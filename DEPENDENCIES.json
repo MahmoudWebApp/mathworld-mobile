@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "flutter": {
+    "minVersion": "3.0.0",
+    "channel": "stable"
+  },
+  "dependencies": {
+    "flutter_riverpod": {
+      "version": "^2.4.0",
+      "description": "إدارة الحالة"
+    },
+    "dio": {
+      "version": "^5.3.0",
+      "description": "HTTP Client"
+    },
+    "hive": {
+      "version": "^2.2.3",
+      "description": "قاعدة بيانات محلية"
+    },
+    "flutter_secure_storage": {
+      "version": "^9.0.0",
+      "description": "تخزين آمن للتوكن"
+    },
+    "easy_localization": {
+      "version": "^3.0.7",
+      "description": "دعم اللغات"
+    },
+    "google_fonts": {
+      "version": "^6.1.0",
+      "description": "الخطوط الحديثة"
+    },
+    "cached_network_image": {
+      "version": "^3.3.0",
+      "description": "تخزين مؤقت للصور"
+    }
+  }
+}

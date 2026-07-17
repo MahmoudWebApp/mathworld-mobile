@@ -1,0 +1,227 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../config/app_routes.dart';
+import '../../config/design_tokens.dart';
+import '../../core/utils/error_message.dart';
+import '../../models/category.dart';
+import '../../models/stage.dart';
+import '../../providers/categories_provider.dart';
+import '../../utils/layout_utils.dart';
+import '../../widgets/app_states.dart';
+import '../../widgets/glass_card.dart';
+import '../../widgets/math_background.dart';
+
+/// Displays localized categories for the selected educational stage.
+class StageCategoriesScreen extends ConsumerWidget {
+  const StageCategoriesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final arguments = ModalRoute.of(context)?.settings.arguments;
+    if (arguments is! Stage) {
+      return Scaffold(
+        body: AppErrorView(onRetry: () => Navigator.maybePop(context)),
+      );
+    }
+
+    final stage = arguments;
+    final categoriesState = ref.watch(stageCategoriesProvider(stage.id));
+    final localeCode = context.locale.languageCode;
+
+    return Scaffold(
+      appBar: AppBar(title: Text(stage.getName(localeCode))),
+      body: MathBackground(
+        child: categoriesState.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, __) => AppErrorView(
+            message: localizedErrorMessage(error),
+            onRetry: () => ref.invalidate(
+              stageCategoriesProvider(stage.id),
+            ),
+          ),
+          data: (categories) {
+            if (categories.isEmpty) {
+              return AppEmptyView(
+                icon: Icons.category_outlined,
+                title: 'no_categories'.tr(),
+                subtitle: 'no_categories_desc'.tr(),
+              );
+            }
+
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final columns = constraints.maxWidth >= 900
+                    ? 4
+                    : constraints.maxWidth >= 620
+                        ? 3
+                        : 2;
+
+                return GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                    AppSpacing.lg,
+                    AppSpacing.xxl,
+                  ),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    mainAxisSpacing: AppSpacing.lg,
+                    crossAxisSpacing: AppSpacing.lg,
+                    mainAxisExtent: 215,
+                  ),
+                  itemCount: categories.length,
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    return _CategoryCard(
+                      category: category,
+                      localeCode: localeCode,
+                      stageId: stage.id,
+                    );
+                  },
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryCard extends StatelessWidget {
+  final Category category;
+  final String localeCode;
+  final int stageId;
+
+  const _CategoryCard({
+    required this.category,
+    required this.localeCode,
+    required this.stageId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = _categoryColor(category.order);
+    final title = category.getName(localeCode);
+    final titleColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final mutedColor = isDark ? AppColors.darkMuted : AppColors.lightMuted;
+
+    return GlassCard(
+      onTap: () => Navigator.pushNamed(
+        context,
+        AppRoutes.problems,
+        arguments: {
+          'categoryId': category.id,
+          'stageId': stageId,
+          'title': title,
+        },
+      ),
+      color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+      border: BorderSide(
+        color: accent.withValues(alpha: isDark ? 0.27 : 0.18),
+      ),
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: isDark ? 0.17 : 0.10),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(
+                color: accent.withValues(alpha: isDark ? 0.34 : 0.23),
+              ),
+            ),
+            child: category.icon != null && category.icon!.trim().isNotEmpty
+                ? Text(category.icon!, style: const TextStyle(fontSize: 25))
+                : Icon(Icons.calculate_outlined, color: accent, size: 26),
+          ),
+          const Spacer(),
+          Text(
+            title,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: titleColor,
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          if (category.problemsCount != null)
+            Text(
+              category.solvedCount != null
+                  ? 'category_progress'.tr(
+                      namedArgs: {
+                        'solved': '${category.solvedCount}',
+                        'total': '${category.problemsCount}',
+                      },
+                    )
+                  : 'problems_count_value'.tr(
+                      namedArgs: {'count': '${category.problemsCount}'},
+                    ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: mutedColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'browse_all'.tr(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: mutedColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Icon(
+                  LayoutUtils.forwardChevron(context),
+                  size: 19,
+                  color: accent,
+                ),
+              ],
+            ),
+          if (category.progress != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(99),
+              child: LinearProgressIndicator(
+                value: category.progress,
+                minHeight: 6,
+                backgroundColor: accent.withValues(alpha: 0.10),
+                valueColor: AlwaysStoppedAnimation(accent),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Color _categoryColor(int value) {
+    const colors = [
+      AppColors.primary,
+      AppColors.cyan,
+      AppColors.success,
+      AppColors.warning,
+      AppColors.secondary,
+      AppColors.error,
+    ];
+
+    final index = (value <= 0 ? 0 : value - 1) % colors.length;
+    return colors[index];
+  }
+}
