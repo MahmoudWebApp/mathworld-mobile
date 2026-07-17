@@ -181,6 +181,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           onPressed: isLoading ? null : _submit,
                           label: 'create_account'.tr(),
                           icon: Icons.person_add_alt_1_rounded,
+                          iconPlacement: PremiumButtonIconPlacement.leading,
                           isLoading: isLoading,
                           expand: true,
                         ),

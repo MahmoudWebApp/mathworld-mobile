@@ -152,6 +152,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           onPressed: isLoading ? null : _submit,
                           label: 'login'.tr(),
                           icon: Icons.login_rounded,
+                          iconPlacement: PremiumButtonIconPlacement.leading,
                           isLoading: isLoading,
                           expand: true,
                         ),

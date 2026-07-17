@@ -449,7 +449,8 @@ class _ContinueLearningCard extends StatelessWidget {
           PremiumButton(
             onPressed: onTap,
             label: 'explore'.tr(),
-            icon: LayoutUtils.forwardChevron(context),
+            icon: LayoutUtils.forwardArrow(context),
+            iconPlacement: PremiumButtonIconPlacement.trailing,
             expand: true,
           ),
         ],

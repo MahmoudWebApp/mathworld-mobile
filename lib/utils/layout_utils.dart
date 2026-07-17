@@ -11,30 +11,33 @@ class LayoutUtils {
     return Directionality.of(context) == ui.TextDirection.rtl;
   }
 
-  /// Returns the icon used to navigate deeper into the application.
+  /// Returns a chevron for navigating deeper into the application.
   ///
-  /// Flutter automatically mirrors this directional icon in RTL.
+  /// Flutter mirrors the icon automatically in RTL.
   static IconData forwardChevron(BuildContext context) {
     return Icons.chevron_right_rounded;
   }
 
-  /// Returns the icon used to navigate back to the previous screen.
+  /// Returns an arrow for forward actions.
   ///
-  /// Flutter automatically mirrors this directional icon in RTL.
+  /// Flutter mirrors the icon automatically in RTL.
+  static IconData forwardArrow(BuildContext context) {
+    return Icons.arrow_forward_rounded;
+  }
+
+  /// Returns the back navigation icon.
+  ///
+  /// Flutter mirrors the icon automatically in RTL.
   static IconData backChevron(BuildContext context) {
     return Icons.chevron_left_rounded;
   }
 
-  /// Returns the icon used for the next page action.
-  ///
-  /// Flutter automatically mirrors this directional icon in RTL.
+  /// Returns the next-page icon.
   static IconData nextPage(BuildContext context) {
     return Icons.chevron_right_rounded;
   }
 
-  /// Returns the icon used for the previous page action.
-  ///
-  /// Flutter automatically mirrors this directional icon in RTL.
+  /// Returns the previous-page icon.
   static IconData previousPage(BuildContext context) {
     return Icons.chevron_left_rounded;
   }
