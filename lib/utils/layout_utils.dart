@@ -2,7 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-/// Centralizes direction-aware layout decisions.
+/// Centralizes direction-aware layout decisions for Arabic and English.
 class LayoutUtils {
   const LayoutUtils._();
 
@@ -26,16 +26,20 @@ class LayoutUtils {
   }
 
   /// Returns the icon used for the next page action.
+  ///
+  /// Flutter automatically mirrors this directional icon in RTL.
   static IconData nextPage(BuildContext context) {
     return Icons.chevron_right_rounded;
   }
 
   /// Returns the icon used for the previous page action.
+  ///
+  /// Flutter automatically mirrors this directional icon in RTL.
   static IconData previousPage(BuildContext context) {
     return Icons.chevron_left_rounded;
   }
 
-  /// Returns a text alignment that matches the current interface direction.
+  /// Returns text alignment matching the current interface direction.
   static TextAlign textAlignment(BuildContext context) {
     return isRtl(context) ? TextAlign.right : TextAlign.left;
   }

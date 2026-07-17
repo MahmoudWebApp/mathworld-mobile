@@ -25,7 +25,9 @@ class ProblemDetailsState {
   });
 
   const ProblemDetailsState.loading()
-      : this(problem: const AsyncValue.loading());
+      : this(
+          problem: const AsyncValue.loading(),
+        );
 
   ProblemDetailsState copyWith({
     AsyncValue<Problem>? problem,
@@ -40,9 +42,9 @@ class ProblemDetailsState {
       problem: problem ?? this.problem,
       selectedOptionId: clearSelectedOption
           ? null
-          : (selectedOptionId ?? this.selectedOptionId),
+          : selectedOptionId ?? this.selectedOptionId,
       answerResult:
-          clearAnswerResult ? null : (answerResult ?? this.answerResult),
+          clearAnswerResult ? null : answerResult ?? this.answerResult,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       isFavoriteBusy: isFavoriteBusy ?? this.isFavoriteBusy,
     );
@@ -53,11 +55,15 @@ final problemDetailsProvider = StateNotifierProvider.autoDispose
     .family<ProblemDetailsNotifier, ProblemDetailsState, int>(
   (ref, problemId) {
     final languageCode = ref.watch(
-      settingsProvider.select((settings) => settings.languageCode),
+      settingsProvider.select(
+        (settings) => settings.languageCode,
+      ),
     );
 
     return ProblemDetailsNotifier(
-      repository: ref.watch(problemsRepositoryProvider),
+      repository: ref.watch(
+        problemsRepositoryProvider,
+      ),
       problemId: problemId,
       languageCode: languageCode,
       onAttemptCompleted: () {
@@ -81,6 +87,7 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
   final String _languageCode;
   final void Function() _onAttemptCompleted;
   final void Function() _onFavoriteChanged;
+
   final DateTime _openedAt = DateTime.now();
 
   ProblemDetailsNotifier({
@@ -94,40 +101,83 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
         _languageCode = languageCode,
         _onAttemptCompleted = onAttemptCompleted,
         _onFavoriteChanged = onFavoriteChanged,
-        super(const ProblemDetailsState.loading()) {
+        super(
+          const ProblemDetailsState.loading(),
+        ) {
     load();
   }
 
+  /// Loads the problem and restores a previously submitted answer.
   Future<void> load() async {
-    state = state.copyWith(problem: const AsyncValue.loading());
+    state = state.copyWith(
+      problem: const AsyncValue.loading(),
+    );
+
     try {
-      final problem = await _repository.getProblem(_problemId, _languageCode);
-      state = state.copyWith(
+      final problem = await _repository.getProblem(
+        _problemId,
+        _languageCode,
+      );
+
+      state = ProblemDetailsState(
         problem: AsyncValue.data(problem),
-        clearSelectedOption: true,
-        clearAnswerResult: true,
+        selectedOptionId: problem.selectedOptionId,
+        answerResult: _restoreAnswerResult(problem),
       );
     } catch (error, stackTrace) {
       state = state.copyWith(
-        problem: AsyncValue.error(error, stackTrace),
+        problem: AsyncValue.error(
+          error,
+          stackTrace,
+        ),
       );
     }
   }
 
+  /// Reconstructs the answer result when a previously attempted
+  /// problem is opened again.
+  AnswerResult? _restoreAnswerResult(
+    Problem problem,
+  ) {
+    if (!problem.hasAttempted) {
+      return null;
+    }
+
+    final wasCorrect = problem.wasCorrect ?? problem.isSolved;
+
+    return AnswerResult(
+      isCorrect: wasCorrect,
+      isSolved: problem.isSolved,
+      pointsEarned: wasCorrect ? problem.points : 0,
+      selectedOptionId: problem.selectedOptionId,
+      correctOptionId: problem.correctOptionId,
+      detailedSolution: problem.detailedSolution ?? '',
+      youtubeSolutionUrl: problem.youtubeSolutionUrl,
+    );
+  }
+
+  /// Selects an option when the student has not submitted an answer yet.
   void selectOption(int? optionId) {
     final problem = state.problem.valueOrNull;
+
     if (problem == null ||
         problem.hasAttempted ||
         state.answerResult != null ||
         state.isSubmitting) {
       return;
     }
-    state = state.copyWith(selectedOptionId: optionId);
+
+    state = state.copyWith(
+      selectedOptionId: optionId,
+    );
   }
 
+  /// Submits the selected answer to the backend.
   Future<void> submitAnswer() async {
     final problem = state.problem.valueOrNull;
+
     final selectedOptionId = state.selectedOptionId;
+
     if (problem == null ||
         selectedOptionId == null ||
         state.isSubmitting ||
@@ -136,7 +186,10 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
       return;
     }
 
-    state = state.copyWith(isSubmitting: true);
+    state = state.copyWith(
+      isSubmitting: true,
+    );
+
     try {
       final result = await _repository.submitAnswer(
         problemId: problem.id,
@@ -152,6 +205,9 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
       final updatedProblem = problem.copyWith(
         isSolved: result.isSolved,
         hasAttempted: true,
+        selectedOptionId: result.selectedOptionId ?? selectedOptionId,
+        correctOptionId: result.correctOptionId,
+        wasCorrect: result.isCorrect,
         detailedSolution: result.detailedSolution.isNotEmpty
             ? result.detailedSolution
             : problem.detailedSolution,
@@ -160,25 +216,37 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
       );
 
       state = state.copyWith(
-        problem: AsyncValue.data(updatedProblem),
+        problem: AsyncValue.data(
+          updatedProblem,
+        ),
+        selectedOptionId: result.selectedOptionId ?? selectedOptionId,
         answerResult: result,
         isSubmitting: false,
       );
+
       _onAttemptCompleted();
     } catch (_) {
-      state = state.copyWith(isSubmitting: false);
+      state = state.copyWith(
+        isSubmitting: false,
+      );
+
       rethrow;
     }
   }
 
+  /// Adds or removes the problem from the user's favorites.
   Future<void> toggleFavorite() async {
     final problem = state.problem.valueOrNull;
+
     if (problem == null || state.isFavoriteBusy) {
       return;
     }
 
     final requestedValue = !problem.isFavorite;
-    state = state.copyWith(isFavoriteBusy: true);
+
+    state = state.copyWith(
+      isFavoriteBusy: true,
+    );
 
     try {
       final serverValue = await _repository.setFavorite(
@@ -186,14 +254,21 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
         isFavorite: requestedValue,
       );
 
-      final updated = problem.copyWith(isFavorite: serverValue);
+      final updated = problem.copyWith(
+        isFavorite: serverValue,
+      );
+
       state = state.copyWith(
         problem: AsyncValue.data(updated),
         isFavoriteBusy: false,
       );
+
       _onFavoriteChanged();
     } catch (_) {
-      state = state.copyWith(isFavoriteBusy: false);
+      state = state.copyWith(
+        isFavoriteBusy: false,
+      );
+
       rethrow;
     }
   }

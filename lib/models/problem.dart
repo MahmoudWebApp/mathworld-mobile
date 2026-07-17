@@ -11,6 +11,9 @@ class Problem {
   final int points;
   final bool isSolved;
   final bool hasAttempted;
+  final int? selectedOptionId;
+  final int? correctOptionId;
+  final bool? wasCorrect;
   final bool isFavorite;
   final int viewsCount;
   final List<Option> options;
@@ -29,6 +32,9 @@ class Problem {
     required this.points,
     required this.isSolved,
     required this.hasAttempted,
+    this.selectedOptionId,
+    this.correctOptionId,
+    this.wasCorrect,
     required this.isFavorite,
     required this.viewsCount,
     required this.options,
@@ -40,14 +46,19 @@ class Problem {
     Map<String, dynamic> json, {
     String languageCode = 'ar',
   }) {
-    final isSolved = _bool(json['IsSolved'] ?? json['isSolved']);
+    final isSolved = _bool(
+      json['IsSolved'] ?? json['isSolved'],
+    );
+
     final hasAttemptedValue = json['HasAttempted'] ??
         json['hasAttempted'] ??
         json['AlreadyAttempted'] ??
         json['alreadyAttempted'];
 
     return Problem(
-      id: _int(json['Id'] ?? json['id']),
+      id: _int(
+        json['Id'] ?? json['id'],
+      ),
       title: localizedString(
         json,
         languageCode: languageCode,
@@ -62,7 +73,9 @@ class Problem {
         arabicKey: 'QuestionTextAr',
         englishKey: 'QuestionTextEn',
       ),
-      stageId: _int(json['StageId'] ?? json['stageId']),
+      stageId: _int(
+        json['StageId'] ?? json['stageId'],
+      ),
       stageName: localizedString(
         json,
         languageCode: languageCode,
@@ -70,7 +83,9 @@ class Problem {
         arabicKey: 'StageNameAr',
         englishKey: 'StageNameEn',
       ),
-      categoryId: _int(json['CategoryId'] ?? json['categoryId']),
+      categoryId: _int(
+        json['CategoryId'] ?? json['categoryId'],
+      ),
       categoryName: localizedString(
         json,
         languageCode: languageCode,
@@ -81,16 +96,42 @@ class Problem {
       categoryIcon: _nullableString(
         json['CategoryIcon'] ?? json['categoryIcon'],
       ),
-      points: _int(json['Points'] ?? json['points']),
+      points: _int(
+        json['Points'] ?? json['points'],
+      ),
       isSolved: isSolved,
       hasAttempted:
           hasAttemptedValue == null ? isSolved : _bool(hasAttemptedValue),
-      isFavorite: _bool(json['IsFavorite'] ?? json['isFavorite']),
-      viewsCount: _int(json['ViewsCount'] ?? json['viewsCount']),
-      options: _list(json['Options'] ?? json['options'])
-          .map((item) => Option.fromJson(_map(item)))
+      selectedOptionId: _nullableInt(
+        json['SelectedOptionId'] ?? json['selectedOptionId'],
+      ),
+      correctOptionId: _nullableInt(
+        json['CorrectOptionId'] ?? json['correctOptionId'],
+      ),
+      wasCorrect: _nullableBool(
+        json['WasCorrect'] ??
+            json['wasCorrect'] ??
+            json['IsCorrect'] ??
+            json['isCorrect'],
+      ),
+      isFavorite: _bool(
+        json['IsFavorite'] ?? json['isFavorite'],
+      ),
+      viewsCount: _int(
+        json['ViewsCount'] ?? json['viewsCount'],
+      ),
+      options: _list(
+        json['Options'] ?? json['options'],
+      )
+          .map(
+            (item) => Option.fromJson(
+              _map(item),
+            ),
+          )
           .toList()
-        ..sort((a, b) => a.order.compareTo(b.order)),
+        ..sort(
+          (first, second) => first.order.compareTo(second.order),
+        ),
       detailedSolution: localizedNullableString(
         json,
         languageCode: languageCode,
@@ -107,6 +148,9 @@ class Problem {
   Problem copyWith({
     bool? isSolved,
     bool? hasAttempted,
+    int? selectedOptionId,
+    int? correctOptionId,
+    bool? wasCorrect,
     bool? isFavorite,
     String? detailedSolution,
     String? youtubeSolutionUrl,
@@ -124,6 +168,9 @@ class Problem {
       points: points,
       isSolved: isSolved ?? this.isSolved,
       hasAttempted: hasAttempted ?? this.hasAttempted,
+      selectedOptionId: selectedOptionId ?? this.selectedOptionId,
+      correctOptionId: correctOptionId ?? this.correctOptionId,
+      wasCorrect: wasCorrect ?? this.wasCorrect,
       isFavorite: isFavorite ?? this.isFavorite,
       viewsCount: viewsCount ?? this.viewsCount,
       options: options,
@@ -145,11 +192,19 @@ class Option {
     required this.order,
   });
 
-  factory Option.fromJson(Map<String, dynamic> json) {
+  factory Option.fromJson(
+    Map<String, dynamic> json,
+  ) {
     return Option(
-      id: _int(json['Id'] ?? json['id']),
-      latexCode: _string(json['LatexCode'] ?? json['latexCode']),
-      order: _int(json['Order'] ?? json['order']),
+      id: _int(
+        json['Id'] ?? json['id'],
+      ),
+      latexCode: _string(
+        json['LatexCode'] ?? json['latexCode'],
+      ),
+      order: _int(
+        json['Order'] ?? json['order'],
+      ),
     );
   }
 }
@@ -185,7 +240,9 @@ class ProblemPreview {
     String languageCode = 'ar',
   }) {
     return ProblemPreview(
-      id: _int(json['Id'] ?? json['id']),
+      id: _int(
+        json['Id'] ?? json['id'],
+      ),
       title: localizedString(
         json,
         languageCode: languageCode,
@@ -193,7 +250,9 @@ class ProblemPreview {
         arabicKey: 'TitleAr',
         englishKey: 'TitleEn',
       ),
-      stageId: _int(json['StageId'] ?? json['stageId']),
+      stageId: _int(
+        json['StageId'] ?? json['stageId'],
+      ),
       stageName: localizedNullableString(
         json,
         languageCode: languageCode,
@@ -201,7 +260,9 @@ class ProblemPreview {
         arabicKey: 'StageNameAr',
         englishKey: 'StageNameEn',
       ),
-      categoryId: _int(json['CategoryId'] ?? json['categoryId']),
+      categoryId: _int(
+        json['CategoryId'] ?? json['categoryId'],
+      ),
       categoryName: localizedString(
         json,
         languageCode: languageCode,
@@ -209,10 +270,18 @@ class ProblemPreview {
         arabicKey: 'CategoryNameAr',
         englishKey: 'CategoryNameEn',
       ),
-      viewsCount: _int(json['ViewsCount'] ?? json['viewsCount']),
-      points: _int(json['Points'] ?? json['points']),
-      isSolved: _bool(json['IsSolved'] ?? json['isSolved']),
-      isFavorite: _bool(json['IsFavorite'] ?? json['isFavorite']),
+      viewsCount: _int(
+        json['ViewsCount'] ?? json['viewsCount'],
+      ),
+      points: _int(
+        json['Points'] ?? json['points'],
+      ),
+      isSolved: _bool(
+        json['IsSolved'] ?? json['isSolved'],
+      ),
+      isFavorite: _bool(
+        json['IsFavorite'] ?? json['isFavorite'],
+      ),
     );
   }
 }
@@ -243,14 +312,23 @@ class AnswerResult {
     Map<String, dynamic> json, {
     String languageCode = 'ar',
   }) {
-    final isCorrect = _bool(json['IsCorrect'] ?? json['isCorrect']);
+    final isCorrect = _bool(
+      json['IsCorrect'] ?? json['isCorrect'],
+    );
+
+    final containsSolved =
+        json.containsKey('IsSolved') || json.containsKey('isSolved');
 
     return AnswerResult(
       isCorrect: isCorrect,
-      isSolved: json.containsKey('IsSolved') || json.containsKey('isSolved')
-          ? _bool(json['IsSolved'] ?? json['isSolved'])
+      isSolved: containsSolved
+          ? _bool(
+              json['IsSolved'] ?? json['isSolved'],
+            )
           : isCorrect,
-      pointsEarned: _int(json['PointsEarned'] ?? json['pointsEarned']),
+      pointsEarned: _int(
+        json['PointsEarned'] ?? json['pointsEarned'],
+      ),
       selectedOptionId: _nullableInt(
         json['SelectedOptionId'] ?? json['selectedOptionId'],
       ),
@@ -321,7 +399,9 @@ String? localizedNullableString(
   required String englishKey,
 }) {
   final preferredKey = languageCode == 'en' ? englishKey : arabicKey;
+
   final fallbackKey = languageCode == 'en' ? arabicKey : englishKey;
+
   final candidates = [
     json[preferredKey],
     json[localizedKey],
@@ -332,6 +412,7 @@ String? localizedNullableString(
 
   for (final candidate in candidates) {
     final value = _nullableString(candidate);
+
     if (value != null) {
       return value;
     }
@@ -344,49 +425,76 @@ String _lowerCamel(String value) {
   if (value.isEmpty) {
     return value;
   }
-  return '${value[0].toLowerCase()}${value.substring(1)}';
+
+  return '${value[0].toLowerCase()}'
+      '${value.substring(1)}';
 }
 
 Map<String, dynamic> _map(dynamic value) {
   return value is Map ? Map<String, dynamic>.from(value) : const {};
 }
 
-List<dynamic> _list(dynamic value) => value is List ? value : const [];
+List<dynamic> _list(dynamic value) {
+  return value is List ? value : const [];
+}
 
 int _int(dynamic value) {
   if (value is int) {
     return value;
   }
+
   if (value is num) {
     return value.toInt();
   }
-  return int.tryParse(value?.toString() ?? '') ?? 0;
+
+  return int.tryParse(
+        value?.toString() ?? '',
+      ) ??
+      0;
 }
 
 int? _nullableInt(dynamic value) {
   if (value == null) {
     return null;
   }
+
   if (value is int) {
     return value;
   }
+
   if (value is num) {
     return value.toInt();
   }
-  return int.tryParse(value.toString());
+
+  return int.tryParse(
+    value.toString(),
+  );
 }
 
 bool _bool(dynamic value) {
   if (value is bool) {
     return value;
   }
+
   final normalized = value?.toString().toLowerCase();
+
   return normalized == 'true' || normalized == '1';
 }
 
-String _string(dynamic value) => value?.toString().trim() ?? '';
+bool? _nullableBool(dynamic value) {
+  if (value == null) {
+    return null;
+  }
+
+  return _bool(value);
+}
+
+String _string(dynamic value) {
+  return value?.toString().trim() ?? '';
+}
 
 String? _nullableString(dynamic value) {
   final result = _string(value);
+
   return result.isEmpty ? null : result;
 }

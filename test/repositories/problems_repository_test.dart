@@ -38,7 +38,7 @@ void main() {
     expect(result.problems.single.title, 'Title');
     expect(result.problems.single.categoryName, 'Algebra');
     expect(result.total, 1);
-    expect(client.lastQueryParameters?['engine'], 'meilisearch');
+    expect(client.lastQueryParameters?['engine'], 'postgresql');
   });
 
   test('submit answer parses server validation metadata', () async {
