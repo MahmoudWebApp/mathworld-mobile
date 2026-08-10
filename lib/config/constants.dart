@@ -6,44 +6,35 @@ class ApiConstants {
 
   static String get baseUrl {
     final configured = _readEnvironmentValue('API_BASE_URL')?.trim();
-
     final value = configured == null || configured.isEmpty
         ? 'https://mathwordbackend.onrender.com/api'
         : configured;
-
     return value.replaceFirst(RegExp(r'/$'), '');
   }
 
   /// Selects the backend search engine used by the unified search endpoint.
-  ///
-  /// PostgreSQL is the safe default.
-  /// MeiliSearch is used only when SEARCH_ENGINE is explicitly set
-  /// to `meilisearch`.
+  /// Supported values are `meilisearch` and `postgresql`.
+  /// PostgreSQL is the safe default until MeiliSearch is explicitly enabled.
   static String get searchEngine {
     final configured =
         _readEnvironmentValue('SEARCH_ENGINE')?.trim().toLowerCase();
-
     return configured == 'meilisearch' ? 'meilisearch' : 'postgresql';
   }
 
   static const String login = '/auth/login';
   static const String register = '/auth/register';
-
   static const String stages = '/stages';
   static const String categories = '/categories';
-
   static const String problemsSearch = '/problems/search';
   static const String problemDetail = '/problems';
   static const String submitAnswer = '/problems/submit';
-
   static const String userProfile = '/users/profile';
   static const String userDashboard = '/users/dashboard';
   static const String userFavorites = '/users/favorites';
   static const String userSolved = '/users/solved';
-
   static const String toggleFavorite = '/users/favorite/toggle';
   static const String favoriteCheck = '/users/favorite/check';
-
+  static const String errorNotebook = '/users/error-notebook';
   static const String stats = '/stats';
 
   static String? _readEnvironmentValue(String key) {

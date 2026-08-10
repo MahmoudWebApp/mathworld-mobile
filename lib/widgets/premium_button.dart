@@ -2,82 +2,44 @@ import 'package:flutter/material.dart';
 
 import '../config/design_tokens.dart';
 
-/// Defines where the icon appears relative to the button label.
-enum PremiumButtonIconPlacement {
-  leading,
-  trailing,
-}
-
-/// A responsive gradient button that supports RTL and LTR layouts.
+/// A responsive gradient button that safely adapts to narrow layouts.
 class PremiumButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
-  final IconData? icon;
-  final PremiumButtonIconPlacement iconPlacement;
+  final IconData? leadingIcon;
+  final IconData? trailingIcon;
   final bool isLoading;
   final bool expand;
   final EdgeInsetsGeometry padding;
+  final Gradient gradient;
 
   const PremiumButton({
     super.key,
     required this.label,
     required this.onPressed,
-    this.icon,
-    this.iconPlacement = PremiumButtonIconPlacement.leading,
+    this.leadingIcon,
+    this.trailingIcon,
     this.isLoading = false,
     this.expand = false,
-    this.padding = const EdgeInsets.symmetric(
-      horizontal: 18,
-      vertical: 14,
-    ),
+    this.padding = const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+    this.gradient = AppGradients.primary,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final foreground = theme.brightness == Brightness.dark
+    final foreground = Theme.of(context).brightness == Brightness.dark
         ? AppColors.darkBackground
         : Colors.white;
 
-    final labelWidget = Flexible(
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
-        style: theme.textTheme.labelLarge?.copyWith(
-          color: foreground,
-        ),
-      ),
-    );
-
-    final iconWidget = icon == null
-        ? null
-        : Icon(
-            icon,
-            size: 19,
-            color: foreground,
-            textDirection: Directionality.of(context),
-          );
-
-    final content = _buildContent(
-      labelWidget: labelWidget,
-      iconWidget: iconWidget,
-    );
-
     final child = Container(
-      constraints: const BoxConstraints(
-        minHeight: 50,
-      ),
+      constraints: const BoxConstraints(minHeight: 50),
       padding: padding,
       decoration: BoxDecoration(
-        gradient: onPressed == null ? null : AppGradients.primary,
+        gradient: onPressed == null ? null : gradient,
         color: onPressed == null
-            ? theme.colorScheme.surfaceContainerHighest
+            ? Theme.of(context).colorScheme.surfaceContainerHighest
             : null,
-        borderRadius: BorderRadius.circular(
-          AppRadius.md,
-        ),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Center(
         child: isLoading
@@ -91,7 +53,38 @@ class PremiumButton extends StatelessWidget {
             : Row(
                 mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: content,
+                children: [
+                  if (leadingIcon != null) ...[
+                    Icon(
+                      leadingIcon,
+                      size: 19,
+                      color: foreground,
+                      textDirection: TextDirection.ltr,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelLarge
+                          ?.copyWith(color: foreground),
+                    ),
+                  ),
+                  if (trailingIcon != null) ...[
+                    const SizedBox(width: 8),
+                    Icon(
+                      trailingIcon,
+                      size: 19,
+                      color: foreground,
+                      textDirection: TextDirection.ltr,
+                    ),
+                  ],
+                ],
               ),
       ),
     );
@@ -100,43 +93,14 @@ class PremiumButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: isLoading ? null : onPressed,
-        borderRadius: BorderRadius.circular(
-          AppRadius.md,
-        ),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: child,
       ),
     );
 
     if (expand) {
-      return SizedBox(
-        width: double.infinity,
-        child: button,
-      );
+      return SizedBox(width: double.infinity, child: button);
     }
-
     return button;
-  }
-
-  List<Widget> _buildContent({
-    required Widget labelWidget,
-    required Widget? iconWidget,
-  }) {
-    if (iconWidget == null) {
-      return [labelWidget];
-    }
-
-    if (iconPlacement == PremiumButtonIconPlacement.trailing) {
-      return [
-        labelWidget,
-        const SizedBox(width: 8),
-        iconWidget,
-      ];
-    }
-
-    return [
-      iconWidget,
-      const SizedBox(width: 8),
-      labelWidget,
-    ];
   }
 }

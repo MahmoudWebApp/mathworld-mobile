@@ -187,8 +187,8 @@ class _CategoryCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.xs),
-                Icon(
-                  LayoutUtils.forwardChevron(context),
+                LayoutUtils.forwardIcon(
+                  context,
                   size: 19,
                   color: accent,
                 ),
@@ -213,12 +213,12 @@ class _CategoryCard extends StatelessWidget {
 
   Color _categoryColor(int value) {
     const colors = [
-      AppColors.primary,
-      AppColors.cyan,
-      AppColors.success,
-      AppColors.warning,
-      AppColors.secondary,
-      AppColors.error,
+      AppColors.brandPurple,
+      AppColors.brandCyan,
+      AppColors.brandBlue,
+      AppColors.brandViolet,
+      Color(0xFF6D5DFB),
+      Color(0xFF32B8D8),
     ];
 
     final index = (value <= 0 ? 0 : value - 1) % colors.length;

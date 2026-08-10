@@ -197,7 +197,7 @@ class _PaginationControls extends StatelessWidget {
           IconButton.filledTonal(
             onPressed: onPrevious,
             tooltip: 'previous'.tr(),
-            icon: Icon(LayoutUtils.previousPage(context)),
+            icon: LayoutUtils.previousPageIcon(context),
           ),
           Expanded(
             child: Text(
@@ -214,7 +214,7 @@ class _PaginationControls extends StatelessWidget {
           IconButton.filledTonal(
             onPressed: onNext,
             tooltip: 'next'.tr(),
-            icon: Icon(LayoutUtils.nextPage(context)),
+            icon: LayoutUtils.nextPageIcon(context),
           ),
         ],
       ),

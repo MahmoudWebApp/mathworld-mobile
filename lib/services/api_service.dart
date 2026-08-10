@@ -45,6 +45,9 @@ class ApiService implements ApiClient {
 
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
+          } else {
+            // Requests created after logout must never reuse an old header.
+            options.headers.remove('Authorization');
           }
 
           options.headers['Accept-Language'] = languageCode;

@@ -13,7 +13,7 @@ class ProblemsRepository {
   /// Searches through the unified backend endpoint.
   ///
   /// The selected engine is read from `SEARCH_ENGINE` and defaults to
-  /// MeiliSearch. PostgreSQL remains available through the same endpoint.
+  /// PostgreSQL. MeiliSearch can be enabled explicitly through the same endpoint.
   Future<ProblemSearchResult> search(
     ProblemSearchParams params,
     String languageCode,
@@ -100,6 +100,55 @@ class ProblemsRepository {
     return result.copyWith(
       selectedOptionId: result.selectedOptionId ?? selectedOptionId,
     );
+  }
+
+  /// Loads all recorded attempts for one problem.
+  Future<ProblemAttemptHistory> getAttemptHistory(int problemId) async {
+    final response = await _apiService.get(
+      '${ApiConstants.problemDetail}/$problemId/attempts',
+    );
+
+    return ProblemAttemptHistory.fromJson(
+      ApiEnvelope.map(response.data),
+    );
+  }
+
+  /// Loads the user's active or archived error-notebook problems.
+  Future<List<ErrorNotebookProblem>> getErrorNotebook({
+    required String languageCode,
+    bool includeArchived = false,
+  }) async {
+    final response = await _apiService.get(
+      ApiConstants.errorNotebook,
+      queryParameters: {
+        'includeArchived': includeArchived,
+      },
+    );
+
+    return ApiEnvelope.list(response.data)
+        .whereType<Map>()
+        .map(
+          (item) => ErrorNotebookProblem.fromJson(
+            Map<String, dynamic>.from(item),
+            languageCode: languageCode,
+          ),
+        )
+        .toList();
+  }
+
+  /// Archives or restores one problem in the error notebook.
+  Future<bool> setErrorNotebookArchive({
+    required int problemId,
+    required bool isArchived,
+  }) async {
+    final response = await _apiService.put(
+      '${ApiConstants.errorNotebook}/$problemId/archive',
+      data: {'IsArchived': isArchived},
+    );
+
+    final data = ApiEnvelope.map(response.data);
+    final value = data['IsArchived'] ?? data['isArchived'];
+    return value is bool ? value : isArchived;
   }
 
   /// Sets the requested favorite state on the backend.

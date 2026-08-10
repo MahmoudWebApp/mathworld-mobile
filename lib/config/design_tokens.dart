@@ -4,10 +4,17 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  static const Color primary = Color(0xFF6D5DFB);
-  static const Color primaryDark = Color(0xFF67D8FF);
-  static const Color secondary = Color(0xFF8A5CF6);
-  static const Color cyan = Color(0xFF20C7E8);
+  // MathWorld brand palette. Keep branded surfaces and actions inside this
+  // purple-to-cyan family so the application matches the logo everywhere.
+  static const Color brandPurple = Color(0xFF7B3FF2);
+  static const Color brandViolet = Color(0xFF9A5BFF);
+  static const Color brandBlue = Color(0xFF3B82F6);
+  static const Color brandCyan = Color(0xFF25C9E8);
+
+  static const Color primary = brandPurple;
+  static const Color primaryDark = brandCyan;
+  static const Color secondary = brandViolet;
+  static const Color cyan = brandCyan;
   static const Color success = Color(0xFF10B981);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFEF476F);
@@ -51,21 +58,38 @@ class AppRadius {
 class AppGradients {
   AppGradients._();
 
+  /// Primary MathWorld gradient used by the logo mark and main CTAs.
   static const LinearGradient primary = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [AppColors.primary, AppColors.secondary, AppColors.cyan],
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [
+      AppColors.brandPurple,
+      AppColors.brandViolet,
+      AppColors.brandBlue,
+      AppColors.brandCyan,
+    ],
+    stops: [0.0, 0.34, 0.68, 1.0],
   );
 
+  /// Dark branded panel gradient derived only from the logo palette.
   static const LinearGradient darkHero = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF242039), Color(0xFF172035), Color(0xFF102A34)],
+    colors: [
+      Color(0xFF2A174D),
+      Color(0xFF1A2450),
+      Color(0xFF0E3D4B),
+    ],
   );
 
+  /// Light branded panel gradient derived only from the logo palette.
   static const LinearGradient lightHero = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFF1EEFF), Color(0xFFECF9FD), Color(0xFFFFFFFF)],
+    colors: [
+      Color(0xFFF2EBFF),
+      Color(0xFFEDF2FF),
+      Color(0xFFEAFBFF),
+    ],
   );
 }

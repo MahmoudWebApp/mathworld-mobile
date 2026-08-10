@@ -6,7 +6,14 @@ import '../core/errors/app_exception.dart';
 import '../core/network/api_client.dart';
 import '../models/user.dart';
 import '../repositories/auth_repository.dart';
+import 'categories_provider.dart';
+import 'dashboard_provider.dart';
+import 'learning_provider.dart';
+import 'problem_details_provider.dart';
+import 'problems_provider.dart';
 import 'repositories_provider.dart';
+import 'stages_provider.dart';
+import 'user_lists_provider.dart';
 
 /// Describes the current authentication lifecycle.
 enum AuthStatus { checking, authenticated, unauthenticated }
@@ -53,6 +60,7 @@ class AuthState {
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(
+    ref,
     ref.watch(authRepositoryProvider),
     ref.watch(apiClientProvider),
   );
@@ -60,11 +68,15 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
 
 /// Manages authentication and reacts to centralized 401 session events.
 class AuthNotifier extends StateNotifier<AuthState> {
+  final Ref _ref;
   final AuthRepository _repository;
   late final StreamSubscription<void> _sessionSubscription;
 
-  AuthNotifier(this._repository, ApiClient apiClient)
-      : super(const AuthState.checking()) {
+  AuthNotifier(
+    this._ref,
+    this._repository,
+    ApiClient apiClient,
+  ) : super(const AuthState.checking()) {
     _sessionSubscription = apiClient.sessionExpiredStream.listen((_) {
       _handleExpiredSession();
     });
@@ -97,6 +109,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> login(String email, String password) async {
+    _resetAccountScopedState();
     state = state.copyWith(
       isSubmitting: true,
       clearError: true,
@@ -104,6 +117,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
     try {
       final user = await _repository.login(email, password);
+      _resetAccountScopedState();
       state = AuthState(status: AuthStatus.authenticated, user: user);
     } catch (error) {
       final appError = error is AppException
@@ -127,6 +141,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String email,
     String password,
   ) async {
+    _resetAccountScopedState();
     state = state.copyWith(
       isSubmitting: true,
       clearError: true,
@@ -134,6 +149,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
     try {
       final user = await _repository.register(fullName, email, password);
+      _resetAccountScopedState();
       state = AuthState(status: AuthStatus.authenticated, user: user);
     } catch (error) {
       final appError = error is AppException
@@ -153,16 +169,37 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    _resetAccountScopedState();
     await _repository.clearSession();
+    _resetAccountScopedState();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
   Future<void> _handleExpiredSession() async {
+    _resetAccountScopedState();
     await _repository.clearSession();
+    _resetAccountScopedState();
     state = const AuthState(
       status: AuthStatus.unauthenticated,
       sessionExpired: true,
     );
+  }
+
+  /// Drops every provider whose result belongs to the authenticated account.
+  ///
+  /// Riverpod providers live above the Navigator, so removing routes alone is
+  /// not enough when a different user signs in during the same app process.
+  void _resetAccountScopedState() {
+    _ref.invalidate(stagesProvider);
+    _ref.invalidate(categoriesProvider);
+    _ref.invalidate(stageCategoriesProvider);
+    _ref.invalidate(dashboardProvider);
+    _ref.invalidate(favoritesProvider);
+    _ref.invalidate(solvedProvider);
+    _ref.invalidate(problemsProvider);
+    _ref.invalidate(problemDetailsProvider);
+    _ref.invalidate(problemAttemptHistoryProvider);
+    _ref.invalidate(errorNotebookProvider);
   }
 
   void consumeSessionExpired() {

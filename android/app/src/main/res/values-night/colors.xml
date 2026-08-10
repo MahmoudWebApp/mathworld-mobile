@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark-mode brand colors used by the Android launcher icon and splash screen. -->
+    <color name="ic_launcher_background">#DDF3FC</color>
+    <color name="launch_background">#061826</color>
+</resources>

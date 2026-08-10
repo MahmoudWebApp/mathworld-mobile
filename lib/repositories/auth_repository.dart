@@ -93,5 +93,6 @@ class AuthRepository {
   Future<void> clearSession() async {
     await _apiService.deleteToken();
     await HiveService.clearAuth();
+    await HiveService.clearCache();
   }
 }

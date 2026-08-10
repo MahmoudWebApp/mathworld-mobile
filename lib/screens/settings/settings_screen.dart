@@ -107,6 +107,21 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 24),
+            _SectionTitle(title: 'learning_tools'.tr()),
+            const SizedBox(height: 10),
+            GlassCard(
+              padding: EdgeInsets.zero,
+              child: ListTile(
+                leading: const Icon(Icons.auto_stories_outlined),
+                title: Text('error_notebook'.tr()),
+                subtitle: Text('error_notebook_settings_desc'.tr()),
+                trailing: LayoutUtils.forwardIcon(context),
+                onTap: () {
+                  Navigator.pushNamed(context, AppRoutes.errorNotebook);
+                },
+              ),
+            ),
+            const SizedBox(height: 24),
             _SectionTitle(title: 'about_and_legal'.tr()),
             const SizedBox(height: 10),
             GlassCard(
@@ -116,7 +131,7 @@ class SettingsScreen extends ConsumerWidget {
                   ListTile(
                     leading: const Icon(Icons.shield_outlined),
                     title: Text('privacy'.tr()),
-                    trailing: Icon(LayoutUtils.forwardChevron(context)),
+                    trailing: LayoutUtils.forwardIcon(context),
                     onTap: () {
                       Navigator.pushNamed(context, AppRoutes.privacy);
                     },
@@ -155,8 +170,8 @@ class SettingsScreen extends ConsumerWidget {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                trailing: Icon(
-                  LayoutUtils.forwardChevron(context),
+                trailing: LayoutUtils.forwardIcon(
+                  context,
                   color: AppColors.error,
                 ),
                 onTap: () async {

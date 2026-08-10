@@ -167,8 +167,8 @@ class _StageCard extends StatelessWidget {
               color: accent.withValues(alpha: isDark ? 0.13 : 0.08),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              LayoutUtils.forwardChevron(context),
+            child: LayoutUtils.forwardIcon(
+              context,
               color: accent,
               size: 22,
             ),
@@ -180,11 +180,10 @@ class _StageCard extends StatelessWidget {
 
   Color _stageColor(int value) {
     const colors = [
-      AppColors.cyan,
-      AppColors.success,
-      AppColors.warning,
-      AppColors.primary,
-      AppColors.secondary,
+      AppColors.brandCyan,
+      AppColors.brandBlue,
+      AppColors.brandViolet,
+      AppColors.brandPurple,
     ];
 
     final index = (value <= 0 ? 0 : value - 1) % colors.length;

@@ -6,44 +6,109 @@ import 'package:flutter/material.dart';
 class LayoutUtils {
   const LayoutUtils._();
 
-  /// Returns true when the current interface direction is right-to-left.
+  static const Set<String> _rtlLanguageCodes = {
+    'ar',
+    'fa',
+    'he',
+    'ur',
+  };
+
+  /// Returns true when the active locale uses a right-to-left script.
   static bool isRtl(BuildContext context) {
-    return Directionality.of(context) == ui.TextDirection.rtl;
+    final languageCode = Localizations.localeOf(context).languageCode;
+    if (_rtlLanguageCodes.contains(languageCode)) {
+      return true;
+    }
+
+    return Directionality.maybeOf(context) == ui.TextDirection.rtl;
   }
 
-  /// Returns a chevron for navigating deeper into the application.
+  /// Returns the explicit glyph used to navigate deeper into the application.
   ///
-  /// Flutter mirrors the icon automatically in RTL.
+  /// The returned [IconData] must be rendered with an LTR icon direction to
+  /// avoid Flutter mirroring it a second time in RTL layouts.
   static IconData forwardChevron(BuildContext context) {
-    return Icons.chevron_right_rounded;
+    return isRtl(context)
+        ? Icons.chevron_left_rounded
+        : Icons.chevron_right_rounded;
   }
 
-  /// Returns an arrow for forward actions.
-  ///
-  /// Flutter mirrors the icon automatically in RTL.
-  static IconData forwardArrow(BuildContext context) {
-    return Icons.arrow_forward_rounded;
-  }
-
-  /// Returns the back navigation icon.
-  ///
-  /// Flutter mirrors the icon automatically in RTL.
+  /// Returns the explicit glyph used to navigate back to the previous screen.
   static IconData backChevron(BuildContext context) {
-    return Icons.chevron_left_rounded;
+    return isRtl(context)
+        ? Icons.chevron_right_rounded
+        : Icons.chevron_left_rounded;
   }
 
-  /// Returns the next-page icon.
-  static IconData nextPage(BuildContext context) {
-    return Icons.chevron_right_rounded;
+  static IconData nextPage(BuildContext context) => forwardChevron(context);
+
+  static IconData previousPage(BuildContext context) => backChevron(context);
+
+  /// Builds a forward icon without Material's automatic RTL mirroring.
+  static Widget forwardIcon(
+    BuildContext context, {
+    double? size,
+    Color? color,
+    String? semanticLabel,
+  }) {
+    return Icon(
+      forwardChevron(context),
+      size: size,
+      color: color,
+      semanticLabel: semanticLabel,
+      textDirection: ui.TextDirection.ltr,
+    );
   }
 
-  /// Returns the previous-page icon.
-  static IconData previousPage(BuildContext context) {
-    return Icons.chevron_left_rounded;
+  /// Builds a back icon without Material's automatic RTL mirroring.
+  static Widget backIcon(
+    BuildContext context, {
+    double? size,
+    Color? color,
+    String? semanticLabel,
+  }) {
+    return Icon(
+      backChevron(context),
+      size: size,
+      color: color,
+      semanticLabel: semanticLabel,
+      textDirection: ui.TextDirection.ltr,
+    );
   }
 
-  /// Returns text alignment matching the current interface direction.
+  /// Builds a next-page icon without automatic mirroring.
+  static Widget nextPageIcon(
+    BuildContext context, {
+    double? size,
+    Color? color,
+  }) {
+    return Icon(
+      nextPage(context),
+      size: size,
+      color: color,
+      textDirection: ui.TextDirection.ltr,
+    );
+  }
+
+  /// Builds a previous-page icon without automatic mirroring.
+  static Widget previousPageIcon(
+    BuildContext context, {
+    double? size,
+    Color? color,
+  }) {
+    return Icon(
+      previousPage(context),
+      size: size,
+      color: color,
+      textDirection: ui.TextDirection.ltr,
+    );
+  }
+
   static TextAlign textAlignment(BuildContext context) {
     return isRtl(context) ? TextAlign.right : TextAlign.left;
+  }
+
+  static CrossAxisAlignment crossAxisAlignment(BuildContext context) {
+    return isRtl(context) ? CrossAxisAlignment.end : CrossAxisAlignment.start;
   }
 }

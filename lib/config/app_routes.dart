@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
+import '../screens/dashboard/error_notebook_screen.dart';
 import '../screens/dashboard/solved_screen.dart';
 import '../screens/main/main_shell.dart';
 import '../screens/problems/problem_details_screen.dart';
@@ -17,6 +18,7 @@ class AppRoutes {
   static const String register = '/register';
   static const String home = '/home';
   static const String solved = '/solved';
+  static const String errorNotebook = '/error-notebook';
   static const String stageCategories = '/stage-categories';
   static const String problems = '/problems';
   static const String problemDetails = '/problem-details';
@@ -29,6 +31,7 @@ class AppRoutes {
       register: (_) => const RegisterScreen(),
       home: (_) => const MainShell(),
       solved: (_) => const SolvedScreen(),
+      errorNotebook: (_) => const ErrorNotebookScreen(),
       stageCategories: (_) => const StageCategoriesScreen(),
       problems: (_) => const ProblemsListScreen(),
       problemDetails: (_) => const ProblemDetailsScreen(),

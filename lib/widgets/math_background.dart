@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Paints a subtle ambient background that never competes with content.
+import '../config/design_tokens.dart';
+
+/// Paints a subtle MathWorld-branded ambient background.
 class MathBackground extends StatelessWidget {
   final Widget child;
   final bool showSymbols;
@@ -14,28 +16,46 @@ class MathBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final scheme = Theme.of(context).colorScheme;
     final background = Theme.of(context).scaffoldBackgroundColor;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: RadialGradient(
-          center: const Alignment(0.72, -0.92),
-          radius: 1.25,
-          colors: [
-            scheme.primary.withValues(alpha: isDark ? 0.055 : 0.038),
-            background,
-            background,
-          ],
-          stops: const [0, 0.36, 1],
-        ),
-      ),
+    return ColoredBox(
+      color: background,
       child: Stack(
         fit: StackFit.expand,
         children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: const Alignment(0.86, -0.96),
+                radius: 1.05,
+                colors: [
+                  AppColors.brandCyan.withValues(
+                    alpha: isDark ? 0.105 : 0.070,
+                  ),
+                  Colors.transparent,
+                ],
+                stops: const [0, 0.74],
+              ),
+            ),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: const Alignment(-0.92, -0.72),
+                radius: 1.12,
+                colors: [
+                  AppColors.brandPurple.withValues(
+                    alpha: isDark ? 0.085 : 0.055,
+                  ),
+                  Colors.transparent,
+                ],
+                stops: const [0, 0.76],
+              ),
+            ),
+          ),
           CustomPaint(
             painter: _MathGridPainter(
-              color: scheme.primary.withValues(
+              color: AppColors.brandCyan.withValues(
                 alpha: isDark ? 0.018 : 0.012,
               ),
             ),
@@ -53,20 +73,33 @@ class _AmbientSymbolLayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        Theme.of(context).colorScheme.primary.withValues(alpha: 0.028);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return IgnorePointer(
       child: Stack(
         children: [
           Positioned(
             top: 90,
             left: 24,
-            child: _Symbol('π', color, 30, -0.10),
+            child: _Symbol(
+              'π',
+              AppColors.brandPurple.withValues(
+                alpha: isDark ? 0.050 : 0.038,
+              ),
+              30,
+              -0.10,
+            ),
           ),
           Positioned(
             bottom: 130,
             right: 28,
-            child: _Symbol('∞', color, 36, 0.08),
+            child: _Symbol(
+              '∞',
+              AppColors.brandCyan.withValues(
+                alpha: isDark ? 0.050 : 0.038,
+              ),
+              36,
+              0.08,
+            ),
           ),
         ],
       ),

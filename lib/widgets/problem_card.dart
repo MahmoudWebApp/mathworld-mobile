@@ -80,8 +80,8 @@ class ProblemCard extends StatelessWidget {
                     ),
                   Padding(
                     padding: const EdgeInsets.only(top: AppSpacing.xs),
-                    child: Icon(
-                      LayoutUtils.forwardChevron(context),
+                    child: LayoutUtils.forwardIcon(
+                      context,
                       color: Theme.of(context)
                           .colorScheme
                           .onSurface

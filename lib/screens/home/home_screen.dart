@@ -14,7 +14,6 @@ import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/premium_button.dart';
-import '../../widgets/problem_card.dart';
 import '../../widgets/rich_math_text.dart';
 
 /// Displays the user dashboard, progress summary, and learning shortcuts.
@@ -58,50 +57,8 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.xxl),
                 AnimatedEntry(
                   index: 3,
-                  child: _SectionHeader(
-                    title: 'recent_solved'.tr(),
-                    actionLabel:
-                        dashboard.recentSolved.isEmpty ? null : 'view_all'.tr(),
-                    onAction: dashboard.recentSolved.isEmpty
-                        ? null
-                        : () => Navigator.pushNamed(
-                              context,
-                              AppRoutes.solved,
-                            ),
-                  ),
+                  child: _SectionHeader(title: 'recent_activity'.tr()),
                 ),
-                const SizedBox(height: AppSpacing.md),
-                if (dashboard.recentSolved.isEmpty)
-                  AppEmptyView(
-                    icon: Icons.history_rounded,
-                    title: 'no_solved_yet'.tr(),
-                  )
-                else
-                  ...dashboard.recentSolved
-                      .take(3)
-                      .toList()
-                      .asMap()
-                      .entries
-                      .map(
-                        (entry) => AnimatedEntry(
-                          index: entry.key + 4,
-                          child: Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: AppSpacing.md,
-                            ),
-                            child: ProblemCard(
-                              problem: entry.value,
-                              onTap: () => Navigator.pushNamed(
-                                context,
-                                AppRoutes.problemDetails,
-                                arguments: entry.value.id,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                const SizedBox(height: AppSpacing.xl),
-                _SectionHeader(title: 'recent_activity'.tr()),
                 const SizedBox(height: AppSpacing.md),
                 if (dashboard.recentActivities.isEmpty)
                   AppEmptyView(
@@ -168,9 +125,7 @@ class HomeScreen extends ConsumerWidget {
                                   ],
                                 ),
                               ),
-                              trailing: Icon(
-                                LayoutUtils.forwardChevron(context),
-                              ),
+                              trailing: LayoutUtils.forwardIcon(context),
                               onTap: () => Navigator.pushNamed(
                                 context,
                                 AppRoutes.problemDetails,
@@ -405,7 +360,13 @@ class _ContinueLearningCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GlassCard(
+      gradient: isDark ? AppGradients.darkHero : AppGradients.lightHero,
+      border: BorderSide(
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.20),
+      ),
       padding: const EdgeInsets.all(AppSpacing.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -449,8 +410,7 @@ class _ContinueLearningCard extends StatelessWidget {
           PremiumButton(
             onPressed: onTap,
             label: 'explore'.tr(),
-            icon: LayoutUtils.forwardArrow(context),
-            iconPlacement: PremiumButtonIconPlacement.trailing,
+            trailingIcon: LayoutUtils.forwardChevron(context),
             expand: true,
           ),
         ],
@@ -461,26 +421,12 @@ class _ContinueLearningCard extends StatelessWidget {
 
 class _SectionHeader extends StatelessWidget {
   final String title;
-  final String? actionLabel;
-  final VoidCallback? onAction;
 
-  const _SectionHeader({
-    required this.title,
-    this.actionLabel,
-    this.onAction,
-  });
+  const _SectionHeader({required this.title});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(title, style: Theme.of(context).textTheme.titleLarge),
-        ),
-        if (actionLabel != null)
-          TextButton(onPressed: onAction, child: Text(actionLabel!)),
-      ],
-    );
+    return Text(title, style: Theme.of(context).textTheme.titleLarge);
   }
 }
 
