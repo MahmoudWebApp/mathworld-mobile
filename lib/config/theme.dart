@@ -27,8 +27,8 @@ class AppTheme {
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final primary = isDark ? AppColors.primaryDark : AppColors.primary;
     final baseTextTheme = languageCode == 'ar'
-        ? GoogleFonts.almaraiTextTheme()
-        : GoogleFonts.outfitTextTheme();
+        ? GoogleFonts.alexandriaTextTheme()
+        : GoogleFonts.nunitoTextTheme();
 
     return ThemeData(
       useMaterial3: true,
@@ -38,7 +38,7 @@ class AppTheme {
         brightness: brightness,
         primary: primary,
         onPrimary: isDark ? AppColors.darkBackground : Colors.white,
-        secondary: AppColors.secondary,
+        secondary: AppColors.brandPink,
         onSecondary: Colors.white,
         error: AppColors.error,
         onError: Colors.white,
