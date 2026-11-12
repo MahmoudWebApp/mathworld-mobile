@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/brand_logo.dart';
 
 /// Displays startup branding while the stored session is validated.
 class SplashScreen extends ConsumerStatefulWidget {
@@ -80,7 +81,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     height: 108,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Colors.black,
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
@@ -90,11 +91,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.functions_rounded,
-                      size: 54,
-                      color: AppColors.primary,
-                    ),
+                    child: const BrandMark(size: 108),
                   ),
                   const SizedBox(height: 24),
                   Text(
