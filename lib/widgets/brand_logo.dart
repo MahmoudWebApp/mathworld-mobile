@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
-/// Displays the transparent MathWorld brand asset for the active theme.
+import '../config/design_tokens.dart';
+
+/// Shared lockup using the approved cap / sigma / x² symbol.
 class BrandLogo extends StatelessWidget {
   final double width;
   final double? height;
@@ -18,39 +19,60 @@ class BrandLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return SvgPicture.asset(
-      isDark
-          ? 'assets/branding/mathworld-logo-dark.svg'
-          : 'assets/branding/mathworld-logo-light.svg',
-      width: width,
-      height: height,
-      fit: fit,
-      semanticsLabel: semanticsLabel,
-      excludeFromSemantics: semanticsLabel == null,
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final markSize = height != null ? (height! < 52 ? height! : 52.0) : 48.0;
+    return Semantics(
+      label: semanticsLabel ?? 'MathWorld',
+      child: ExcludeSemantics(
+        child: SizedBox(
+          width: width,
+          height: height,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              BrandMark(size: markSize),
+              const SizedBox(width: 10),
+              Flexible(
+                child: FittedBox(
+                  alignment: AlignmentDirectional.centerStart,
+                  fit: fit == BoxFit.fill ? BoxFit.scaleDown : fit,
+                  child: Text(
+                    'MathWorld',
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: dark ? const Color(0xFFEC4899) : AppColors.primary,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
 
-/// Displays the compact MathWorld mark used in small branded surfaces.
+/// Exact user-proposed image, resized, without redrawing its symbols.
 class BrandMark extends StatelessWidget {
   final double size;
 
-  const BrandMark({
-    super.key,
-    this.size = 56,
-  });
+  const BrandMark({super.key, this.size = 56});
 
   @override
   Widget build(BuildContext context) {
-    return Image.asset(
-      'assets/branding/mathworld-mark.png',
-      width: size,
-      height: size,
-      fit: BoxFit.contain,
-      filterQuality: FilterQuality.high,
-      semanticLabel: 'MathWorld',
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(size * 0.22),
+      child: Image.asset(
+        'assets/branding/mathworld-mark.png',
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        filterQuality: FilterQuality.high,
+        semanticLabel: 'MathWorld',
+      ),
     );
   }
 }

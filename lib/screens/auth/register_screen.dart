@@ -7,6 +7,7 @@ import '../../core/utils/error_message.dart';
 import '../../core/utils/validators.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/glass_card.dart';
+import '../../widgets/brand_logo.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/premium_button.dart';
 
@@ -81,6 +82,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        const Center(child: BrandMark(size: 72)),
+                        const SizedBox(height: AppSpacing.lg),
                         Text(
                           'register_title'.tr(),
                           style: Theme.of(context).textTheme.headlineSmall,

@@ -7,6 +7,7 @@ import '../../core/utils/error_message.dart';
 import '../../core/utils/validators.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/glass_card.dart';
+import '../../widgets/brand_logo.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/premium_button.dart';
 
@@ -74,21 +75,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Center(
-                          child: Container(
-                            width: 82,
-                            height: 82,
-                            decoration: BoxDecoration(
-                              gradient: AppGradients.primary,
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: const Icon(
-                              Icons.functions_rounded,
-                              color: Colors.white,
-                              size: 40,
-                            ),
-                          ),
-                        ),
+                        const Center(child: BrandMark(size: 82)),
                         const SizedBox(height: AppSpacing.xl),
                         Text(
                           'login_title'.tr(),
