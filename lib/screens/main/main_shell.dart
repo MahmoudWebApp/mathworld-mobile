@@ -1,4 +1,3 @@
-import 'dart:ui';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -43,27 +42,20 @@ class _MainShellState extends State<MainShell> {
         body: IndexedStack(index: _selectedIndex, children: _pages),
         bottomNavigationBar: SafeArea(
           minimum: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.xl),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-              child: Container(
+          child: Container(
                 decoration: BoxDecoration(
-                  color: (isDark ? AppColors.darkSurface : Colors.white)
-                      .withValues(alpha: isDark ? 0.84 : 0.92),
+                  color: isDark ? AppColors.darkSurface : Colors.white,
                   borderRadius: BorderRadius.circular(AppRadius.xl),
                   border: Border.all(
-                    color: isDark
-                        ? AppColors.darkBorder.withValues(alpha: 0.9)
-                        : Colors.white.withValues(alpha: 0.95),
+                    color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
                   ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(
-                        alpha: isDark ? 0.30 : 0.08,
+                        alpha: isDark ? 0.16 : 0.055,
                       ),
-                      blurRadius: 30,
-                      offset: const Offset(0, 12),
+                      blurRadius: 18,
+                      offset: const Offset(0, 5),
                     ),
                   ],
                 ),
@@ -79,8 +71,8 @@ class _MainShellState extends State<MainShell> {
                       label: 'home'.tr(),
                     ),
                     NavigationDestination(
-                      icon: const Icon(Icons.school_outlined),
-                      selectedIcon: const Icon(Icons.school_rounded),
+                      icon: const Icon(Icons.auto_stories_outlined),
+                      selectedIcon: const Icon(Icons.auto_stories_rounded),
                       label: 'stages'.tr(),
                     ),
                     NavigationDestination(
@@ -89,14 +81,12 @@ class _MainShellState extends State<MainShell> {
                       label: 'favorites'.tr(),
                     ),
                     NavigationDestination(
-                      icon: const Icon(Icons.tune_rounded),
-                      selectedIcon: const Icon(Icons.tune_rounded),
+                      icon: const Icon(Icons.settings_outlined),
+                      selectedIcon: const Icon(Icons.settings_rounded),
                       label: 'settings'.tr(),
                     ),
                   ],
                 ),
-              ),
-            ),
           ),
         ),
       ),
