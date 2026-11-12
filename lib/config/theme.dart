@@ -38,9 +38,9 @@ class AppTheme {
         brightness: brightness,
         primary: primary,
         onPrimary: isDark ? AppColors.darkBackground : Colors.white,
-        secondary: AppColors.brandPink,
+        secondary: isDark ? const Color(0xFFD58CB6) : AppColors.brandPink,
         onSecondary: Colors.white,
-        error: AppColors.error,
+        error: isDark ? const Color(0xFFE18A9E) : AppColors.error,
         onError: Colors.white,
         surface: surface,
         onSurface: text,
@@ -141,6 +141,8 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
+          backgroundColor: primary,
+          foregroundColor: isDark ? AppColors.darkBackground : Colors.white,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),
