@@ -8,7 +8,7 @@ class AppColors {
   static const Color brandPurple = Color(0xFF6D28D9);
   static const Color brandViolet = Color(0xFFA21CAF);
   static const Color brandPink = Color(0xFFEC4899);
-  static const Color brandLavender = Color(0xFFA78BFA);
+  static const Color brandLavender = Color(0xFF9B83DF);
 
   // Compatibility aliases for existing widgets; both now use the brand palette.
   static const Color brandBlue = brandViolet;
@@ -18,7 +18,7 @@ class AppColors {
   static const Color primaryDark = brandLavender;
   static const Color secondary = brandViolet;
   static const Color cyan = brandPink;
-  static const Color success = Color(0xFF10B981);
+  static const Color success = Color(0xFF27866B);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFEF476F);
 
@@ -31,10 +31,10 @@ class AppColors {
 
   static const Color darkBackground = Color(0xFF110C1E);
   static const Color darkSurface = Color(0xFF1B1428);
-  static const Color darkSurfaceMuted = Color(0xFF251A33);
+  static const Color darkSurfaceMuted = Color(0xFF231B30);
   static const Color darkText = Color(0xFFFBF8FF);
   static const Color darkMuted = Color(0xFFB9ADBF);
-  static const Color darkBorder = Color(0xFF453353);
+  static const Color darkBorder = Color(0xFF40344D);
 }
 
 class AppSpacing {
