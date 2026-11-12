@@ -30,9 +30,10 @@ class PremiumButton extends StatelessWidget {
     final foreground = Theme.of(context).brightness == Brightness.dark
         ? AppColors.darkBackground
         : Colors.white;
+    final isEnabled = onPressed != null && !isLoading;
 
     final child = Container(
-      constraints: const BoxConstraints(minHeight: 50),
+      constraints: const BoxConstraints(minHeight: 52),
       padding: padding,
       decoration: BoxDecoration(
         gradient: onPressed == null ? null : gradient,
@@ -92,7 +93,7 @@ class PremiumButton extends StatelessWidget {
     final button = Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: isLoading ? null : onPressed,
+        onTap: isEnabled ? onPressed : null,
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: child,
       ),
