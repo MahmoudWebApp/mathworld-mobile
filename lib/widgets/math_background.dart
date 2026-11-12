@@ -30,7 +30,7 @@ class MathBackground extends StatelessWidget {
                 radius: 1.05,
                 colors: [
                   AppColors.brandCyan.withValues(
-                    alpha: isDark ? 0.105 : 0.070,
+                    alpha: isDark ? 0.070 : 0.045,
                   ),
                   Colors.transparent,
                 ],
@@ -45,7 +45,7 @@ class MathBackground extends StatelessWidget {
                 radius: 1.12,
                 colors: [
                   AppColors.brandPurple.withValues(
-                    alpha: isDark ? 0.085 : 0.055,
+                    alpha: isDark ? 0.065 : 0.035,
                   ),
                   Colors.transparent,
                 ],
@@ -56,7 +56,7 @@ class MathBackground extends StatelessWidget {
           CustomPaint(
             painter: _MathGridPainter(
               color: AppColors.brandCyan.withValues(
-                alpha: isDark ? 0.018 : 0.012,
+                alpha: isDark ? 0.012 : 0.008,
               ),
             ),
           ),
