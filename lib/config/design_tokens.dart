@@ -4,34 +4,37 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // MathWorld brand palette. Keep branded surfaces and actions inside this
-  // purple-to-cyan family so the application matches the logo everywhere.
-  static const Color brandPurple = Color(0xFF7B3FF2);
-  static const Color brandViolet = Color(0xFF9A5BFF);
-  static const Color brandBlue = Color(0xFF3B82F6);
-  static const Color brandCyan = Color(0xFF25C9E8);
+  // Shared with web: accessible purple actions and pink accents, no cyan UI.
+  static const Color brandPurple = Color(0xFF6D28D9);
+  static const Color brandViolet = Color(0xFFA21CAF);
+  static const Color brandPink = Color(0xFFEC4899);
+  static const Color brandLavender = Color(0xFFA78BFA);
+
+  // Compatibility aliases for existing widgets; both now use the brand palette.
+  static const Color brandBlue = brandViolet;
+  static const Color brandCyan = brandPink;
 
   static const Color primary = brandPurple;
-  static const Color primaryDark = brandCyan;
+  static const Color primaryDark = brandLavender;
   static const Color secondary = brandViolet;
-  static const Color cyan = brandCyan;
+  static const Color cyan = brandPink;
   static const Color success = Color(0xFF10B981);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFEF476F);
 
-  static const Color lightBackground = Color(0xFFF6F7FC);
+  static const Color lightBackground = Color(0xFFFAF8FF);
   static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightSurfaceMuted = Color(0xFFF0F2F8);
-  static const Color lightText = Color(0xFF17182C);
-  static const Color lightMuted = Color(0xFF666B80);
-  static const Color lightBorder = Color(0xFFE1E4EE);
+  static const Color lightSurfaceMuted = Color(0xFFF5F1FA);
+  static const Color lightText = Color(0xFF21172F);
+  static const Color lightMuted = Color(0xFF6D6478);
+  static const Color lightBorder = Color(0xFFE8E0EF);
 
-  static const Color darkBackground = Color(0xFF0B0C14);
-  static const Color darkSurface = Color(0xFF171826);
-  static const Color darkSurfaceMuted = Color(0xFF202231);
-  static const Color darkText = Color(0xFFF7F8FC);
-  static const Color darkMuted = Color(0xFFB2B6C8);
-  static const Color darkBorder = Color(0xFF303344);
+  static const Color darkBackground = Color(0xFF110C1E);
+  static const Color darkSurface = Color(0xFF1B1428);
+  static const Color darkSurfaceMuted = Color(0xFF251A33);
+  static const Color darkText = Color(0xFFFBF8FF);
+  static const Color darkMuted = Color(0xFFB9ADBF);
+  static const Color darkBorder = Color(0xFF453353);
 }
 
 class AppSpacing {
@@ -62,34 +65,19 @@ class AppGradients {
   static const LinearGradient primary = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [
-      AppColors.brandPurple,
-      AppColors.brandViolet,
-      AppColors.brandBlue,
-      AppColors.brandCyan,
-    ],
-    stops: [0.0, 0.34, 0.68, 1.0],
+    colors: [AppColors.brandPurple, AppColors.brandViolet, AppColors.brandPink],
+    stops: [0.0, 0.58, 1.0],
   );
 
-  /// Dark branded panel gradient derived only from the logo palette.
   static const LinearGradient darkHero = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [
-      Color(0xFF2A174D),
-      Color(0xFF1A2450),
-      Color(0xFF0E3D4B),
-    ],
+    colors: [Color(0xFF27183D), Color(0xFF21142F), Color(0xFF35172E)],
   );
 
-  /// Light branded panel gradient derived only from the logo palette.
   static const LinearGradient lightHero = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [
-      Color(0xFFF2EBFF),
-      Color(0xFFEDF2FF),
-      Color(0xFFEAFBFF),
-    ],
+    colors: [Color(0xFFF3EBFF), Color(0xFFFFF1F7)],
   );
 }
