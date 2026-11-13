@@ -1,0 +1,33 @@
+name: Arabic and English directional navigation widget tests
+
+on:
+  pull_request:
+    paths:
+      - 'lib/utils/layout_utils.dart'
+      - 'lib/widgets/premium_button.dart'
+      - 'lib/screens/dashboard/leaderboard_screen.dart'
+      - 'test/rtl_navigation_test.dart'
+      - '.github/workflows/rtl-navigation-ci.yml'
+  push:
+    branches:
+      - fix/rtl-directional-icons-v1
+
+permissions:
+  contents: read
+
+jobs:
+  rtl-navigation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.38.10'
+          cache: true
+      - name: Resolve packages
+        run: flutter pub get
+      - name: Provide non-secret local test environment file
+        run: cp .env.example .env
+      - name: Check semantic Arabic/English back and next arrows
+        run: flutter test test/rtl_navigation_test.dart

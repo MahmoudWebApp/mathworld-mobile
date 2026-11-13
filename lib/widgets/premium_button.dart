@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../config/design_tokens.dart';
+import '../utils/layout_utils.dart';
 
 /// A responsive gradient button that safely adapts to narrow layouts.
 class PremiumButton extends StatelessWidget {
@@ -57,7 +58,7 @@ class PremiumButton extends StatelessWidget {
                 children: [
                   if (leadingIcon != null) ...[
                     Icon(
-                      leadingIcon,
+                      LayoutUtils.resolveSemanticIcon(context, leadingIcon!),
                       size: 19,
                       color: foreground,
                       textDirection: TextDirection.ltr,
@@ -79,7 +80,7 @@ class PremiumButton extends StatelessWidget {
                   if (trailingIcon != null) ...[
                     const SizedBox(width: 8),
                     Icon(
-                      trailingIcon,
+                      LayoutUtils.resolveSemanticIcon(context, trailingIcon!),
                       size: 19,
                       color: foreground,
                       textDirection: TextDirection.ltr,
