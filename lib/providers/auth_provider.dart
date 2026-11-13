@@ -168,6 +168,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> chooseLearningStage(int stageId) async {
+    final current = state.user;
+    if (current == null) {
+      throw StateError('Select a stage after login.');
+    }
+    state = state.copyWith(isSubmitting: true, clearError: true);
+    try {
+      final updated = await _repository.chooseLearningStage(current, stageId);
+      state = state.copyWith(user: updated, isSubmitting: false);
+      _ref.invalidate(dashboardProvider);
+    } catch (_) {
+      state = state.copyWith(isSubmitting: false);
+      rethrow;
+    }
+  }
+
   Future<void> logout() async {
     _resetAccountScopedState();
     await _repository.clearSession();

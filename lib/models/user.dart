@@ -6,6 +6,7 @@ class User {
   final String role;
   final String subscriptionType;
   final String? profilePicture;
+  final int? currentStageId;
 
   const User({
     required this.id,
@@ -14,6 +15,7 @@ class User {
     required this.role,
     required this.subscriptionType,
     this.profilePicture,
+    this.currentStageId,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,9 @@ class User {
       profilePicture: _asNullableString(
         json['ProfilePicture'] ?? json['profilePicture'],
       ),
+      currentStageId: _asNullableInt(
+        json['CurrentStageId'] ?? json['currentStageId'],
+      ),
     );
   }
 
@@ -40,7 +45,19 @@ class User {
       'Role': role,
       'SubscriptionType': subscriptionType,
       if (profilePicture != null) 'ProfilePicture': profilePicture,
+      if (currentStageId != null) 'CurrentStageId': currentStageId,
     };
+  }
+  User copyWith({int? currentStageId}) {
+    return User(
+      id: id,
+      fullName: fullName,
+      email: email,
+      role: role,
+      subscriptionType: subscriptionType,
+      profilePicture: profilePicture,
+      currentStageId: currentStageId ?? this.currentStageId,
+    );
   }
 }
 
@@ -76,6 +93,7 @@ class UserProfile extends User {
     required super.role,
     required super.subscriptionType,
     super.profilePicture,
+    super.currentStageId,
     required this.solvedProblemsCount,
     required this.totalPoints,
     required this.memberSince,
@@ -94,6 +112,9 @@ class UserProfile extends User {
       profilePicture: _asNullableString(
         json['ProfilePicture'] ?? json['profilePicture'],
       ),
+      currentStageId: _asNullableInt(
+        json['CurrentStageId'] ?? json['currentStageId'],
+      ),
       solvedProblemsCount: _asInt(
         json['SolvedProblemsCount'] ?? json['solvedProblemsCount'],
       ),
@@ -101,6 +122,13 @@ class UserProfile extends User {
       memberSince: _asDateTime(json['MemberSince'] ?? json['memberSince']),
     );
   }
+}
+
+int? _asNullableInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString());
 }
 
 int _asInt(dynamic value) {

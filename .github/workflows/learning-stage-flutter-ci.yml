@@ -1,0 +1,33 @@
+name: Flutter learning stage analyze
+
+on:
+  push:
+    branches:
+      - feature/student-learning-stage-journey-flutter-v1
+  pull_request:
+    paths:
+      - 'lib/**'
+      - 'assets/translations/**'
+      - 'pubspec.yaml'
+      - '.github/workflows/learning-stage-flutter-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Flutter version
+        run: flutter --version
+      - name: Local non-secret environment for Flutter asset checks
+        run: cp .env.example .env
+      - name: Dependencies
+        run: flutter pub get
+      - name: Analyze Dart (ignore SDK-wide deprecation info; keep warnings fatal)
+        run: flutter analyze --no-fatal-infos

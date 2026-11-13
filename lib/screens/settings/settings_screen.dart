@@ -121,6 +121,19 @@ class SettingsScreen extends ConsumerWidget {
                 },
               ),
             ),
+            GlassCard(
+              padding: EdgeInsets.zero,
+              child: ListTile(
+                leading: const Icon(Icons.school_outlined),
+                title: Text('learning_stage'.tr()),
+                subtitle: Text('change_learning_stage'.tr()),
+                trailing: LayoutUtils.forwardIcon(context),
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  AppRoutes.learningStage,
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
             _SectionTitle(title: 'about_and_legal'.tr()),
             const SizedBox(height: 10),

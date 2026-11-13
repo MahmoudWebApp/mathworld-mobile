@@ -48,7 +48,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (!mounted) {
         return;
       }
-      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (_) => false);
+      final user = ref.read(authProvider).user;
+      final destination = user?.role == 'Student' &&
+              user?.currentStageId == null
+          ? AppRoutes.learningStage
+          : AppRoutes.home;
+      Navigator.pushNamedAndRemoveUntil(context, destination, (_) => false);
     } catch (error) {
       if (!mounted) {
         return;

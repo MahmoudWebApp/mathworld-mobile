@@ -152,5 +152,17 @@
   "minutes_short": "{count} د",
   "minutes_seconds_short": "{minutes} د {seconds} ث",
   "archive_problem": "أرشفة المسألة",
-  "restore_problem": "استعادة المسألة"
+  "restore_problem": "استعادة المسألة",
+  "learning_stage": "المرحلة التعليمية",
+  "change_learning_stage": "غيّر مرحلتك دون فقدان تقدمك",
+  "choose_learning_stage_title": "اختر مرحلتك التعليمية",
+  "choose_learning_stage_desc": "رحلتك ونقاطك ستكون حسب مرحلتك، ويمكنك تغييرها لاحقًا دون فقدان أي حلول.",
+  "save_learning_stage": "حفظ المرحلة والمتابعة",
+  "select_stage_to_continue": "اختر مرحلة لتبدأ",
+  "learning_journey": "رحلتي التعليمية",
+  "stage_completion": "نسبة إنجاز المرحلة",
+  "stage_solved": "مسائل تم حلها",
+  "stage_attempted": "مسائل جربتها",
+  "stage_points": "نقاط المرحلة",
+  "stage_topics": "التقدم حسب الموضوع"
 }

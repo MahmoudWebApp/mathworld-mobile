@@ -152,5 +152,17 @@
   "minutes_short": "{count}m",
   "minutes_seconds_short": "{minutes}m {seconds}s",
   "archive_problem": "Archive problem",
-  "restore_problem": "Restore problem"
+  "restore_problem": "Restore problem",
+  "learning_stage": "Learning stage",
+  "change_learning_stage": "Change stage without losing progress",
+  "choose_learning_stage_title": "Choose your learning stage",
+  "choose_learning_stage_desc": "Your journey and points are organized by stage. You can change it later without losing completed work.",
+  "save_learning_stage": "Save stage and continue",
+  "select_stage_to_continue": "Select a stage to continue",
+  "learning_journey": "My learning journey",
+  "stage_completion": "Stage completion",
+  "stage_solved": "Solved problems",
+  "stage_attempted": "Attempted problems",
+  "stage_points": "Stage points",
+  "stage_topics": "Progress by topic"
 }
