@@ -67,7 +67,7 @@ class AuthRepository {
 
   Future<User> _parseAndSaveAuthResult(dynamic responseData) async {
     try {
-      return _saveAuthResult(
+      return await _saveAuthResult(
         AuthResult.fromJson(ApiEnvelope.map(responseData)),
       );
     } on FormatException catch (error) {
