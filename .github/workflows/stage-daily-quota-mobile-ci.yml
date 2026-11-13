@@ -1,0 +1,43 @@
+name: Stage daily quota Flutter tests and release APK
+
+on:
+  pull_request:
+    paths:
+      - 'lib/**'
+      - 'assets/branding/**'
+      - 'android/**'
+      - 'test/models/stage_daily_quota_test.dart'
+      - 'pubspec.yaml'
+      - '.github/workflows/stage-daily-quota-mobile-ci.yml'
+  push:
+    branches:
+      - feature/stage-daily-quota-mobile-brand-fixes-v1
+
+permissions:
+  contents: read
+
+jobs:
+  stage-quota:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.38.10'
+          cache: true
+      - name: Provide non-secret test environment
+        run: cp .env.example .env
+      - name: Resolve Flutter packages
+        run: flutter pub get
+      - name: Test stage-scoped daily quota parsing
+        run: flutter test test/models/stage_daily_quota_test.dart
+      - name: Build release Android APK
+        run: flutter build apk --release
+      - name: Upload release APK for manual device validation
+        uses: actions/upload-artifact@v4
+        with:
+          name: mathworld-v1.2.0-stage-quota-android
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
+          if-no-files-found: error
