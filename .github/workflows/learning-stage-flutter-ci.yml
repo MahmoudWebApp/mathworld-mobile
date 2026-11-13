@@ -31,3 +31,5 @@ jobs:
         run: flutter pub get
       - name: Analyze Dart (ignore SDK-wide deprecation info; keep warnings fatal)
         run: flutter analyze --no-fatal-infos
+      - name: Verify Arabic and English directional navigation
+        run: flutter test test/widgets/layout_utils_test.dart
