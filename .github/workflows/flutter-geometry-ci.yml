@@ -1,0 +1,28 @@
+name: Flutter analyze and geometry tests
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+  push:
+    branches: [feature/premium-entitlements-client]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Analyze Dart
+        run: flutter analyze --no-fatal-infos
+      - name: Run geometry unit tests
+        run: flutter test test/geometry_diagram_test.dart
