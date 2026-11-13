@@ -81,23 +81,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 108,
-                    height: 108,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.18),
-                          blurRadius: 30,
-                          offset: const Offset(0, 14),
-                        ),
-                      ],
-                    ),
-                    child: const BrandMark(size: 108),
-                  ),
+                  // The artwork itself owns its outline. Never add a second
+                  // opaque black square behind the logo.
+                  const BrandMark(size: 108),
                   const SizedBox(height: 24),
                   Text(
                     'app_name'.tr(),
