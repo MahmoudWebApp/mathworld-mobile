@@ -47,7 +47,7 @@ class HomeScreen extends ConsumerWidget {
                 ref.invalidate(stageDailyQuotaProvider(stageId));
               }
               ref.invalidate(learningJourneyProvider);
-              await ref.refresh(dashboardProvider.future);
+              await ref.refresh(dashboardProvider.future).then((_) {});
             },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
