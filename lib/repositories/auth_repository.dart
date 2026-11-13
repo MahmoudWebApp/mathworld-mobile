@@ -65,6 +65,30 @@ class AuthRepository {
     return _parseAndSaveAuthResult(response.data);
   }
 
+  Future<User> googleLogin(String idToken) async {
+    await clearSession();
+    final response = await _apiService.post(
+      ApiConstants.socialGoogle,
+      data: {'Provider': 'Google', 'AccessToken': idToken},
+      handleUnauthorized: false,
+    );
+    return _parseAndSaveAuthResult(response.data);
+  }
+
+  Future<void> linkGoogle(String idToken) async {
+    final response = await _apiService.post(
+      ApiConstants.socialLinkGoogle,
+      data: {'Provider': 'Google', 'AccessToken': idToken},
+    );
+    final data = ApiEnvelope.map(response.data);
+    if (data['Linked'] != true && data['linked'] != true) {
+      throw const AppException(
+        type: AppExceptionType.invalidResponse,
+        messageKey: 'invalid_response',
+      );
+    }
+  }
+
   Future<User> _parseAndSaveAuthResult(dynamic responseData) async {
     try {
       return await _saveAuthResult(

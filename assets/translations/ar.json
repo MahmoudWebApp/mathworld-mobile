@@ -164,5 +164,10 @@
   "stage_solved": "مسائل تم حلها",
   "stage_attempted": "مسائل جربتها",
   "stage_points": "نقاط المرحلة",
-  "stage_topics": "التقدم حسب الموضوع"
+  "stage_topics": "التقدم حسب الموضوع",
+  "social_google": "المتابعة باستخدام Google",
+  "social_login_failed": "تعذر تسجيل الدخول عبر Google",
+  "link_google": "ربط Google بحسابي",
+  "link_google_desc": "اربطه بحساب MathWorld الحالي دون فقدان النقاط أو الحلول",
+  "google_linked": "تم ربط حساب Google بنجاح"
 }

@@ -164,5 +164,10 @@
   "stage_solved": "Solved problems",
   "stage_attempted": "Attempted problems",
   "stage_points": "Stage points",
-  "stage_topics": "Progress by topic"
+  "stage_topics": "Progress by topic",
+  "social_google": "Continue with Google",
+  "social_login_failed": "Google sign-in failed",
+  "link_google": "Link Google to my account",
+  "link_google_desc": "Keep your MathWorld progress and points in one account",
+  "google_linked": "Google account linked successfully"
 }

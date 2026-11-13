@@ -6,6 +6,7 @@ import '../core/errors/app_exception.dart';
 import '../core/network/api_client.dart';
 import '../models/user.dart';
 import '../repositories/auth_repository.dart';
+import '../services/google_identity_service.dart';
 import 'categories_provider.dart';
 import 'dashboard_provider.dart';
 import 'learning_provider.dart';
@@ -134,6 +135,43 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       throw appError;
     }
+  }
+
+  Future<void> loginWithGoogle() async {
+    _resetAccountScopedState();
+    state = state.copyWith(
+      isSubmitting: true,
+      clearError: true,
+      sessionExpired: false,
+    );
+    try {
+      final googleToken = await GoogleIdentityService.requestIdToken();
+      final user = await _repository.googleLogin(googleToken);
+      _resetAccountScopedState();
+      state = AuthState(status: AuthStatus.authenticated, user: user);
+    } catch (error) {
+      final appError = error is AppException
+          ? error
+          : AppException(
+              type: AppExceptionType.unknown,
+              messageKey: 'social_login_failed',
+              cause: error,
+            );
+      state = AuthState(
+        status: AuthStatus.unauthenticated,
+        isSubmitting: false,
+        error: appError,
+      );
+      throw appError;
+    }
+  }
+
+  Future<void> linkGoogle() async {
+    if (!state.isAuthenticated) {
+      throw StateError('Sign in to MathWorld before linking Google.');
+    }
+    final token = await GoogleIdentityService.requestIdToken();
+    await _repository.linkGoogle(token);
   }
 
   Future<void> register(

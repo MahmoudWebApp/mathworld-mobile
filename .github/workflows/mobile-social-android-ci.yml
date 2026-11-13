@@ -1,0 +1,45 @@
+name: Mobile social auth Android build
+
+on:
+  push:
+    branches:
+      - feature/social-google-mobile-auth-v1
+  pull_request:
+    paths:
+      - 'lib/**'
+      - 'pubspec.yaml'
+      - 'android/**'
+      - '.github/workflows/mobile-social-android-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.10'
+          channel: stable
+          cache: true
+      - name: Copy public example environment
+        run: cp .env.example .env
+      - name: Resolve Flutter dependencies
+        run: flutter pub get
+      - name: Check Dart analysis
+        run: flutter analyze --no-fatal-infos
+      - name: Build Android test APK (social sign-in remains OFF)
+        run: flutter build apk --debug --no-pub
+      - name: Upload test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: mathworld-android-social-ci-debug
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
