@@ -74,7 +74,7 @@ class _MainShellState extends ConsumerState<MainShell> {
                     NavigationDestination(
                       icon: const Icon(Icons.auto_stories_outlined),
                       selectedIcon: const Icon(Icons.auto_stories_rounded),
-                      label: 'stage_topics'.tr(),
+                      label: 'active_stage_categories'.tr(),
                     ),
                     NavigationDestination(
                       icon: const Icon(Icons.favorite_border_rounded),
