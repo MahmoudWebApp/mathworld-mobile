@@ -64,7 +64,7 @@ class PremiumApiService {
   final ApiClient _api;
 
   Future<StudentEntitlement> getEntitlement() async {
-    final response = await _api.get('/api/users/subscription');
+    final response = await _api.get('/users/subscription');
     final envelope = Map<String, dynamic>.from(response.data as Map);
     return StudentEntitlement.fromJson(
       Map<String, dynamic>.from(envelope['Data'] as Map),
@@ -76,7 +76,7 @@ class PremiumApiService {
       throw ArgumentError.value(problemId, 'problemId', 'Must be positive');
     }
     final response = await _api.get(
-      '/api/problems/$problemId/premium-solution',
+      '/problems/$problemId/premium-solution',
     );
     final envelope = Map<String, dynamic>.from(response.data as Map);
     return PremiumSolution.fromJson(
@@ -85,7 +85,7 @@ class PremiumApiService {
   }
 
   Future<Map<String, bool>> getLaunchFeatures() async {
-    final response = await _api.get('/api/config/features');
+    final response = await _api.get('/config/features');
     final envelope = Map<String, dynamic>.from(response.data as Map);
     final data = Map<String, dynamic>.from(envelope['Data'] as Map);
     return data.map((key, value) => MapEntry(key, value == true));
