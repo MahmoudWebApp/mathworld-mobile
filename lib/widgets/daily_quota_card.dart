@@ -57,7 +57,7 @@ class _Content extends StatelessWidget {
     final title = isArabic ? 'المسائل الجديدة اليوم' : 'New questions today';
     final color = Theme.of(context).colorScheme.primary;
     final ratio = data.limit <= 0
-        ? 0.0 : (data.used / data.limit).clamp(0.0, 1.0);
+        ? 0.0 : (data.used / data.limit).clamp(0.0, 1.0).toDouble();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
