@@ -56,24 +56,24 @@ bool isValidGeometryScene(Map<String, dynamic> scene) {
         (value['label'] is! String || (value['label'] as String).length > 80))) return false;
     bool coords(List<String> keys) => keys.every((k) => finite(value[k]));
     switch (value['type']) {
-      case 'point': if (!coords(['x','y'])) return false;
+      case 'point': if (!coords(['x','y'])) { return false; }
       case 'segment': case 'ray': case 'vector': case 'line':
         if (!coords(['x1','y1','x2','y2']) ||
-            (value['x1'] == value['x2'] && value['y1'] == value['y2'])) return false;
+            (value['x1'] == value['x2'] && value['y1'] == value['y2'])) { return false; }
       case 'circle':
-        if (!coords(['cx','cy']) || !finite(value['r'], positive: true)) return false;
+        if (!coords(['cx','cy']) || !finite(value['r'], positive: true)) { return false; }
       case 'polygon':
         final points = value['points'];
         if (points is! List || points.length < 3 || points.length > 30 ||
-            !points.every((p) => p is Map && finite(p['x']) && finite(p['y']))) return false;
+            !points.every((p) => p is Map && finite(p['x']) && finite(p['y']))) { return false; }
       case 'angle':
         if (!coords(['cx','cy','startDegrees','endDegrees']) ||
-            !finite(value['radius'], positive: true)) return false;
+            !finite(value['radius'], positive: true)) { return false; }
       case 'axes':
         if (!coords(['originX','originY']) ||
             !finite(value['xLength'], positive: true) ||
-            !finite(value['yLength'], positive: true)) return false;
-      default: return false;
+            !finite(value['yLength'], positive: true)) { return false; }
+      default: { return false; }
     }
   }
   return true;
