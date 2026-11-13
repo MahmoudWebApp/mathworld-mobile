@@ -7,7 +7,9 @@ import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
 import '../../core/utils/relative_time.dart';
 import '../../models/dashboard_stats.dart';
+import '../../models/learning_journey.dart';
 import '../../providers/dashboard_provider.dart';
+import '../../providers/learning_journey_provider.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/animated_entry.dart';
 import '../../widgets/app_states.dart';
@@ -25,6 +27,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardState = ref.watch(dashboardProvider);
+    final learningJourney = ref.watch(learningJourneyProvider);
 
     return MathBackground(
       child: SafeArea(
@@ -48,6 +51,18 @@ class HomeScreen extends ConsumerWidget {
               children: [
                 AnimatedEntry(child: _HeroCard(dashboard: dashboard)),
                 const SizedBox(height: AppSpacing.xl),
+                learningJourney.when(
+                  data: (journey) => journey == null
+                      ? const SizedBox.shrink()
+                      : Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+                          child: AnimatedEntry(
+                            child: _LearningJourneyCard(journey: journey),
+                          ),
+                        ),
+                  error: (_, __) => const SizedBox.shrink(),
+                  loading: () => const SizedBox.shrink(),
+                ),
                 AnimatedEntry(index: 1, child: _StatsGrid(stats: dashboard)),
                 const SizedBox(height: AppSpacing.xl),
                 AnimatedEntry(
@@ -415,6 +430,107 @@ class _ContinueLearningCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _LearningJourneyCard extends StatelessWidget {
+  final LearningJourney journey;
+
+  const _LearningJourneyCard({required this.journey});
+
+  @override
+  Widget build(BuildContext context) {
+    final language = context.locale.languageCode;
+    final color = Theme.of(context).colorScheme.primary;
+
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('learning_journey'.tr(),
+              style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: AppSpacing.xs),
+          Text(journey.getName(language),
+              style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('stage_completion'.tr()),
+              Text('${journey.completionPercent}%',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: color)),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          LinearProgressIndicator(
+            value: journey.completionPercent.clamp(0, 100) / 100,
+            minHeight: 8,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Wrap(
+            spacing: AppSpacing.lg,
+            runSpacing: AppSpacing.sm,
+            children: [
+              _StageStat(
+                title: 'stage_solved'.tr(),
+                value: '${journey.solvedProblems}/${journey.totalProblems}',
+              ),
+              _StageStat(
+                title: 'stage_attempted'.tr(),
+                value: '${journey.attemptedProblems}',
+              ),
+              _StageStat(
+                title: 'stage_points'.tr(),
+                value: '${journey.totalPoints}',
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text('stage_topics'.tr(),
+              style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: AppSpacing.sm),
+          ...journey.categories.map(
+            (category) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      category.getName(language),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Text(
+                    '${category.solvedProblems}/${category.totalProblems}',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StageStat extends StatelessWidget {
+  final String title;
+  final String value;
+
+  const _StageStat({required this.title, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(value, style: Theme.of(context).textTheme.titleLarge),
+        Text(title, style: Theme.of(context).textTheme.bodySmall),
+      ],
     );
   }
 }
