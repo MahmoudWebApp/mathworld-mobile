@@ -8,7 +8,8 @@ plugins {
 android {
     namespace = "com.mathworld.mathworld_mobile"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Pin a stable NDK installed on CI images; avoid Flutter's newer flaky download.
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
