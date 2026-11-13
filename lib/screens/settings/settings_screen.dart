@@ -7,6 +7,7 @@ import '../../config/constants.dart';
 import '../../config/design_tokens.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/stages_provider.dart';
 import '../../services/google_identity_service.dart';
 import '../../core/utils/error_message.dart';
 import '../../utils/layout_utils.dart';
@@ -22,6 +23,12 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
+    final currentUser = ref.watch(authProvider.select((state) => state.user));
+    final stages = ref.watch(stagesProvider).valueOrNull ?? [];
+    final stage = stages.where((stage) => stage.id == currentUser?.currentStageId);
+    final selectedStage = stage.isNotEmpty
+        ? stage.first.getName(context.locale.languageCode)
+        : null;
 
     final content = MathBackground(
       showSymbols: false,
@@ -123,19 +130,25 @@ class SettingsScreen extends ConsumerWidget {
                 },
               ),
             ),
-            GlassCard(
-              padding: EdgeInsets.zero,
-              child: ListTile(
-                leading: const Icon(Icons.school_outlined),
-                title: Text('learning_stage'.tr()),
-                subtitle: Text('change_learning_stage'.tr()),
-                trailing: LayoutUtils.forwardIcon(context),
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  AppRoutes.learningStage,
+            if (currentUser?.role == 'Student')
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: ListTile(
+                  leading: const Icon(Icons.school_outlined),
+                  title: Text('learning_stage'.tr()),
+                  subtitle: Text(
+                    [
+                      if (selectedStage != null) selectedStage,
+                      'change_stage_keeps_progress'.tr(),
+                    ].join(' · '),
+                  ),
+                  trailing: LayoutUtils.forwardIcon(context),
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.learningStage,
+                  ),
                 ),
               ),
-            ),
             const SizedBox(height: 24),
             if (GoogleIdentityService.available) ...[
               GlassCard(
