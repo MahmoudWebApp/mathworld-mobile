@@ -5,6 +5,7 @@ The approved source remains authoritative: no AI redrawing or symbol changes.
 Flood-fills only a contiguous near-black matte touching the bitmap edges.
 Generates transparent in-app PNG and launcher/adaptive assets from that source.
 Run on a disposable branch; review generated PNGs before merging.
+Rebuilt after detection of residual opaque neutral-black pixels.
 """
 from __future__ import annotations
 
