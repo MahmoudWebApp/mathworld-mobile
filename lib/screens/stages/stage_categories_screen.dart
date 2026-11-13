@@ -10,6 +10,7 @@ import '../../models/stage.dart';
 import '../../providers/categories_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/stages_provider.dart';
+import '../../providers/stage_category_access_provider.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
@@ -33,6 +34,11 @@ class StageCategoriesScreen extends ConsumerWidget {
 
     final stage = arguments;
     final categoriesState = ref.watch(stageCategoriesProvider(stage.id));
+    final accessState = ref.watch(stageCategoryAccessProvider(stage.id));
+    final user = ref.watch(authProvider.select((state) => state.user));
+    final premiumState = user?.role == 'Student'
+        ? ref.watch(studentPremiumProvider)
+        : null;
     final localeCode = context.locale.languageCode;
 
     final content = MathBackground(
@@ -45,6 +51,24 @@ class StageCategoriesScreen extends ConsumerWidget {
             ),
           ),
           data: (categories) {
+            if (accessState.isLoading || (premiumState?.isLoading ?? false)) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (accessState.hasError || (premiumState?.hasError ?? false)) {
+              return AppErrorView(
+                onRetry: () {
+                  ref.invalidate(stageCategoryAccessProvider(stage.id));
+                  ref.invalidate(studentPremiumProvider);
+                },
+              );
+            }
+            final access = accessState.valueOrNull;
+            if (access == null) {
+              return AppErrorView(
+                onRetry: () => ref.invalidate(stageCategoryAccessProvider(stage.id)),
+              );
+            }
+            final isPremium = premiumState?.valueOrNull ?? false;
             if (categories.isEmpty) {
               return AppEmptyView(
                 icon: Icons.category_outlined,
@@ -107,6 +131,7 @@ class StageCategoriesScreen extends ConsumerWidget {
                       category: category,
                       localeCode: localeCode,
                       stageId: stage.id,
+                      locked: user?.role == 'Student' && !isPremium && !access.freeCategoryIds.contains(category.id),
                     );
                   },
                 );
@@ -174,11 +199,13 @@ class _CategoryCard extends StatelessWidget {
   final Category category;
   final String localeCode;
   final int stageId;
+  final bool locked;
 
   const _CategoryCard({
     required this.category,
     required this.localeCode,
     required this.stageId,
+    required this.locked,
   });
 
   @override
@@ -190,7 +217,14 @@ class _CategoryCard extends StatelessWidget {
     final mutedColor = isDark ? AppColors.darkMuted : AppColors.lightMuted;
 
     return GlassCard(
-      onTap: () => Navigator.pushNamed(
+      onTap: locked ? () => showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(localeCode == 'ar' ? 'فئة مقفلة' : 'Locked category'),
+          content: Text(localeCode == 'ar' ? 'هذه الفئة متاحة مع Premium. الدفع الإلكتروني غير متاح حالياً.' : 'This category requires Premium. Online checkout is not available yet.'),
+          actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(localeCode == 'ar' ? 'حسناً' : 'OK'))],
+        ),
+      ) : () => Navigator.pushNamed(
         context,
         AppRoutes.problems,
         arguments: {
@@ -223,6 +257,10 @@ class _CategoryCard extends StatelessWidget {
                 : Icon(Icons.calculate_outlined, color: accent, size: 26),
           ),
           const Spacer(),
+          if (locked) ...[
+            const Icon(Icons.lock_outline, size: 20),
+            const SizedBox(height: AppSpacing.xs),
+          ],
           Text(
             title,
             maxLines: 3,
