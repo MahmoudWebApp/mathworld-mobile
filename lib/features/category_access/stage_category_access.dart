@@ -15,11 +15,11 @@ class StageCategoryAccess {
 
   factory StageCategoryAccess.fromJson(Map<String, dynamic> json) {
     return StageCategoryAccess(
-      stageId: (json['stageId'] as num).toInt(),
-      categories: (json['categories'] as List<dynamic>)
+      stageId: ((json['StageId'] ?? json['stageId']) as num).toInt(),
+      categories: ((json['Categories'] ?? json['categories']) as List<dynamic>)
           .map((item) => StageCategoryItem.fromJson(item as Map<String, dynamic>))
           .toList(),
-      freeCategoryIds: (json['freeCategoryIds'] as List<dynamic>)
+      freeCategoryIds: ((json['FreeCategoryIds'] ?? json['freeCategoryIds']) as List<dynamic>)
           .map((id) => (id as num).toInt())
           .toList(),
     );
@@ -43,11 +43,11 @@ class StageCategoryItem {
 
   factory StageCategoryItem.fromJson(Map<String, dynamic> json) {
     return StageCategoryItem(
-      id: (json['id'] as num).toInt(),
-      nameAr: json['nameAr'] as String? ?? '',
-      nameEn: json['nameEn'] as String? ?? '',
-      icon: json['icon'] as String? ?? '📐',
-      isFree: json['isFree'] == true,
+      id: ((json['Id'] ?? json['id']) as num).toInt(),
+      nameAr: (json['NameAr'] ?? json['nameAr']) as String? ?? '',
+      nameEn: (json['NameEn'] ?? json['nameEn']) as String? ?? '',
+      icon: (json['Icon'] ?? json['icon']) as String? ?? '📐',
+      isFree: (json['IsFree'] ?? json['isFree']) == true,
     );
   }
 
