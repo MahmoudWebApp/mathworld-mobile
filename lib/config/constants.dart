@@ -33,6 +33,7 @@ class ApiConstants {
   static const String userProfile = '/users/profile';
   static const String userLearningStage = '/users/learning-stage';
   static const String userJourney = '/users/journey';
+  static const String userDailyQuota = '/users/daily-quota';
   static const String userLeaderboard = '/users/leaderboard';
   static const String userDashboard = '/users/dashboard';
   static const String userFavorites = '/users/favorites';
@@ -78,7 +79,7 @@ class AppConstants {
   const AppConstants._();
 
   static const String appName = 'MathWorld';
-  static const String appVersion = '1.1.0';
+  static const String appVersion = '1.2.0';
   static const String defaultLanguage = 'ar';
   static const String tokenKey = 'auth_token';
   static const int pageSize = 10;
