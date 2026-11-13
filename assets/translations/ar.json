@@ -169,5 +169,19 @@
   "social_login_failed": "تعذر تسجيل الدخول عبر Google",
   "link_google": "ربط Google بحسابي",
   "link_google_desc": "اربطه بحساب MathWorld الحالي دون فقدان النقاط أو الحلول",
-  "google_linked": "تم ربط حساب Google بنجاح"
+  "google_linked": "تم ربط حساب Google بنجاح",
+  "leaderboard_title": "ترتيب المتفوقين",
+  "leaderboard_description": "الترتيب حسب عدد المسائل المختلفة المحلولة، ثم النقاط والدقة من أول محاولة.",
+  "leaderboard_choose_stage": "اختر مرحلتك التعليمية لعرض الترتيب.",
+  "leaderboard_all": "كل الوقت",
+  "leaderboard_weekly": "هذا الأسبوع",
+  "leaderboard_monthly": "هذا الشهر",
+  "leaderboard_empty": "لا توجد حلول في هذه الفترة حتى الآن.",
+  "leaderboard_my_rank": "ترتيبك",
+  "leaderboard_solved": "مسألة محلولة",
+  "leaderboard_points": "نقطة",
+  "leaderboard_first_try": "صحيح من أول محاولة",
+  "leaderboard_previous": "السابق",
+  "leaderboard_next": "التالي",
+  "leaderboard_privacy": "نخفي أسماء الطلاب الآخرين احترامًا للخصوصية."
 }
