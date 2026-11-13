@@ -55,7 +55,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
       body: MathBackground(
         child: SafeArea(
           child: RefreshIndicator(
-            onRefresh: () => ref.refresh(leaderboardProvider(filter).future),
+            onRefresh: () async {
+              await ref.refresh(leaderboardProvider(filter).future);
+            },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(
