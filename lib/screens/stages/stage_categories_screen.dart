@@ -8,6 +8,8 @@ import '../../core/utils/error_message.dart';
 import '../../models/category.dart';
 import '../../models/stage.dart';
 import '../../providers/categories_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/stages_provider.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
@@ -15,11 +17,14 @@ import '../../widgets/math_background.dart';
 
 /// Displays localized categories for the selected educational stage.
 class StageCategoriesScreen extends ConsumerWidget {
-  const StageCategoriesScreen({super.key});
+  final Stage? stage;
+  final bool embedded;
+
+  const StageCategoriesScreen({super.key, this.stage, this.embedded = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final arguments = ModalRoute.of(context)?.settings.arguments;
+    final arguments = stage ?? ModalRoute.of(context)?.settings.arguments;
     if (arguments is! Stage) {
       return Scaffold(
         body: AppErrorView(onRetry: () => Navigator.maybePop(context)),
@@ -30,9 +35,7 @@ class StageCategoriesScreen extends ConsumerWidget {
     final categoriesState = ref.watch(stageCategoriesProvider(stage.id));
     final localeCode = context.locale.languageCode;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(stage.getName(localeCode))),
-      body: MathBackground(
+    final content = MathBackground(
         child: categoriesState.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, __) => AppErrorView(
@@ -85,7 +88,55 @@ class StageCategoriesScreen extends ConsumerWidget {
             );
           },
         ),
+      );
+    return embedded
+        ? content
+        : Scaffold(
+            appBar: AppBar(title: Text(stage.getName(localeCode))),
+            body: content,
+          );
+  }
+}
+
+/// Shows only categories in the active learning stage. Unlike the original
+/// Stage list this follows the user's saved stage preference.
+class CurrentStageCategoriesScreen extends ConsumerWidget {
+  const CurrentStageCategoriesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authProvider.select((state) => state.user));
+    final stageId = user?.currentStageId;
+    if (stageId == null || user?.role != 'Student') {
+      return Center(
+        child: TextButton.icon(
+          onPressed: () => Navigator.pushNamed(context, AppRoutes.learningStage),
+          icon: const Icon(Icons.school_outlined),
+          label: Text('choose_learning_stage_title'.tr()),
+        ),
+      );
+    }
+
+    return ref.watch(stagesProvider).when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => AppErrorView(
+        message: localizedErrorMessage(error),
+        onRetry: () => ref.invalidate(stagesProvider),
       ),
+      data: (stages) {
+        for (final stage in stages) {
+          if (stage.id == stageId) {
+            return StageCategoriesScreen(
+              key: ValueKey(stage.id),
+              stage: stage,
+              embedded: true,
+            );
+          }
+        }
+        return AppErrorView(
+          onRetry: () => ref.invalidate(stagesProvider),
+        );
+      },
     );
   }
 }
