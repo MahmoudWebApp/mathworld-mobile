@@ -9,7 +9,7 @@ class GeometryApiService {
   Future<Map<String, dynamic>?> getDiagram(int problemId) async {
     if (problemId <= 0) return null;
     try {
-      final response = await _api.get('/api/problems/$problemId/diagram');
+      final response = await _api.get('/problems/$problemId/diagram');
       final envelope = response.data;
       if (envelope is! Map || envelope['Data'] is! Map) return null;
       final scene = Map<String, dynamic>.from(envelope['Data'] as Map);
