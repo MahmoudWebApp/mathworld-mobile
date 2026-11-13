@@ -12,6 +12,8 @@ import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/premium_button.dart';
+import '../../widgets/daily_quota_card.dart';
+import '../../providers/stage_daily_quota_provider.dart';
 import '../../widgets/rich_math_text.dart';
 
 /// Displays one problem, its learning summary, and all recorded attempts.
@@ -88,7 +90,13 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
             state: state,
             historyState: historyState,
             onOptionChanged: notifier.selectOption,
-            onSubmit: () => _runAction(context, notifier.submitAnswer),
+            onSubmit: () => _runAction(context, () async {
+              try {
+                await notifier.submitAnswer();
+              } finally {
+                ref.invalidate(stageDailyQuotaProvider(problem.stageId));
+              }
+            }),
             onStartRetry: notifier.startRetry,
             onCancelRetry: notifier.cancelRetry,
             onToggleFavorite: () =>
@@ -116,7 +124,7 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
   }
 }
 
-class _ProblemContent extends StatelessWidget {
+class _ProblemContent extends ConsumerWidget {
   final Problem problem;
   final ProblemDetailsState state;
   final AsyncValue<ProblemAttemptHistory>? historyState;
@@ -138,8 +146,11 @@ class _ProblemContent extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isArabic = context.locale.languageCode == 'ar';
+    final quota = ref.watch(stageDailyQuotaProvider(problem.stageId));
+    final quotaBlocked = !problem.hasAttempted && !state.isRetryMode
+        && (quota.valueOrNull?.exhausted ?? false);
     final canSelect = state.answerResult == null &&
         (!problem.hasAttempted || state.isRetryMode);
     final solution = _solutionText(problem, state);
@@ -155,6 +166,8 @@ class _ProblemContent extends StatelessWidget {
         AppSpacing.xxxl,
       ),
       children: [
+        DailyQuotaCard(stageId: problem.stageId, compact: true),
+        const SizedBox(height: AppSpacing.md),
         _ProblemHeader(
           problem: problem,
           isArabic: isArabic,
@@ -211,7 +224,8 @@ class _ProblemContent extends StatelessWidget {
         if (canSelect) ...[
           const SizedBox(height: AppSpacing.xl),
           PremiumButton(
-            onPressed: state.selectedOptionId == null || state.isSubmitting
+            onPressed: state.selectedOptionId == null ||
+                    state.isSubmitting || quotaBlocked
                 ? null
                 : onSubmit,
             label: state.isRetryMode
