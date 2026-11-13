@@ -25,7 +25,9 @@ jobs:
           cache: true
       - name: Flutter version
         run: flutter --version
+      - name: Local non-secret environment for Flutter asset checks
+        run: cp .env.example .env
       - name: Dependencies
         run: flutter pub get
-      - name: Analyze Dart
-        run: flutter analyze
+      - name: Analyze Dart (ignore SDK-wide deprecation info; keep warnings fatal)
+        run: flutter analyze --no-fatal-infos
