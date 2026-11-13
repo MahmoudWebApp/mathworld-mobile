@@ -40,6 +40,16 @@ class LayoutUtils {
         : Icons.chevron_left_rounded;
   }
 
+  /// Choose a physical arrow for buttons with an explicit LTR icon direction.
+  /// Arabic: continue -> left, back -> right; English is the inverse.
+  static IconData forwardArrow(BuildContext context) => isRtl(context)
+      ? Icons.arrow_back_rounded
+      : Icons.arrow_forward_rounded;
+
+  static IconData backArrow(BuildContext context) => isRtl(context)
+      ? Icons.arrow_forward_rounded
+      : Icons.arrow_back_rounded;
+
   static IconData nextPage(BuildContext context) => forwardChevron(context);
 
   static IconData previousPage(BuildContext context) => backChevron(context);
