@@ -20,6 +20,11 @@ jobs:
         with:
           channel: stable
           cache: true
+      - name: Prepare non-secret CI environment asset
+        run: |
+          if [ ! -f .env ]; then
+            printf 'API_BASE_URL=https://example.invalid/api\\n' > .env
+          fi
       - name: Install dependencies
         run: flutter pub get
       - name: Analyze Dart
