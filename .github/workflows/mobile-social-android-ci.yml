@@ -34,6 +34,8 @@ jobs:
         run: flutter pub get
       - name: Check Dart analysis
         run: flutter analyze --no-fatal-infos
+      - name: Verify Arabic and English directional navigation
+        run: flutter test test/widgets/layout_utils_test.dart
       - name: Build Android test APK (social sign-in remains OFF)
         run: flutter build apk --debug --no-pub
       - name: Upload test APK
