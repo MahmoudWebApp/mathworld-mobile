@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/leaderboard_provider.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
+import '../../utils/layout_utils.dart';
 
 /// Read-only stage leaderboard, with anonymous peers and the learner's own rank.
 class LeaderboardScreen extends ConsumerStatefulWidget {
@@ -166,14 +167,28 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                               onPressed: _page > 1
                                   ? () => setState(() => _page--)
                                   : null,
-                              child: Text('leaderboard_previous'.tr()),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  LayoutUtils.previousPageIcon(context, size: 18),
+                                  const SizedBox(width: 4),
+                                  Text('leaderboard_previous'.tr()),
+                                ],
+                              ),
                             ),
                             Text('$_page / $maxPage'),
                             OutlinedButton(
                               onPressed: _page < maxPage
                                   ? () => setState(() => _page++)
                                   : null,
-                              child: Text('leaderboard_next'.tr()),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text('leaderboard_next'.tr()),
+                                  const SizedBox(width: 4),
+                                  LayoutUtils.nextPageIcon(context, size: 18),
+                                ],
+                              ),
                             ),
                           ],
                         ),
