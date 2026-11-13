@@ -10,6 +10,7 @@ import '../../providers/stages_provider.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/premium_button.dart';
+import '../../utils/layout_utils.dart';
 
 /// First-login stage onboarding and later stage switching.
 /// All progress stays assigned to the original question stage in the API.
@@ -122,7 +123,7 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 PremiumButton(
                   label: 'save_learning_stage'.tr(),
-                  leadingIcon: Icons.arrow_forward_rounded,
+                  leadingIcon: LayoutUtils.forwardArrow(context),
                   onPressed: effective == null || _saving
                       ? null
                       : () => _save(effective),
