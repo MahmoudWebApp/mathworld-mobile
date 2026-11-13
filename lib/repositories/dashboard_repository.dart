@@ -2,6 +2,7 @@ import '../config/constants.dart';
 import '../core/network/api_envelope.dart';
 import '../models/dashboard_stats.dart';
 import '../models/learning_journey.dart';
+import '../models/leaderboard.dart';
 import '../core/network/api_client.dart';
 
 /// Loads user dashboard and public platform statistics.
@@ -24,6 +25,23 @@ class DashboardRepository {
       queryParameters: {'stageId': stageId},
     );
     return LearningJourney.fromJson(ApiEnvelope.map(response.data));
+  }
+
+  Future<LeaderboardData> getLeaderboard({
+    required int stageId,
+    required String period,
+    required int page,
+  }) async {
+    final response = await _apiService.get(
+      ApiConstants.userLeaderboard,
+      queryParameters: {
+        'stageId': stageId,
+        'period': period,
+        'page': page,
+        'pageSize': 20,
+      },
+    );
+    return LeaderboardData.fromJson(ApiEnvelope.map(response.data));
   }
 
   Future<PlatformStats> getPlatformStats() async {
