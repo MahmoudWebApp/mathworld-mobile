@@ -2,6 +2,7 @@ import '../config/constants.dart';
 import '../core/network/api_envelope.dart';
 import '../models/dashboard_stats.dart';
 import '../models/learning_journey.dart';
+import '../models/stage_daily_quota.dart';
 import '../models/leaderboard.dart';
 import '../core/network/api_client.dart';
 
@@ -25,6 +26,14 @@ class DashboardRepository {
       queryParameters: {'stageId': stageId},
     );
     return LearningJourney.fromJson(ApiEnvelope.map(response.data));
+  }
+
+  Future<StageDailyQuota> getDailyQuota(int stageId) async {
+    final response = await _apiService.get(
+      ApiConstants.userDailyQuota,
+      queryParameters: {'stageId': stageId},
+    );
+    return StageDailyQuota.fromJson(ApiEnvelope.map(response.data));
   }
 
   Future<LeaderboardData> getLeaderboard({
