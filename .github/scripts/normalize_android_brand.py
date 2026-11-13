@@ -72,6 +72,20 @@ def remove_connected_black_matte(original: Image.Image) -> Image.Image:
                 r, g, b, _ = pixels[x, y]
                 pixels[x, y] = (r, g, b, 0)
 
+    # The approved PNG contains an opaque dark rectangle behind its colored
+    # emblem in addition to edge-connected black. Remove near-neutral dark
+    # matte remnants anywhere (including disconnected islands), while keeping
+    # saturated purple/violet interior pixels and white/math symbols intact.
+    # This is a pixel cleanup, not a redraw of the brand artwork.
+    neutral_matte_removed = 0
+    for y in range(height):
+        for x in range(width):
+            r, g, b, alpha = pixels[x, y]
+            if alpha and max(r, g, b) < 92 and max(r, g, b) - min(r, g, b) < 38:
+                pixels[x, y] = (r, g, b, 0)
+                neutral_matte_removed += 1
+    print("Removed neutral dark square remnants:", neutral_matte_removed)
+
     bounds = image.getbbox()
     if not bounds:
         raise RuntimeError("No visible logo remained after matte cleanup")
