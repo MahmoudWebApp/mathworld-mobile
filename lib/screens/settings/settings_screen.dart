@@ -7,6 +7,8 @@ import '../../config/constants.dart';
 import '../../config/design_tokens.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../services/google_identity_service.dart';
+import '../../core/utils/error_message.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
@@ -135,6 +137,32 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 24),
+            if (GoogleIdentityService.available) ...[
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: ListTile(
+                  leading: const Icon(Icons.verified_user_outlined),
+                  title: Text('link_google'.tr()),
+                  subtitle: Text('link_google_desc'.tr()),
+                  trailing: const Icon(Icons.link_rounded),
+                  onTap: () async {
+                    try {
+                      await ref.read(authProvider.notifier).linkGoogle();
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('google_linked'.tr())),
+                      );
+                    } catch (error) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(localizedErrorMessage(error))),
+                      );
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
             _SectionTitle(title: 'about_and_legal'.tr()),
             const SizedBox(height: 10),
             GlassCard(

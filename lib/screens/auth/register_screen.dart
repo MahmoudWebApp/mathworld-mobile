@@ -10,6 +10,7 @@ import '../../widgets/glass_card.dart';
 import '../../widgets/brand_logo.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/premium_button.dart';
+import '../../widgets/social_sign_in_buttons.dart';
 
 /// Displays the account registration form.
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -193,6 +194,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           expand: true,
                         ),
                         const SizedBox(height: AppSpacing.md),
+                        const SocialSignInButtons(),
                         TextButton(
                           onPressed: isLoading
                               ? null

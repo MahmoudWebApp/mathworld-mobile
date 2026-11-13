@@ -10,6 +10,7 @@ import '../../widgets/glass_card.dart';
 import '../../widgets/brand_logo.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/premium_button.dart';
+import '../../widgets/social_sign_in_buttons.dart';
 
 /// Displays the email and password authentication form.
 class LoginScreen extends ConsumerStatefulWidget {
@@ -148,6 +149,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           expand: true,
                         ),
                         const SizedBox(height: AppSpacing.md),
+                        const SocialSignInButtons(),
                         TextButton(
                           onPressed: isLoading
                               ? null

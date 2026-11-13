@@ -23,6 +23,8 @@ class ApiConstants {
 
   static const String login = '/auth/login';
   static const String register = '/auth/register';
+  static const String socialGoogle = '/auth/social/google';
+  static const String socialLinkGoogle = '/auth/social/link/google';
   static const String stages = '/stages';
   static const String categories = '/categories';
   static const String problemsSearch = '/problems/search';
@@ -46,6 +48,28 @@ class ApiConstants {
       return null;
     }
   }
+}
+
+/// Build-time feature flags for optional native social sign-in.
+/// No provider credentials are baked into the default release APK.
+class SocialAuthConfig {
+  const SocialAuthConfig._();
+
+  static const bool enabled = bool.fromEnvironment(
+    'MATHWORLD_SOCIAL_LOGIN_ENABLED',
+    defaultValue: false,
+  );
+
+  static const String googleServerClientId = String.fromEnvironment(
+    'MATHWORLD_GOOGLE_SERVER_CLIENT_ID',
+  );
+
+  static const String googleIosClientId = String.fromEnvironment(
+    'MATHWORLD_GOOGLE_IOS_CLIENT_ID',
+  );
+
+  static bool get googleAvailable =>
+      enabled && googleServerClientId.trim().isNotEmpty;
 }
 
 /// Application-wide configuration values.
