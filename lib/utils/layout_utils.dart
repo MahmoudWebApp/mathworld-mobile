@@ -40,6 +40,23 @@ class LayoutUtils {
         : Icons.chevron_left_rounded;
   }
 
+  /// Physical arrows selected by navigation meaning (no double mirroring).
+  static IconData forwardArrow(BuildContext context) =>
+      isRtl(context) ? Icons.arrow_back_rounded : Icons.arrow_forward_rounded;
+
+  static IconData backArrow(BuildContext context) =>
+      isRtl(context) ? Icons.arrow_forward_rounded : Icons.arrow_back_rounded;
+
+  /// For semantic navigation icons passed into reusable icon buttons.
+  /// Non-directional icons (login, checkmark, etc.) stay unchanged.
+  static IconData resolveSemanticIcon(BuildContext context, IconData icon) {
+    if (icon == Icons.arrow_forward_rounded) return forwardArrow(context);
+    if (icon == Icons.arrow_back_rounded) return backArrow(context);
+    if (icon == Icons.chevron_right_rounded) return forwardChevron(context);
+    if (icon == Icons.chevron_left_rounded) return backChevron(context);
+    return icon;
+  }
+
   static IconData nextPage(BuildContext context) => forwardChevron(context);
 
   static IconData previousPage(BuildContext context) => backChevron(context);
