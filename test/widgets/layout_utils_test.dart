@@ -86,4 +86,50 @@ void main() {
     expect(icon.icon, Icons.chevron_left_rounded);
     expect(icon.textDirection, TextDirection.ltr);
   });
+  testWidgets('Arabic action arrows go forward left and back right', (
+    tester,
+  ) async {
+    IconData? forward;
+    IconData? back;
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('ar'),
+      supportedLocales: const [Locale('ar'), Locale('en')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: Builder(builder: (context) {
+        forward = LayoutUtils.forwardArrow(context);
+        back = LayoutUtils.backArrow(context);
+        return const SizedBox.shrink();
+      }),
+    ));
+    expect(forward, Icons.arrow_back_rounded);
+    expect(back, Icons.arrow_forward_rounded);
+  });
+
+  testWidgets('English action arrows go forward right and back left', (
+    tester,
+  ) async {
+    IconData? forward;
+    IconData? back;
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('en'),
+      supportedLocales: const [Locale('ar'), Locale('en')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: Builder(builder: (context) {
+        forward = LayoutUtils.forwardArrow(context);
+        back = LayoutUtils.backArrow(context);
+        return const SizedBox.shrink();
+      }),
+    ));
+    expect(forward, Icons.arrow_forward_rounded);
+    expect(back, Icons.arrow_back_rounded);
+  });
+
 }
