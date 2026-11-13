@@ -53,8 +53,34 @@ class StageCategoriesScreen extends ConsumerWidget {
               );
             }
 
-            return LayoutBuilder(
-              builder: (context, constraints) {
+            return Column(
+              children: [
+                if (embedded)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.sm,
+                    ),
+                    child: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'active_stage_categories'.tr(),
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            stage.getName(localeCode),
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
                 final columns = constraints.maxWidth >= 900
                     ? 4
                     : constraints.maxWidth >= 620
@@ -84,7 +110,10 @@ class StageCategoriesScreen extends ConsumerWidget {
                     );
                   },
                 );
-              },
+                    },
+                  ),
+                ),
+              ],
             );
           },
         ),
