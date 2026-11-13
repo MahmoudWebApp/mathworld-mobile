@@ -49,7 +49,10 @@ class HomeScreen extends ConsumerWidget {
                 132,
               ),
               children: [
-                AnimatedEntry(child: _HeroCard(dashboard: dashboard)),
+                AnimatedEntry(child: _HeroCard(
+                  dashboard: dashboard,
+                  journey: learningJourney.valueOrNull,
+                )),
                 const SizedBox(height: AppSpacing.xl),
                 learningJourney.when(
                   data: (journey) => journey == null
@@ -63,7 +66,11 @@ class HomeScreen extends ConsumerWidget {
                   error: (_, __) => const SizedBox.shrink(),
                   loading: () => const SizedBox.shrink(),
                 ),
-                AnimatedEntry(index: 1, child: _StatsGrid(stats: dashboard)),
+                if (learningJourney.valueOrNull != null)
+                  AnimatedEntry(
+                    index: 1,
+                    child: _StatsGrid(journey: learningJourney.valueOrNull!),
+                  ),
                 const SizedBox(height: AppSpacing.xl),
                 AnimatedEntry(
                   index: 2,
@@ -170,8 +177,9 @@ class HomeScreen extends ConsumerWidget {
 
 class _HeroCard extends StatelessWidget {
   final DashboardStats dashboard;
+  final LearningJourney? journey;
 
-  const _HeroCard({required this.dashboard});
+  const _HeroCard({required this.dashboard, required this.journey});
 
   @override
   Widget build(BuildContext context) {
@@ -253,34 +261,13 @@ class _HeroCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.xl),
-          Row(
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(99),
-                  child: LinearProgressIndicator(
-                    value: (dashboard.successRate / 100)
-                        .clamp(0.0, 1.0)
-                        .toDouble(),
-                    minHeight: 9,
-                    backgroundColor: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.11),
-                    valueColor: const AlwaysStoppedAnimation(AppColors.cyan),
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Text(
-                '${dashboard.successRate}%',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-              ),
-            ],
-          ),
+          if (journey != null) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              '${'learning_stage'.tr()}: ${journey!.getName(context.locale.languageCode)}',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
         ],
       ),
     );
@@ -288,35 +275,35 @@ class _HeroCard extends StatelessWidget {
 }
 
 class _StatsGrid extends StatelessWidget {
-  final DashboardStats stats;
+  final LearningJourney journey;
 
-  const _StatsGrid({required this.stats});
+  const _StatsGrid({required this.journey});
 
   @override
   Widget build(BuildContext context) {
     final items = [
       _StatData(
         Icons.check_circle_outline_rounded,
-        '${stats.solvedProblemsCount}',
-        'solved_problems'.tr(),
+        '${journey.solvedProblems}',
+        'stage_solved'.tr(),
         AppColors.success,
       ),
       _StatData(
         Icons.auto_awesome_rounded,
-        '${stats.totalPoints}',
-        'total_points'.tr(),
+        '${journey.totalPoints}',
+        'stage_points'.tr(),
         AppColors.warning,
       ),
       _StatData(
         Icons.trending_up_rounded,
-        '${stats.successRate}%',
-        'success_rate'.tr(),
+        '${journey.completionPercent}%',
+        'stage_completion'.tr(),
         AppColors.cyan,
       ),
       _StatData(
         Icons.favorite_border_rounded,
-        '${stats.favoriteProblemsCount}',
-        'favorites'.tr(),
+        '${journey.attemptedProblems}',
+        'stage_attempted'.tr(),
         AppColors.error,
       ),
     ];

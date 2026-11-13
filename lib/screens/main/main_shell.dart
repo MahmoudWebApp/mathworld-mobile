@@ -1,27 +1,28 @@
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/design_tokens.dart';
 import '../dashboard/favorites_screen.dart';
 import '../home/home_screen.dart';
 import '../settings/settings_screen.dart';
-import '../stages/stages_screen.dart';
+import '../stages/stage_categories_screen.dart';
 
 /// Hosts the primary application sections and the floating navigation bar.
-class MainShell extends StatefulWidget {
+class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends ConsumerState<MainShell> {
   int _selectedIndex = 0;
 
   late final List<Widget> _pages = [
     HomeScreen(onOpenStages: () => setState(() => _selectedIndex = 1)),
-    const StagesScreen(embedded: true),
+    const CurrentStageCategoriesScreen(),
     const FavoritesScreen(embedded: true),
     const SettingsScreen(embedded: true),
   ];
@@ -73,7 +74,7 @@ class _MainShellState extends State<MainShell> {
                     NavigationDestination(
                       icon: const Icon(Icons.auto_stories_outlined),
                       selectedIcon: const Icon(Icons.auto_stories_rounded),
-                      label: 'stages'.tr(),
+                      label: 'active_stage_categories'.tr(),
                     ),
                     NavigationDestination(
                       icon: const Icon(Icons.favorite_border_rounded),

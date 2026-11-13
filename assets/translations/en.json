@@ -78,7 +78,7 @@
   "server_error": "A server error occurred. Please try again later",
   "unexpected_error": "An unexpected error occurred",
   "continue_learning": "Continue Learning",
-  "continue_learning_desc": "Choose your stage and keep building your math skills.",
+  "continue_learning_desc": "Continue with the topics and problems in your current learning stage",
   "settings_subtitle": "Personalize MathWorld to match your preferences.",
   "about_and_legal": "About and Legal",
   "app_version_value": "Version {version}",
@@ -183,5 +183,7 @@
   "leaderboard_first_try": "first-try correct",
   "leaderboard_previous": "Previous",
   "leaderboard_next": "Next",
-  "leaderboard_privacy": "Other learners' names are hidden to protect privacy."
+  "leaderboard_privacy": "Other learners' names are hidden to protect privacy.",
+  "active_stage_categories": "Categories",
+  "change_stage_keeps_progress": "Changing stage keeps your previous progress"
 }
