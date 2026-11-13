@@ -491,7 +491,11 @@ class _LearningJourneyCard extends StatelessWidget {
           Text('stage_topics'.tr(),
               style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: AppSpacing.sm),
-          OutlinedButton.icon(
+          if (const bool.fromEnvironment(
+            'MATHWORLD_LEADERBOARD_ENABLED',
+            defaultValue: false,
+          ))
+            OutlinedButton.icon(
             onPressed: () => Navigator.pushNamed(context, AppRoutes.leaderboard),
             icon: const Icon(Icons.emoji_events_outlined),
             label: Text('leaderboard_title'.tr()),
