@@ -33,6 +33,7 @@ class ApiConstants {
   static const String userProfile = '/users/profile';
   static const String userLearningStage = '/users/learning-stage';
   static const String userJourney = '/users/journey';
+  static const String userLeaderboard = '/users/leaderboard';
   static const String userDashboard = '/users/dashboard';
   static const String userFavorites = '/users/favorites';
   static const String userSolved = '/users/solved';

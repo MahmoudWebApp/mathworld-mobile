@@ -491,6 +491,12 @@ class _LearningJourneyCard extends StatelessWidget {
           Text('stage_topics'.tr(),
               style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: AppSpacing.sm),
+          OutlinedButton.icon(
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.leaderboard),
+            icon: const Icon(Icons.emoji_events_outlined),
+            label: Text('leaderboard_title'.tr()),
+          ),
+          const SizedBox(height: AppSpacing.sm),
           ...journey.categories.map(
             (category) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),

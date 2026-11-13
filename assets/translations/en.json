@@ -169,5 +169,19 @@
   "social_login_failed": "Google sign-in failed",
   "link_google": "Link Google to my account",
   "link_google_desc": "Keep your MathWorld progress and points in one account",
-  "google_linked": "Google account linked successfully"
+  "google_linked": "Google account linked successfully",
+  "leaderboard_title": "Leaderboard",
+  "leaderboard_description": "Ranked by distinct solved problems, then earned points and first-try correctness.",
+  "leaderboard_choose_stage": "Select your learning stage to see rankings.",
+  "leaderboard_all": "All time",
+  "leaderboard_weekly": "This week",
+  "leaderboard_monthly": "This month",
+  "leaderboard_empty": "No solves in this period yet.",
+  "leaderboard_my_rank": "Your rank",
+  "leaderboard_solved": "solved",
+  "leaderboard_points": "points",
+  "leaderboard_first_try": "first-try correct",
+  "leaderboard_previous": "Previous",
+  "leaderboard_next": "Next",
+  "leaderboard_privacy": "Other learners' names are hidden to protect privacy."
 }
