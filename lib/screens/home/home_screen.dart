@@ -10,6 +10,8 @@ import '../../models/dashboard_stats.dart';
 import '../../models/learning_journey.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/learning_journey_provider.dart';
+import '../../providers/stage_daily_quota_provider.dart';
+import '../../widgets/daily_quota_card.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/animated_entry.dart';
 import '../../widgets/app_states.dart';
@@ -39,7 +41,14 @@ class HomeScreen extends ConsumerWidget {
             onRetry: () => ref.invalidate(dashboardProvider),
           ),
           data: (dashboard) => RefreshIndicator(
-            onRefresh: () => ref.refresh(dashboardProvider.future),
+            onRefresh: () async {
+              final stageId = learningJourney.valueOrNull?.stageId;
+              if (stageId != null) {
+                ref.invalidate(stageDailyQuotaProvider(stageId));
+              }
+              ref.invalidate(learningJourneyProvider);
+              await ref.refresh(dashboardProvider.future);
+            },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(
@@ -66,11 +75,18 @@ class HomeScreen extends ConsumerWidget {
                   error: (_, __) => const SizedBox.shrink(),
                   loading: () => const SizedBox.shrink(),
                 ),
-                if (learningJourney.valueOrNull != null)
+                if (learningJourney.valueOrNull != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: DailyQuotaCard(
+                      stageId: learningJourney.valueOrNull!.stageId,
+                    ),
+                  ),
                   AnimatedEntry(
                     index: 1,
                     child: _StatsGrid(journey: learningJourney.valueOrNull!),
                   ),
+                ],
                 const SizedBox(height: AppSpacing.xl),
                 AnimatedEntry(
                   index: 2,
