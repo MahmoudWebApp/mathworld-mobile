@@ -14,6 +14,20 @@ For existing MathWorld users (including email/password students), always sign
 in to the existing account and **link** Google/Facebook from settings; never
 assume the same email automatically grants ownership of that account.
 
+## Flutter / Android build compatibility
+
+The Android project currently uses **Gradle 8.14** with AGP 8.11.1 and
+Kotlin 2.2.20. Its GitHub Actions test build pins **Flutter 3.38.10**.
+Flutter 3.50.0 enforces Gradle >=9.3.1 and will reject the existing wrapper.
+Do not blindly upgrade production Android build tooling or signing to make
+the CI runner green. Upgrade the Gradle/AGP/Kotlin matrix as a separate
+tested change if you need Flutter 3.50.
+
+The app module must apply `org.jetbrains.kotlin.android` before
+`dev.flutter.flutter-gradle-plugin` when it declares a `kotlin {}`
+`compilerOptions` block. CI includes a real Android debug APK build;
+`flutter analyze` alone cannot detect Gradle DSL errors.
+
 ## Google Developer setup
 
 1. Create the Google Cloud project, OAuth consent screen, and Web OAuth client.
