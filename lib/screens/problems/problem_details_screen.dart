@@ -15,6 +15,11 @@ import '../../widgets/premium_button.dart';
 import '../../widgets/daily_quota_card.dart';
 import '../../providers/stage_daily_quota_provider.dart';
 import '../../widgets/rich_math_text.dart';
+import '../../widgets/geometry_diagram.dart';
+import '../../widgets/premium_solution_panel.dart';
+import '../../services/premium_api_service.dart';
+import '../../services/geometry_api_service.dart';
+import '../../services/api_service.dart';
 
 /// Displays one problem, its learning summary, and all recorded attempts.
 class ProblemDetailsScreen extends ConsumerStatefulWidget {
@@ -194,6 +199,15 @@ class _ProblemContent extends ConsumerWidget {
                 ),
           ),
         ),
+        _OptionalProblemDiagram(problemId: problem.id, isArabic: isArabic),
+        if (!problem.hasAttempted && !state.isRetryMode) ...[
+          const SizedBox(height: AppSpacing.md),
+          PremiumSolutionPanel(
+            problemId: problem.id,
+            service: PremiumApiService(ApiService()),
+            isArabic: isArabic,
+          ),
+        ],
         const SizedBox(height: AppSpacing.xl),
         Text(
           'choose_answer'.tr(),
@@ -927,5 +941,50 @@ String _formatDuration(int seconds) {
   }
   return 'minutes_seconds_short'.tr(
     namedArgs: {'minutes': '$minutes', 'seconds': '$remaining'},
+  );
+}
+
+
+/// Diagram is loaded separately so older problem payloads remain compatible.
+class _OptionalProblemDiagram extends StatefulWidget {
+  const _OptionalProblemDiagram({required this.problemId, required this.isArabic});
+  final int problemId;
+  final bool isArabic;
+
+  @override
+  State<_OptionalProblemDiagram> createState() => _OptionalProblemDiagramState();
+}
+
+class _OptionalProblemDiagramState extends State<_OptionalProblemDiagram> {
+  late Future<Map<String, dynamic>?> _diagram;
+
+  @override
+  void initState() {
+    super.initState();
+    _diagram = GeometryApiService(ApiService()).getDiagram(widget.problemId);
+  }
+
+  @override
+  void didUpdateWidget(covariant _OptionalProblemDiagram oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.problemId != widget.problemId) {
+      _diagram = GeometryApiService(ApiService()).getDiagram(widget.problemId);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<Map<String, dynamic>?>(
+    future: _diagram,
+    builder: (context, snapshot) {
+      final scene = snapshot.data;
+      if (scene == null) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.md),
+        child: GlassCard(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: GeometryDiagram(scene: scene, isArabic: widget.isArabic),
+        ),
+      );
+    },
   );
 }
