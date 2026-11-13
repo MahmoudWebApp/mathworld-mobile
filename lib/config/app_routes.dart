@@ -4,6 +4,7 @@ import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/dashboard/error_notebook_screen.dart';
 import '../screens/dashboard/solved_screen.dart';
+import '../screens/dashboard/leaderboard_screen.dart';
 import '../screens/main/main_shell.dart';
 import '../screens/problems/problem_details_screen.dart';
 import '../screens/problems/problems_list_screen.dart';
@@ -22,6 +23,7 @@ class AppRoutes {
   static const String errorNotebook = '/error-notebook';
   static const String stageCategories = '/stage-categories';
   static const String learningStage = '/learning-stage';
+  static const String leaderboard = '/leaderboard';
   static const String problems = '/problems';
   static const String problemDetails = '/problem-details';
   static const String privacy = '/privacy';
@@ -36,6 +38,7 @@ class AppRoutes {
       errorNotebook: (_) => const ErrorNotebookScreen(),
       stageCategories: (_) => const StageCategoriesScreen(),
       learningStage: (_) => const LearningStageScreen(),
+      leaderboard: (_) => const LeaderboardScreen(),
       problems: (_) => const ProblemsListScreen(),
       problemDetails: (_) => const ProblemDetailsScreen(),
       privacy: (_) => const PrivacyScreen(),
