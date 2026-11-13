@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mathworld_mobile/utils/layout_utils.dart';
 import 'package:mathworld_mobile/widgets/premium_button.dart';
@@ -13,6 +14,11 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         locale: data.locale,
         supportedLocales: const [Locale('ar'), Locale('en')],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         home: Builder(
           builder: (context) => Scaffold(
             body: Column(children: [
