@@ -27,5 +27,7 @@ jobs:
           cache: true
       - name: Resolve packages
         run: flutter pub get
+      - name: Provide non-secret local test environment file
+        run: cp .env.example .env
       - name: Check semantic Arabic/English back and next arrows
         run: flutter test test/rtl_navigation_test.dart
