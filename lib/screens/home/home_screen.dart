@@ -55,7 +55,7 @@ class HomeScreen extends ConsumerWidget {
                 AppSpacing.lg,
                 AppSpacing.lg,
                 AppSpacing.lg,
-                132,
+                32,
               ),
               children: [
                 AnimatedEntry(child: _HeroCard(
