@@ -39,7 +39,8 @@ class _MainShellState extends ConsumerState<MainShell> {
         }
       },
       child: Scaffold(
-        extendBody: true,
+        // Keep scrollable content above the floating bottom bar.
+        extendBody: false,
         body: IndexedStack(index: _selectedIndex, children: _pages),
         bottomNavigationBar: SafeArea(
           minimum: const EdgeInsets.fromLTRB(14, 0, 14, 12),
