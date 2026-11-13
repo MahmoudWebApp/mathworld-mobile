@@ -24,7 +24,7 @@ class StageCategoriesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final arguments = stage ?? ModalRoute.of(context)?.settings.arguments;
+    final arguments = this.stage ?? ModalRoute.of(context)?.settings.arguments;
     if (arguments is! Stage) {
       return Scaffold(
         body: AppErrorView(onRetry: () => Navigator.maybePop(context)),
