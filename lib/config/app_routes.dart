@@ -10,6 +10,7 @@ import '../screens/problems/problems_list_screen.dart';
 import '../screens/settings/privacy_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/stages/stage_categories_screen.dart';
+import '../screens/stages/learning_stage_screen.dart';
 
 /// Central route names and route builders for the application.
 class AppRoutes {
@@ -20,6 +21,7 @@ class AppRoutes {
   static const String solved = '/solved';
   static const String errorNotebook = '/error-notebook';
   static const String stageCategories = '/stage-categories';
+  static const String learningStage = '/learning-stage';
   static const String problems = '/problems';
   static const String problemDetails = '/problem-details';
   static const String privacy = '/privacy';
@@ -33,6 +35,7 @@ class AppRoutes {
       solved: (_) => const SolvedScreen(),
       errorNotebook: (_) => const ErrorNotebookScreen(),
       stageCategories: (_) => const StageCategoriesScreen(),
+      learningStage: (_) => const LearningStageScreen(),
       problems: (_) => const ProblemsListScreen(),
       problemDetails: (_) => const ProblemDetailsScreen(),
       privacy: (_) => const PrivacyScreen(),

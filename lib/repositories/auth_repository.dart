@@ -90,6 +90,27 @@ class AuthRepository {
     }
   }
 
+  Future<User> chooseLearningStage(User user, int stageId) async {
+    final response = await _apiService.put(
+      ApiConstants.userLearningStage,
+      data: {'StageId': stageId},
+    );
+    final stage = ApiEnvelope.map(response.data);
+    final returned = stage['StageId'] ?? stage['stageId'];
+    final confirmed = returned is int
+        ? returned
+        : int.tryParse(returned?.toString() ?? '');
+    if (confirmed == null || confirmed != stageId) {
+      throw const AppException(
+        type: AppExceptionType.invalidResponse,
+        messageKey: 'invalid_response',
+      );
+    }
+    final updated = user.copyWith(currentStageId: stageId);
+    await HiveService.saveUser(updated.toCacheJson());
+    return updated;
+  }
+
   Future<void> clearSession() async {
     await _apiService.deleteToken();
     await HiveService.clearAuth();
