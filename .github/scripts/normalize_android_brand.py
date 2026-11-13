@@ -62,8 +62,9 @@ def remove_connected_black_matte(original: Image.Image) -> Image.Image:
         near_black(0, y) or near_black(width - 1, y)
         for y in range(1, height - 1))
     if border_black / max(border_count, 1) < 0.65:
-        print("No near-black outer matte detected; original image retained.")
-        return image
+        # A previous pass may already have made the exterior transparent.
+        # Still scan any disconnected interior black rectangles below.
+        print("Outer background already transparent; checking residual matte.")
 
     if removed > width * height * 0.95:
         raise RuntimeError("Refusing to erase almost all approved logo pixels")
