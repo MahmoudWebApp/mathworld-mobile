@@ -78,7 +78,7 @@
   "server_error": "حدث خطأ في الخادم، حاول لاحقاً",
   "unexpected_error": "حدث خطأ غير متوقع",
   "continue_learning": "تابع التعلّم",
-  "continue_learning_desc": "اختر مرحلتك وواصل بناء مهاراتك الرياضية.",
+  "continue_learning_desc": "تابع مسائل وفئات مرحلتك التعليمية الحالية",
   "settings_subtitle": "خصص تجربة MathWorld بما يناسبك.",
   "about_and_legal": "عن التطبيق والخصوصية",
   "app_version_value": "الإصدار {version}",
@@ -183,5 +183,7 @@
   "leaderboard_first_try": "صحيح من أول محاولة",
   "leaderboard_previous": "السابق",
   "leaderboard_next": "التالي",
-  "leaderboard_privacy": "نخفي أسماء الطلاب الآخرين احترامًا للخصوصية."
+  "leaderboard_privacy": "نخفي أسماء الطلاب الآخرين احترامًا للخصوصية.",
+  "active_stage_categories": "الفئات",
+  "change_stage_keeps_progress": "تغيير المرحلة لا يمسح تقدمك السابق"
 }
