@@ -1,6 +1,7 @@
 import '../config/constants.dart';
 import '../core/network/api_envelope.dart';
 import '../models/dashboard_stats.dart';
+import '../models/learning_journey.dart';
 import '../core/network/api_client.dart';
 
 /// Loads user dashboard and public platform statistics.
@@ -15,6 +16,14 @@ class DashboardRepository {
       ApiEnvelope.map(response.data),
       languageCode: languageCode,
     );
+  }
+
+  Future<LearningJourney> getJourney(int stageId) async {
+    final response = await _apiService.get(
+      ApiConstants.userJourney,
+      queryParameters: {'stageId': stageId},
+    );
+    return LearningJourney.fromJson(ApiEnvelope.map(response.data));
   }
 
   Future<PlatformStats> getPlatformStats() async {
