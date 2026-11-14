@@ -614,11 +614,15 @@ class _LearningPill extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: color),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
           ),
         ],
       ),
@@ -733,7 +737,9 @@ class _AnswerOptionCard extends StatelessWidget {
                 : scheme.outline;
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 180),
       decoration: BoxDecoration(
         color: stateColor.withValues(
           alpha: isCorrect || isWrong || isSelected ? 0.09 : 0.0,
@@ -757,13 +763,22 @@ class _AnswerOptionCard extends StatelessWidget {
             : isWrong
                 ? const Icon(Icons.cancel_rounded, color: AppColors.error)
                 : null,
-        title: RichMathText(
+        title: Semantics(
+          value: isCorrect
+              ? (isArabic ? 'إجابة صحيحة' : 'Correct answer')
+              : isWrong
+                  ? (isArabic ? 'إجابة خاطئة' : 'Incorrect answer')
+                  : isSelected
+                      ? (isArabic ? 'الإجابة المختارة' : 'Selected answer')
+                      : null,
+          child: RichMathText(
           text: option.latexCode,
           isArabic: isArabic,
           inline: true,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
+          ),
         ),
       ),
     );
