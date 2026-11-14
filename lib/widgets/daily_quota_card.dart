@@ -42,7 +42,7 @@ class DailyQuotaCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isArabic ? 'الممارسة بلا حد يومي' : 'Practice without daily limits',
+                  isArabic ? 'تدرّب بلا حدود' : 'Unlimited practice',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
@@ -51,7 +51,11 @@ class DailyQuotaCard extends ConsumerWidget {
                 Text(
                   premium.isLoading
                       ? (isArabic ? 'جارٍ التحقق من الاشتراك…' : 'Checking membership…')
-                      : isPremium
+                      : premium.hasError
+                          ? (isArabic
+                              ? 'حل بلا حدود ضمن الفئات المفتوحة بحسابك.'
+                              : 'Unlimited practice in your unlocked categories.')
+                          : isPremium
                           ? (isArabic
                               ? 'Premium: كل الفئات مفتوحة، والمسائل غير محدودة.'
                               : 'Premium: all categories unlocked, unlimited questions.')
