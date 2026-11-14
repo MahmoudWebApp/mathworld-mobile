@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/premium_analytics_provider.dart';
@@ -51,6 +52,9 @@ class _PremiumGiftRedeemScreenState
     });
     try {
       final result = await ref.read(premiumGiftServiceProvider).redeem(code);
+      if (!mounted) return;
+      // The verified server grant also refreshes in-memory account status.
+      await ref.read(authProvider.notifier).confirmPremiumGiftRedeemed();
       if (!mounted) return;
       // Refresh all subscription and inbox surfaces after server redemption.
       ref.invalidate(studentPremiumProvider);
