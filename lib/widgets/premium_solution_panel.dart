@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../services/premium_api_service.dart';
+import '../models/problem.dart';
+import 'rich_math_text.dart';
 
 /// Drop-in student action for problem details. The server enforces Premium
 /// access; hiding this button is only a presentation decision.
@@ -10,11 +12,13 @@ class PremiumSolutionPanel extends StatefulWidget {
     required this.problemId,
     required this.service,
     required this.isArabic,
+    this.options = const [],
   });
 
   final int problemId;
   final PremiumApiService service;
   final bool isArabic;
+  final List<Option> options;
 
   @override
   State<PremiumSolutionPanel> createState() => _PremiumSolutionPanelState();
@@ -80,6 +84,15 @@ class _PremiumSolutionPanelState extends State<PremiumSolutionPanel> {
           return const SizedBox.shrink();
         }
         final solution = _solution;
+        Option? correctOption;
+        if (solution?.correctOptionId != null) {
+          for (final option in widget.options) {
+            if (option.id == solution!.correctOptionId) {
+              correctOption = option;
+              break;
+            }
+          }
+        }
         return Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -112,13 +125,28 @@ class _PremiumSolutionPanelState extends State<PremiumSolutionPanel> {
                       padding: const EdgeInsets.only(top: 12),
                       child: SelectableText(solution.detailedSolution!),
                     ),
-                    if (solution.correctOptionId != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(widget.isArabic
-                            ? 'معرّف الخيار الصحيح: ${solution.correctOptionId}'
-                            : 'Correct option ID: ${solution.correctOptionId}'),
+                  if (correctOption != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.isArabic
+                                ? 'الإجابة الصحيحة:'
+                                : 'Correct answer:',
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          RichMathText(
+                            text: correctOption.latexCode,
+                            isArabic: widget.isArabic,
+                            inline: true,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                        ],
                       ),
+                    ),
                 ],
               ],
             ),
