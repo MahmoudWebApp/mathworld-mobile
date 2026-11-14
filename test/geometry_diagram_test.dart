@@ -23,6 +23,15 @@ void main() {
     ],
   };
 
+  test('requires nonempty Arabic and English accessibility descriptions', () {
+    final scene = Map<String, dynamic>.from(triangle);
+    scene['altTextAr'] = '  ';
+    expect(isValidGeometryScene(scene), isFalse);
+    scene['altTextAr'] = 'مثلث';
+    scene['altTextEn'] = '';
+    expect(isValidGeometryScene(scene), isFalse);
+  });
+
   test('accepts shared bilingual right-triangle scene', () {
     expect(isValidGeometryScene(triangle), isTrue);
   });
