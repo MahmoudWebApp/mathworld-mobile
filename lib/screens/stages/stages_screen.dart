@@ -31,7 +31,29 @@ class StagesScreen extends ConsumerWidget {
             message: localizedErrorMessage(error),
             onRetry: () => ref.invalidate(stagesProvider),
           ),
-          data: (items) => RefreshIndicator(
+          data: (items) => items.isEmpty
+              ? RefreshIndicator(
+                  onRefresh: () => ref.refresh(stagesProvider.future),
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    children: [
+                      AppEmptyView(
+                        icon: Icons.school_outlined,
+                        title: 'no_results'.tr(),
+                        subtitle: localeCode == 'ar'
+                            ? 'ما في مراحل تعليمية منشورة حالياً. اسحب للأسفل للتحديث.'
+                            : 'No learning stages are published yet. Pull down to refresh.',
+                        action: OutlinedButton.icon(
+                          onPressed: () => ref.invalidate(stagesProvider),
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: Text('retry'.tr()),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : RefreshIndicator(
             onRefresh: () => ref.refresh(stagesProvider.future),
             child: ListView.separated(
               physics: const AlwaysScrollableScrollPhysics(),
