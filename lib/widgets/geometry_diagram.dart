@@ -60,6 +60,8 @@ class GeometryDiagram extends StatelessWidget {
 bool isValidGeometryScene(Map<String, dynamic> scene) {
   if (scene['schemaVersion'] != 1 ||
       scene['altTextAr'] is! String || scene['altTextEn'] is! String ||
+      (scene['altTextAr'] as String).trim().isEmpty ||
+      (scene['altTextEn'] as String).trim().isEmpty ||
       (scene['altTextAr'] as String).length > 500 ||
       (scene['altTextEn'] as String).length > 500 ||
       scene['viewport'] is! Map || scene['objects'] is! List) return false;
