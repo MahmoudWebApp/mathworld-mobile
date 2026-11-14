@@ -13,6 +13,10 @@ import 'dashboard_provider.dart';
 import 'learning_provider.dart';
 import 'problem_details_provider.dart';
 import 'problems_provider.dart';
+import 'notification_provider.dart';
+import 'premium_analytics_provider.dart';
+import 'stage_category_access_provider.dart';
+import 'student_badges_provider.dart';
 import 'repositories_provider.dart';
 import 'stages_provider.dart';
 import 'user_lists_provider.dart';
@@ -270,6 +274,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _ref.invalidate(problemDetailsProvider);
     _ref.invalidate(problemAttemptHistoryProvider);
     _ref.invalidate(errorNotebookProvider);
+    // Account-isolated API caches must not show the previous user's
+    // subscription, notifications, private reports or achievements.
+    _ref.invalidate(studentPremiumProvider);
+    _ref.invalidate(stageCategoryAccessProvider);
+    _ref.invalidate(notificationInboxProvider);
+    _ref.invalidate(premiumAnalyticsProvider);
+    _ref.invalidate(studentBadgesProvider);
   }
 
   void consumeSessionExpired() {
