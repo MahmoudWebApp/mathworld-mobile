@@ -1,4 +1,4 @@
-name: Stage daily quota Flutter tests and release APK
+name: Flutter Free-access tests and debug-signed Android QA APK
 
 on:
   pull_request:
@@ -34,14 +34,19 @@ jobs:
         run: cp .env.example .env
       - name: Resolve Flutter packages
         run: flutter pub get
-      - name: Test stage-scoped daily quota parsing
+      - name: Verify legacy daily quota response stays unlimited
         run: flutter test test/models/stage_daily_quota_test.dart
-      - name: Build release Android APK
+      - name: Build Android release-mode QA APK (debug-signed)
         run: flutter build apk --release
-      - name: Upload release APK for manual device validation
+      - name: Explain artifact signing and release limitation
+        run: |
+          echo '### Android QA APK — not production signed' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This release-mode APK uses the Android debug signing configuration. It is intended for manual UI and launcher-icon validation only, not Google Play publishing.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Production keystore configuration and final application ID are tracked in mobile issue #13.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload debug-signed release-mode QA APK for device validation
         uses: actions/upload-artifact@v4
         with:
-          name: mathworld-v1.2.0-stage-quota-android
+          name: mathworld-android-qa-release-mode-debug-signed
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 14
           if-no-files-found: error
