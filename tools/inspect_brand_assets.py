@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ASSETS = {
     "flutter-mark": "assets/branding/mathworld-mark.png",
     "android-adaptive-foreground": "android/app/src/main/res/drawable-nodpi/mathworld_adaptive_foreground.png",
+    "android-native-launch": "android/app/src/main/res/drawable-nodpi/launch_image.png",
     "android-launcher-mdpi": "android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
     "android-launcher-xxxhdpi": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
     "ios-app-icon-1024": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png",
