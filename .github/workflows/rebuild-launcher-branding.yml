@@ -36,7 +36,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add ios/Runner/Assets.xcassets/AppIcon.appiconset/ web/favicon.png web/icons/
+          git add ios/Runner/Assets.xcassets/AppIcon.appiconset/ ios/Runner/Assets.xcassets/LaunchImage.imageset/ web/favicon.png web/icons/
           if git diff --cached --quiet; then
             echo "Existing icons already match approved source"
             exit 0
