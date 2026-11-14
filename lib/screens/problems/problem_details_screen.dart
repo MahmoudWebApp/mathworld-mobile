@@ -982,13 +982,9 @@ class _OptionalProblemDiagramState extends State<_OptionalProblemDiagram> {
     builder: (context, snapshot) {
       final scene = snapshot.data;
       if (scene == null) return const SizedBox.shrink();
-      return Padding(
-        padding: const EdgeInsets.only(top: AppSpacing.md),
-        child: GlassCard(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: GeometryDiagram(scene: scene, isArabic: widget.isArabic),
-        ),
-      );
+      // GeometryDiagram supplies the same bordered figure and caption as the web.
+      // Avoid nesting an additional glass card around it on small screens.
+      return GeometryDiagram(scene: scene, isArabic: widget.isArabic);
     },
   );
 }
