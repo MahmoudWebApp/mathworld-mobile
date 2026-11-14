@@ -99,7 +99,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         ),
         data: (inbox) => RefreshIndicator(
           onRefresh: () async {
-            await ref.refresh(notificationPageProvider(_page).future);
+            await ref.refresh(notificationPageProvider(_page).future).then((_) {});
             ref.invalidate(notificationInboxProvider);
           },
           child: ListView(
