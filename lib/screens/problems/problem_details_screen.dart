@@ -13,7 +13,6 @@ import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/premium_button.dart';
 import '../../widgets/daily_quota_card.dart';
-import '../../providers/stage_daily_quota_provider.dart';
 import '../../widgets/rich_math_text.dart';
 import '../../widgets/geometry_diagram.dart';
 import '../../widgets/premium_solution_panel.dart';
@@ -95,13 +94,7 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
             state: state,
             historyState: historyState,
             onOptionChanged: notifier.selectOption,
-            onSubmit: () => _runAction(context, () async {
-              try {
-                await notifier.submitAnswer();
-              } finally {
-                ref.invalidate(stageDailyQuotaProvider(problem.stageId));
-              }
-            }),
+            onSubmit: () => _runAction(context, notifier.submitAnswer),
             onStartRetry: notifier.startRetry,
             onCancelRetry: notifier.cancelRetry,
             onToggleFavorite: () =>
@@ -153,9 +146,6 @@ class _ProblemContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isArabic = context.locale.languageCode == 'ar';
-    final quota = ref.watch(stageDailyQuotaProvider(problem.stageId));
-    final quotaBlocked = !problem.hasAttempted && !state.isRetryMode
-        && (quota.valueOrNull?.exhausted ?? false);
     final canSelect = state.answerResult == null &&
         (!problem.hasAttempted || state.isRetryMode);
     final solution = _solutionText(problem, state);
@@ -239,7 +229,7 @@ class _ProblemContent extends ConsumerWidget {
           const SizedBox(height: AppSpacing.xl),
           PremiumButton(
             onPressed: state.selectedOptionId == null ||
-                    state.isSubmitting || quotaBlocked
+                    state.isSubmitting
                 ? null
                 : onSubmit,
             label: state.isRetryMode
