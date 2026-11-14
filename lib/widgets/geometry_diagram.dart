@@ -15,18 +15,42 @@ class GeometryDiagram extends StatelessWidget {
     final width = (viewport['width'] as num).toDouble();
     final height = (viewport['height'] as num).toDouble();
     final description = (scene[isArabic ? 'altTextAr' : 'altTextEn'] as String);
+    final theme = Theme.of(context);
     return Semantics(
       label: description,
       image: true,
-      child: AspectRatio(
-        aspectRatio: width / height,
-        child: CustomPaint(
-          painter: _GeometryPainter(
-            (scene['objects'] as List).cast<Map<String, dynamic>>(),
-            Theme.of(context).colorScheme.onSurface,
-            width,
-            height,
-          ),
+      excludeSemantics: true,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AspectRatio(
+              aspectRatio: width / height,
+              child: CustomPaint(
+                painter: _GeometryPainter(
+                  (scene['objects'] as List).cast<Map<String, dynamic>>(),
+                  theme.colorScheme.onSurface,
+                  width,
+                  height,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              description,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
       ),
     );
