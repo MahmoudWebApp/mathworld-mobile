@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import '../lib/services/notification_api_service.dart';
+import 'package:mathworld_mobile/services/notification_api_service.dart';
 
 void main() {
   Map<String, dynamic> sampleNotice(int id, {bool unread = true}) => {
