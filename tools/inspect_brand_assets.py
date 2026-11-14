@@ -18,7 +18,9 @@ ASSETS = {
     "android-adaptive-foreground": "android/app/src/main/res/drawable-nodpi/mathworld_adaptive_foreground.png",
     "android-native-launch": "android/app/src/main/res/drawable-nodpi/launch_image.png",
     "android-launcher-mdpi": "android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+    "android-launcher-round-mdpi": "android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png",
     "android-launcher-xxxhdpi": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+    "android-launcher-round-xxxhdpi": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png",
     "ios-app-icon-1024": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png",
     "ios-native-launch-3x": "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png",
     "flutter-web-icon-512": "web/icons/Icon-512.png",
@@ -71,12 +73,26 @@ def main():
     if missing:
         raise SystemExit("Missing external launcher/Flutter icon assets: "+", ".join(missing))
     for item in results:
-        if item["name"] in ("flutter-mark", "android-adaptive-foreground", "ios-native-launch-3x"):
+        if item["name"] in (
+            "flutter-mark", "android-adaptive-foreground", "android-native-launch",
+            "android-launcher-mdpi", "android-launcher-xxxhdpi",
+            "android-launcher-round-mdpi", "android-launcher-round-xxxhdpi",
+            "ios-native-launch-3x",
+        ):
             if not item["hasTransparentCorner"]:
                 raise SystemExit("Expected transparent approved mark: "+item["name"])
         if item["name"] in ("ios-app-icon-1024", "flutter-web-icon-512", "flutter-web-maskable-512"):
             if item["opaqueDarkCorners"] > 0 or item["hasTransparentCorner"]:
                 raise SystemExit("Expected opaque lavender/pink (NOT black) icon corners: "+item["name"])
+    adaptive=next(x for x in results if x["name"] == "android-adaptive-foreground")
+    if adaptive["alphaExtentFraction"] > 0.56:
+        raise SystemExit(
+            "Android launcher graphic exceeds safe mask size: "
+            +str(adaptive["alphaExtentFraction"])
+        )
+    android_launch=next(x for x in results if x["name"] == "android-native-launch")
+    if (android_launch["width"],android_launch["height"]) != (300,300):
+        raise SystemExit("Native Android splash must be 300x300 transparent artwork")
     native_launch=next(x for x in results if x["name"] == "ios-native-launch-3x")
     if (native_launch["width"],native_launch["height"]) != (504,555):
         raise SystemExit("Native iOS splash image must be 504x555 pixels at 3x")
