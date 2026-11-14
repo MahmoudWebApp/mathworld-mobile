@@ -113,7 +113,7 @@ class _PremiumGiftRedeemScreenState
                     controller: _controller,
                     maxLength: 100,
                     textCapitalization: TextCapitalization.characters,
-                    textDirection: TextDirection.ltr,
+                    textAlign: TextAlign.left,
                     autocorrect: false,
                     enableSuggestions: false,
                     decoration: InputDecoration(
