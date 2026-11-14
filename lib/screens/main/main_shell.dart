@@ -1,9 +1,14 @@
 
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/design_tokens.dart';
+import '../../config/app_routes.dart';
+import '../../providers/notification_provider.dart';
+import '../../widgets/brand_logo.dart';
 import '../dashboard/favorites_screen.dart';
 import '../home/home_screen.dart';
 import '../settings/settings_screen.dart';
@@ -19,6 +24,21 @@ class MainShell extends ConsumerStatefulWidget {
 
 class _MainShellState extends ConsumerState<MainShell> {
   int _selectedIndex = 0;
+  Timer? _notificationRefresh;
+
+  @override
+  void initState() {
+    super.initState();
+    _notificationRefresh = Timer.periodic(const Duration(minutes: 1), (_) {
+      ref.invalidate(notificationInboxProvider);
+    });
+  }
+
+  @override
+  void dispose() {
+    _notificationRefresh?.cancel();
+    super.dispose();
+  }
 
   late final List<Widget> _pages = [
     HomeScreen(onOpenStages: () => setState(() => _selectedIndex = 1)),
@@ -39,6 +59,42 @@ class _MainShellState extends ConsumerState<MainShell> {
         }
       },
       child: Scaffold(
+        appBar: AppBar(
+          title: const BrandLogo(width: 148, height: 44),
+          actions: [
+            IconButton(
+              tooltip: context.locale.languageCode == 'ar'
+                  ? 'الإشعارات' : 'Notifications',
+              onPressed: () async {
+                await Navigator.pushNamed(context, AppRoutes.notifications);
+                if (mounted) ref.invalidate(notificationInboxProvider);
+              },
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.notifications_none_rounded),
+                  if ((ref.watch(notificationInboxProvider).valueOrNull?.unreadCount ?? 0) > 0)
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: Container(
+                        height: 9,
+                        width: 9,
+                        decoration: BoxDecoration(
+                          color: AppColors.brandPink,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
         // Keep scrollable content above the floating bottom bar.
         extendBody: false,
         body: IndexedStack(index: _selectedIndex, children: _pages),
