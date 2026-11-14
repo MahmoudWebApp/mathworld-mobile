@@ -16,6 +16,7 @@ import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/premium_button.dart';
+import '../../widgets/student_badges_card.dart';
 import '../../widgets/rich_math_text.dart';
 
 /// Displays the user dashboard, progress summary, and learning shortcuts.
@@ -75,6 +76,8 @@ class HomeScreen extends ConsumerWidget {
                     child: _StatsGrid(journey: learningJourney.valueOrNull!),
                   ),
                 ],
+                const SizedBox(height: AppSpacing.xl),
+                const StudentBadgesCard(),
                 const SizedBox(height: AppSpacing.xl),
                 AnimatedEntry(
                   index: 2,
