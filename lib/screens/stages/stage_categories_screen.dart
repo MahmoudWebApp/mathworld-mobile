@@ -11,6 +11,7 @@ import '../../providers/categories_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/stages_provider.dart';
 import '../../providers/stage_category_access_provider.dart';
+import '../../utils/category_grid_layout.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
@@ -105,18 +106,15 @@ class StageCategoriesScreen extends ConsumerWidget {
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                // Category titles and progress must remain readable on
-                // 320–420px phones and with enlarged Arabic system text.
-                final enlargedText =
-                    MediaQuery.textScalerOf(context).scale(1) > 1.2;
-                final columns = constraints.maxWidth >= 1000
-                    ? 4
-                    : constraints.maxWidth >= 740
-                        ? 3
-                        : constraints.maxWidth >= 440 && !enlargedText
-                            ? 2
-                            : 1;
-                final extent = enlargedText ? 288.0 : columns == 1 ? 220.0 : 248.0;
+                final textScale = MediaQuery.textScalerOf(context).scale(1);
+                final columns = StageCategoryGridLayout.columns(
+                  constraints.maxWidth,
+                  textScale: textScale,
+                );
+                final extent = StageCategoryGridLayout.cardExtent(
+                  columns,
+                  textScale: textScale,
+                );
 
                 return GridView.builder(
                   padding: const EdgeInsets.fromLTRB(
