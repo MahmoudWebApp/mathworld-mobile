@@ -7,6 +7,7 @@ import '../core/network/api_client.dart';
 import '../models/user.dart';
 import '../repositories/auth_repository.dart';
 import '../services/google_identity_service.dart';
+import '../services/hive_service.dart';
 import 'categories_provider.dart';
 import 'dashboard_provider.dart';
 import 'learning_provider.dart';
@@ -203,6 +204,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
         error: appError,
       );
       throw appError;
+    }
+  }
+
+  /// Update the cached subscription only after a confirmed server-side
+  /// Premium gift redemption. The backend remains the source of truth.
+  Future<void> confirmPremiumGiftRedeemed() async {
+    final current = state.user;
+    if (current == null || !state.isAuthenticated) return;
+    final updated = current.copyWith(subscriptionType: 'Premium');
+    state = state.copyWith(user: updated);
+    try {
+      await HiveService.saveUser(updated.toCacheJson());
+    } catch (_) {
+      // The authenticated backend grant already succeeded; a local cache
+      // write failure must not incorrectly report redemption as failed.
     }
   }
 
