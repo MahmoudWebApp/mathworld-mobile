@@ -71,10 +71,27 @@ class StageCategoriesScreen extends ConsumerWidget {
             }
             final isPremium = premiumState?.valueOrNull ?? false;
             if (categories.isEmpty) {
-              return AppEmptyView(
-                icon: Icons.category_outlined,
-                title: 'no_categories'.tr(),
-                subtitle: 'no_categories_desc'.tr(),
+              return RefreshIndicator(
+                onRefresh: () => ref.refresh(stageCategoriesProvider(stage.id).future),
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  children: [
+                    AppEmptyView(
+                      icon: Icons.category_outlined,
+                      title: 'no_categories'.tr(),
+                      subtitle: 'no_categories_desc'.tr(),
+                      action: OutlinedButton.icon(
+                        onPressed: () {
+                          ref.invalidate(stageCategoriesProvider(stage.id));
+                          ref.invalidate(stageCategoryAccessProvider(stage.id));
+                        },
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: Text('retry'.tr()),
+                      ),
+                    ),
+                  ],
+                ),
               );
             }
 
@@ -117,6 +134,7 @@ class StageCategoriesScreen extends ConsumerWidget {
                 );
 
                 return GridView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.lg,
                     AppSpacing.md,
