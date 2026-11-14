@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -117,6 +119,7 @@ class _PremiumGiftRedeemScreenState
                     controller: _controller,
                     maxLength: 100,
                     textCapitalization: TextCapitalization.characters,
+                    textDirection: ui.TextDirection.ltr,
                     textAlign: TextAlign.left,
                     autocorrect: false,
                     enableSuggestions: false,
