@@ -68,7 +68,9 @@ bool isValidGeometryScene(Map<String, dynamic> scene) {
             !points.every((p) => p is Map && finite(p['x']) && finite(p['y']))) { return false; }
       case 'angle':
         if (!coords(['cx','cy','startDegrees','endDegrees']) ||
-            !finite(value['radius'], positive: true)) { return false; }
+            !finite(value['radius'], positive: true) ||
+            (value['endDegrees'] - value['startDegrees']).abs() == 0 ||
+            (value['endDegrees'] - value['startDegrees']).abs() >= 360) { return false; }
       case 'axes':
         if (!coords(['originX','originY']) ||
             !finite(value['xLength'], positive: true) ||
