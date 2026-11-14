@@ -149,6 +149,23 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+            if (currentUser?.role == 'Student')
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: ListTile(
+                  leading: const Icon(Icons.bar_chart_rounded),
+                  title: Text(context.locale.languageCode == 'ar'
+                      ? 'تقريري الشخصي (Premium)'
+                      : 'My progress report (Premium)'),
+                  subtitle: Text(context.locale.languageCode == 'ar'
+                      ? 'إحصائيات المحاولات والنقاط والفئات'
+                      : 'Attempts, points and category progress'),
+                  trailing: LayoutUtils.forwardIcon(context),
+                  onTap: () => Navigator.pushNamed(
+                    context, AppRoutes.premiumAnalytics,
+                  ),
+                ),
+              ),
             const SizedBox(height: 24),
             if (GoogleIdentityService.available) ...[
               GlassCard(
