@@ -133,7 +133,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        entry.displayName,
+                                        entry.isCurrentUser
+                                            ? (isArabic ? 'أنت' : 'You')
+                                            : (isArabic
+                                                ? 'طالب #${entry.rank}'
+                                                : 'Learner #${entry.rank}'),
                                         style: TextStyle(
                                           fontWeight: entry.isCurrentUser
                                               ? FontWeight.w800
