@@ -203,11 +203,16 @@ class _ReportBody extends ConsumerWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: metrics.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                // Single column on very small phones or with enlarged text:
+                // prevent Arabic metric labels from overflowing the card.
+                crossAxisCount: MediaQuery.sizeOf(context).width < 390 ||
+                        MediaQuery.textScalerOf(context).scale(1) > 1.25
+                    ? 1
+                    : 2,
                 mainAxisSpacing: AppSpacing.md,
                 crossAxisSpacing: AppSpacing.md,
-                childAspectRatio: 1.35,
+                mainAxisExtent: 166,
               ),
               itemBuilder: (context, index) {
                 final stat = metrics[index];
@@ -220,7 +225,12 @@ class _ReportBody extends ConsumerWidget {
                       const SizedBox(height: AppSpacing.sm),
                       Text('${stat.$2}', style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(fontWeight: FontWeight.w800)),
-                      Text(stat.$1, style: Theme.of(context).textTheme.bodySmall),
+                      Text(
+                        stat.$1,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     ],
                   ),
                 );
