@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets/branding/mathworld-mark.png"
 IOS = ROOT / "ios/Runner/Assets.xcassets/AppIcon.appiconset"
 WEB = ROOT / "web"
+ANDROID = ROOT / "android/app/src/main/res"
 SCALE = 1024
 
 def source_mark() -> Image.Image:
@@ -65,6 +66,18 @@ def save(image: Image.Image,path:Path,px:int):
     img.save(path,"PNG",optimize=True)
     print(f"BRAND_ICON_GENERATED|{path.relative_to(ROOT)}|{px}x{px}",flush=True)
 
+def transparent_square(mark: Image.Image, fraction: float) -> Image.Image:
+    """Retain the approved symbol and leave surrounding pixels transparent."""
+    if not (0.1 <= fraction <= 0.8):
+        raise ValueError("Invalid icon content fraction")
+    image=Image.new("RGBA",(SCALE,SCALE),(0,0,0,0))
+    maximum=round(SCALE*fraction)
+    scale=min(maximum/mark.width,maximum/mark.height)
+    size=(round(mark.width*scale),round(mark.height*scale))
+    symbol=mark.resize(size,Image.Resampling.LANCZOS)
+    image.alpha_composite(symbol,((SCALE-size[0])//2,(SCALE-size[1])//2))
+    return image
+
 def native_launch_image(mark: Image.Image) -> Image.Image:
     """iOS native startup before Flutter draws; retains unchanged symbol."""
     width,height=504,555  # 3x of storyboard's 168x185 launch asset
@@ -90,6 +103,22 @@ def main():
     mark=source_mark()
     regular=master(mark,0.72)
     maskable=master(mark,0.56)
+    # Adaptive icons need the symbol entirely INSIDE the central launcher
+    # safe area. The background remains the native MathWorld purple layer.
+    adaptive=transparent_square(mark,0.52)
+    save(adaptive,ANDROID/"drawable-nodpi/mathworld_adaptive_foreground.png",432)
+    save(adaptive,ANDROID/"drawable-nodpi/ic_launcher_foreground.png",432)
+    legacy=transparent_square(mark,0.74)
+    for folder,px in (
+        ("mipmap-mdpi",48),("mipmap-hdpi",72),
+        ("mipmap-xhdpi",96),("mipmap-xxhdpi",144),
+        ("mipmap-xxxhdpi",192),
+    ):
+        for name in ("ic_launcher.png","ic_launcher_round.png"):
+            save(legacy,ANDROID/folder/name,px)
+    # Android's drawable/launch_background.xml paints purple behind this
+    # centered transparent image. The old launch_image.png had BLACK corners.
+    save(transparent_square(mark,0.72),ANDROID/"drawable-nodpi/launch_image.png",300)
     manifest=json.loads((IOS/"Contents.json").read_text(encoding="utf-8"))
     items=manifest.get("images",[])
     emitted=set()
