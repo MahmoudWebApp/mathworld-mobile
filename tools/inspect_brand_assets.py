@@ -37,6 +37,7 @@ def summarize(label: str, path: Path) -> dict:
         # or downloadable production assets.
         print(f"BRAND_PREVIEW|{label}|{preview}", flush=True)
         opaque_black_corners = sum(1 for r,g,b,a in corners if a >= 250 and max(r,g,b) < 42)
+        alpha_bounds = img.getchannel("A").getbbox()
         return {
             "name":label, "path":str(path.relative_to(ROOT)), "width":width,
             "height":height, "sourceMode":source.mode,
@@ -44,6 +45,12 @@ def summarize(label: str, path: Path) -> dict:
             "cornerRgba":[list(p) for p in corners],
             "opaqueDarkCorners":opaque_black_corners,
             "hasTransparentCorner":any(a < 32 for _,_,_,a in corners),
+            "alphaBounds":list(alpha_bounds) if alpha_bounds else None,
+            "alphaExtentFraction": (
+                round(max(alpha_bounds[2]-alpha_bounds[0],
+                          alpha_bounds[3]-alpha_bounds[1])/max(width,height),3)
+                if alpha_bounds else 0
+            ),
         }
 
 def main():
