@@ -139,6 +139,7 @@ class StageCategoriesScreen extends ConsumerWidget {
                       localeCode: localeCode,
                       stageId: stage.id,
                       locked: user?.role == 'Student' && !isPremium && !access.freeCategoryIds.contains(category.id),
+                      freeCategory: access.freeCategoryIds.contains(category.id),
                     );
                   },
                 );
@@ -207,12 +208,14 @@ class _CategoryCard extends StatelessWidget {
   final String localeCode;
   final int stageId;
   final bool locked;
+  final bool freeCategory;
 
   const _CategoryCard({
     required this.category,
     required this.localeCode,
     required this.stageId,
     required this.locked,
+    required this.freeCategory,
   });
 
   @override
@@ -277,13 +280,18 @@ class _CategoryCard extends StatelessWidget {
             child: _categoryIcon(accent),
           ),
           const Spacer(),
-          if (locked) ...[
+          if (locked || freeCategory) ...[
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.lock_outline, size: 15, color: accent),
+                Icon(
+                  locked ? Icons.lock_outline : Icons.lock_open_rounded,
+                  size: 15,
+                  color: accent,
+                ),
                 const SizedBox(width: AppSpacing.xs),
-                Text('Premium',
+                Text(
+                  locked ? 'Premium' : (localeCode == 'ar' ? 'مجاني' : 'Free'),
                     style: TextStyle(
                       fontSize: 12,
                       color: accent,
