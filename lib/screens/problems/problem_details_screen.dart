@@ -614,7 +614,8 @@ class _LearningPill extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: color),
           const SizedBox(width: 6),
-          Flexible(
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 220),
             child: Text(
               label,
               maxLines: 2,
