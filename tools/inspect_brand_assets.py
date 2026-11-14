@@ -19,6 +19,7 @@ ASSETS = {
     "android-launcher-mdpi": "android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
     "android-launcher-xxxhdpi": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
     "ios-app-icon-1024": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png",
+    "ios-native-launch-3x": "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png",
     "flutter-web-icon-512": "web/icons/Icon-512.png",
     "flutter-web-maskable-512": "web/icons/Icon-maskable-512.png",
 }
@@ -62,13 +63,16 @@ def main():
     if missing:
         raise SystemExit("Missing external launcher/Flutter icon assets: "+", ".join(missing))
     for item in results:
-        if item["name"] in ("flutter-mark", "android-adaptive-foreground"):
+        if item["name"] in ("flutter-mark", "android-adaptive-foreground", "ios-native-launch-3x"):
             if not item["hasTransparentCorner"]:
                 raise SystemExit("Expected transparent approved mark: "+item["name"])
         if item["name"] in ("ios-app-icon-1024", "flutter-web-icon-512", "flutter-web-maskable-512"):
             if item["opaqueDarkCorners"] > 0 or item["hasTransparentCorner"]:
                 raise SystemExit("Expected opaque lavender/pink (NOT black) icon corners: "+item["name"])
-    print("PASS: iOS and Web app icons have no black matte; Android and Flutter marks retain transparency")
+    native_launch=next(x for x in results if x["name"] == "ios-native-launch-3x")
+    if (native_launch["width"],native_launch["height"]) != (504,555):
+        raise SystemExit("Native iOS splash image must be 504x555 pixels at 3x")
+    print("PASS: iOS/PWA icons have no black matte; iOS native splash and Flutter marks retain transparency")
 
 if __name__=="__main__":
     main()
