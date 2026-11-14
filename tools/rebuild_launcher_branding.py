@@ -8,10 +8,9 @@ light MathWorld lavender/pink background for platforms requiring one.
 from __future__ import annotations
 
 import json
-import math
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets/branding/mathworld-mark.png"
@@ -66,6 +65,27 @@ def save(image: Image.Image,path:Path,px:int):
     img.save(path,"PNG",optimize=True)
     print(f"BRAND_ICON_GENERATED|{path.relative_to(ROOT)}|{px}x{px}",flush=True)
 
+def native_launch_image(mark: Image.Image) -> Image.Image:
+    """iOS native startup before Flutter draws; retains unchanged symbol."""
+    width,height=504,555  # 3x of storyboard's 168x185 launch asset
+    image=Image.new("RGBA",(width,height),(0,0,0,0))
+    draw=ImageDraw.Draw(image)
+    side=460
+    x,y=(width-side)//2,(height-side)//2
+    draw.rounded_rectangle(
+        (x,y,x+side,y+side),
+        radius=94,
+        fill=(250,248,255,255),
+        outline=(221,202,243,255),
+        width=4,
+    )
+    target=362
+    scale=min(target/mark.width,target/mark.height)
+    size=(round(mark.width*scale),round(mark.height*scale))
+    symbol=mark.resize(size,Image.Resampling.LANCZOS)
+    image.alpha_composite(symbol,((width-size[0])//2,(height-size[1])//2))
+    return image
+
 def main():
     mark=source_mark()
     regular=master(mark,0.72)
@@ -94,6 +114,17 @@ def main():
     save(regular,WEB/"icons/Icon-512.png",512)
     save(maskable,WEB/"icons/Icon-maskable-192.png",192)
     save(maskable,WEB/"icons/Icon-maskable-512.png",512)
+    launch=native_launch_image(mark)
+    launch_dir=ROOT/"ios/Runner/Assets.xcassets/LaunchImage.imageset"
+    for scale in (1,2,3):
+        suffix="" if scale==1 else f"@{scale}x"
+        target=launch_dir/f"LaunchImage{suffix}.png"
+        resolution=(168*scale,185*scale)
+        output=launch.resize(resolution,Image.Resampling.LANCZOS)
+        target.parent.mkdir(parents=True,exist_ok=True)
+        output.save(target,"PNG",optimize=True)
+        print(f"BRAND_LAUNCH_GENERATED|{target.relative_to(ROOT)}|{resolution}",flush=True)
+
     # Verify no opaque black corner survives, and iOS icons have no alpha.
     for path in [IOS/"Icon-App-1024x1024@1x.png",WEB/"icons/Icon-512.png"]:
         img=Image.open(path).convert("RGB")
