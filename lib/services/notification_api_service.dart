@@ -40,20 +40,34 @@ class UserNotice {
 }
 
 class NotificationInbox {
-  const NotificationInbox({required this.items, required this.unreadCount});
+  const NotificationInbox({
+    required this.items,
+    required this.unreadCount,
+    required this.totalCount,
+    required this.hasMore,
+    required this.skip,
+  });
 
   final List<UserNotice> items;
   final int unreadCount;
+  final int totalCount;
+  final bool hasMore;
+  final int skip;
 
-  factory NotificationInbox.fromJson(Map<String, dynamic> json) =>
-      NotificationInbox(
-        items: (json['Items'] as List<dynamic>? ?? const [])
-            .map((item) => UserNotice.fromJson(
-                  Map<String, dynamic>.from(item as Map),
-                ))
-            .toList(growable: false),
-        unreadCount: (json['UnreadCount'] as num?)?.toInt() ?? 0,
-      );
+  factory NotificationInbox.fromJson(Map<String, dynamic> json) {
+    final items = (json['Items'] as List<dynamic>? ?? const [])
+        .map((item) => UserNotice.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ))
+        .toList(growable: false);
+    return NotificationInbox(
+      items: items,
+      unreadCount: (json['UnreadCount'] as num?)?.toInt() ?? 0,
+      totalCount: (json['TotalCount'] as num?)?.toInt() ?? items.length,
+      hasMore: json['HasMore'] as bool? ?? false,
+      skip: (json['Skip'] as num?)?.toInt() ?? 0,
+    );
+  }
 }
 
 /// Same authenticated 30-day inbox as Next.js, with no fabricated messages.
@@ -62,8 +76,14 @@ class NotificationApiService {
 
   final ApiClient _client;
 
-  Future<NotificationInbox> getInbox() async {
-    final response = await _client.get('/notifications', queryParameters: {'take': 30});
+  Future<NotificationInbox> getInbox({int take = 30, int skip = 0}) async {
+    if (take < 1 || take > 50 || skip < 0 || skip > 10000) {
+      throw ArgumentError('Invalid inbox pagination');
+    }
+    final response = await _client.get('/notifications', queryParameters: {
+      'take': take,
+      'skip': skip,
+    });
     final envelope = Map<String, dynamic>.from(response.data as Map);
     return NotificationInbox.fromJson(
       Map<String, dynamic>.from(envelope['Data'] as Map),
