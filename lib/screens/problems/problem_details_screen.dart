@@ -193,6 +193,7 @@ class _ProblemContent extends ConsumerWidget {
             problemId: problem.id,
             service: PremiumApiService(ApiService()),
             isArabic: isArabic,
+            options: problem.options,
           ),
         ],
         const SizedBox(height: AppSpacing.xl),
