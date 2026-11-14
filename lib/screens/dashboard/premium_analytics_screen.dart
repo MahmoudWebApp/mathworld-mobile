@@ -1,6 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:cross_file/cross_file.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/design_tokens.dart';
@@ -116,7 +121,15 @@ class _ReportBody extends ConsumerWidget {
           c.awardedPoints, c.timeSpentSeconds,
         ],
     ];
-    return rows.map((row) => row.map(_csvCell).join(',')).join('\r\n');
+    final total = <Object?>[
+      'TOTAL', '', '', '', '', '',
+      report.attemptedProblems, report.solvedProblems,
+      report.categories.fold<int>(0, (sum, c) => sum + c.errorNotebookProblems),
+      report.attempts, report.correctAttempts, report.incorrectAttempts,
+      report.firstTryCorrect, report.awardedPoints, report.timeSpentSeconds,
+    ];
+    rows.add(total);
+    return rows.map((row) => row.map(_csvCell).join(',')).join('\r\n') + '\r\n';
   }
 
   @override
@@ -248,12 +261,44 @@ class _ReportBody extends ConsumerWidget {
             const SizedBox(height: AppSpacing.lg),
             OutlinedButton.icon(
               onPressed: () async {
+                final bytes = Uint8List.fromList([
+                  0xEF, 0xBB, 0xBF, ...utf8.encode(_csv()),
+                ]);
+                try {
+                  final origin = context.findRenderObject() as RenderBox?;
+                  await SharePlus.instance.share(
+                    ShareParams(
+                      files: [
+                        XFile.fromData(bytes, mimeType: 'text/csv'),
+                      ],
+                      fileNameOverrides: const ['mathworld-premium-report.csv'],
+                      subject: ar ? 'تقرير MathWorld' : 'MathWorld report',
+                      sharePositionOrigin: origin == null
+                          ? null
+                          : origin.localToGlobal(Offset.zero) & origin.size,
+                    ),
+                  );
+                } catch (_) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(ar
+                        ? 'تعذّر مشاركة الملف. يمكنك نسخ البيانات بدلاً منها.'
+                        : 'Unable to share the CSV file. Try copying the table.')),
+                  );
+                }
+              },
+              icon: const Icon(Icons.ios_share_rounded),
+              label: Text(ar ? 'مشاركة ملف CSV / Excel' : 'Share Excel-ready CSV file'),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            OutlinedButton.icon(
+              onPressed: () async {
                 await Clipboard.setData(ClipboardData(text: _csv()));
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text(ar
-                      ? 'تم نسخ جدول CSV؛ يمكن لصقه في برنامج جداول.'
-                      : 'CSV table copied; paste it into a spreadsheet app.')),
+                      ? 'تم نسخ جدول CSV؛ يمكنك لصقه في برنامج جداول.'
+                      : 'CSV copied; paste it into your spreadsheet app.')),
                 );
               },
               icon: const Icon(Icons.content_copy_rounded),
@@ -263,8 +308,8 @@ class _ReportBody extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Text(
                 ar
-                    ? 'تنزيل ملف Excel والطباعة إلى PDF متاحان من موقع MathWorld حالياً. نسخ CSV على الجوال لا يحفظ ملفاً.'
-                    : 'Downloadable CSV and print-to-PDF are available on MathWorld Web. Copying mobile CSV does not create a file.',
+                    ? 'يمكنك الآن مشاركة ملف CSV من الجوال وفتحه في Excel؛ إصدار PDF يبقى متاحاً من المتصفح عبر الطباعة.'
+                    : 'You can now share a CSV file from the app and open it in Excel. Save-as-PDF is available from the Web print view.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
