@@ -61,6 +61,14 @@ def main():
     },ensure_ascii=False),flush=True)
     if missing:
         raise SystemExit("Missing external launcher/Flutter icon assets: "+", ".join(missing))
+    for item in results:
+        if item["name"] in ("flutter-mark", "android-adaptive-foreground"):
+            if not item["hasTransparentCorner"]:
+                raise SystemExit("Expected transparent approved mark: "+item["name"])
+        if item["name"] in ("ios-app-icon-1024", "flutter-web-icon-512", "flutter-web-maskable-512"):
+            if item["opaqueDarkCorners"] > 0 or item["hasTransparentCorner"]:
+                raise SystemExit("Expected opaque lavender/pink (NOT black) icon corners: "+item["name"])
+    print("PASS: iOS and Web app icons have no black matte; Android and Flutter marks retain transparency")
 
 if __name__=="__main__":
     main()
