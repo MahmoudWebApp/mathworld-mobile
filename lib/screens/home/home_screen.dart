@@ -484,7 +484,7 @@ class _LearningJourneyCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           if (const bool.fromEnvironment(
             'MATHWORLD_LEADERBOARD_ENABLED',
-            defaultValue: false,
+            defaultValue: true,
           ))
             OutlinedButton.icon(
             onPressed: () => Navigator.pushNamed(context, AppRoutes.leaderboard),
