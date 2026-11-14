@@ -105,11 +105,18 @@ class StageCategoriesScreen extends ConsumerWidget {
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                final columns = constraints.maxWidth >= 900
+                // Category titles and progress must remain readable on
+                // 320–420px phones and with enlarged Arabic system text.
+                final enlargedText =
+                    MediaQuery.textScalerOf(context).scale(1) > 1.2;
+                final columns = constraints.maxWidth >= 1000
                     ? 4
-                    : constraints.maxWidth >= 620
+                    : constraints.maxWidth >= 740
                         ? 3
-                        : 2;
+                        : constraints.maxWidth >= 440 && !enlargedText
+                            ? 2
+                            : 1;
+                final extent = enlargedText ? 288.0 : columns == 1 ? 220.0 : 248.0;
 
                 return GridView.builder(
                   padding: const EdgeInsets.fromLTRB(
@@ -122,7 +129,7 @@ class StageCategoriesScreen extends ConsumerWidget {
                     crossAxisCount: columns,
                     mainAxisSpacing: AppSpacing.lg,
                     crossAxisSpacing: AppSpacing.lg,
-                    mainAxisExtent: 215,
+                    mainAxisExtent: extent,
                   ),
                   itemCount: categories.length,
                   itemBuilder: (context, index) {
@@ -220,9 +227,24 @@ class _CategoryCard extends StatelessWidget {
       onTap: locked ? () => showDialog<void>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: Text(localeCode == 'ar' ? 'فئة مقفلة' : 'Locked category'),
-          content: Text(localeCode == 'ar' ? 'هذه الفئة متاحة مع Premium. الدفع الإلكتروني غير متاح حالياً.' : 'This category requires Premium. Online checkout is not available yet.'),
-          actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(localeCode == 'ar' ? 'حسناً' : 'OK'))],
+          title: Text(localeCode == 'ar' ? 'فئة Premium' : 'Premium category'),
+          content: Text(localeCode == 'ar'
+              ? 'الحساب المجاني بيحل مسائل بلا حد ضمن الفئتين المفتوحتين من كل مرحلة. هاي الفئة بحاجة Premium؛ الدفع الإلكتروني غير مفعّل حالياً، وفيك تستخدم كود هدية.'
+              : 'Free learners can solve unlimited questions in the two unlocked categories of each stage. This category needs Premium. Checkout is not live; you can redeem a gift code.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(localeCode == 'ar' ? 'رجوع' : 'Back'),
+            ),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                Navigator.pushNamed(context, AppRoutes.premiumGiftRedeem);
+              },
+              icon: const Icon(Icons.card_giftcard_rounded),
+              label: Text(localeCode == 'ar' ? 'تفعيل كود هدية' : 'Redeem a gift'),
+            ),
+          ],
         ),
       ) : () => Navigator.pushNamed(
         context,
@@ -252,13 +274,23 @@ class _CategoryCard extends StatelessWidget {
                 color: accent.withValues(alpha: isDark ? 0.34 : 0.23),
               ),
             ),
-            child: category.icon != null && category.icon!.trim().isNotEmpty
-                ? Text(category.icon!, style: const TextStyle(fontSize: 25))
-                : Icon(Icons.calculate_outlined, color: accent, size: 26),
+            child: _categoryIcon(accent),
           ),
           const Spacer(),
           if (locked) ...[
-            const Icon(Icons.lock_outline, size: 20),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.lock_outline, size: 15, color: accent),
+                const SizedBox(width: AppSpacing.xs),
+                Text('Premium',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: accent,
+                      fontWeight: FontWeight.w800,
+                    )),
+              ],
+            ),
             const SizedBox(height: AppSpacing.xs),
           ],
           Text(
@@ -317,6 +349,11 @@ class _CategoryCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(99),
               child: LinearProgressIndicator(
+                semanticsLabel: localeCode == 'ar'
+                    ? 'تقدم $title'
+                    : '$title progress',
+                semanticsValue:
+                    '${(category.progress! * 100).round()}%',
                 value: category.progress,
                 minHeight: 6,
                 backgroundColor: accent.withValues(alpha: 0.10),
@@ -327,6 +364,29 @@ class _CategoryCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _categoryIcon(Color accent) {
+    final value = category.icon?.trim() ?? '';
+    if (value.startsWith('https://')) {
+      return Image.network(
+        value,
+        width: 30,
+        height: 30,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) =>
+            Icon(Icons.calculate_outlined, color: accent, size: 26),
+      );
+    }
+    // The API may return an asset path or URL instead of a glyph.
+    // Never display a long raw URL or path over the category card.
+    if (value.isNotEmpty &&
+        value.runes.length <= 4 &&
+        !value.contains('/') &&
+        !value.contains('\\')) {
+      return Text(value, style: const TextStyle(fontSize: 25));
+    }
+    return Icon(Icons.calculate_outlined, color: accent, size: 26);
   }
 
   Color _categoryColor(int value) {
