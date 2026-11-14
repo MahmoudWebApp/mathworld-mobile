@@ -317,7 +317,12 @@ class _StatsGrid extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 720 ? 4 : 2;
+        // Small phones and large accessibility text need room for Arabic labels.
+        final columns = constraints.maxWidth >= 720
+            ? 4
+            : constraints.maxWidth < 350
+                ? 1
+                : 2;
         final width =
             (constraints.maxWidth - AppSpacing.md * (columns - 1)) / columns;
         return Wrap(
@@ -449,15 +454,23 @@ class _LearningJourneyCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: AppSpacing.lg),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('stage_completion'.tr()),
+              Expanded(
+                child: Text(
+                  'stage_completion'.tr(),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
               Text('${journey.completionPercent}%',
                   style: TextStyle(fontWeight: FontWeight.bold, color: color)),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
           LinearProgressIndicator(
+            semanticsLabel: 'stage_completion'.tr(),
+            semanticsValue: '${journey.completionPercent}%',
             value: journey.completionPercent.clamp(0, 100) / 100,
             minHeight: 8,
             borderRadius: BorderRadius.circular(20),
