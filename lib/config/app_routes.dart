@@ -5,10 +5,13 @@ import '../screens/auth/register_screen.dart';
 import '../screens/dashboard/error_notebook_screen.dart';
 import '../screens/dashboard/solved_screen.dart';
 import '../screens/dashboard/leaderboard_screen.dart';
+import '../screens/dashboard/premium_analytics_screen.dart';
 import '../screens/main/main_shell.dart';
+import '../screens/notifications/notifications_screen.dart';
 import '../screens/problems/problem_details_screen.dart';
 import '../screens/problems/problems_list_screen.dart';
 import '../screens/settings/privacy_screen.dart';
+import '../screens/settings/premium_gift_redeem_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/stages/stage_categories_screen.dart';
 import '../screens/stages/learning_stage_screen.dart';
@@ -27,6 +30,9 @@ class AppRoutes {
   static const String problems = '/problems';
   static const String problemDetails = '/problem-details';
   static const String privacy = '/privacy';
+  static const String notifications = '/notifications';
+  static const String premiumAnalytics = '/premium-analytics';
+  static const String premiumGiftRedeem = '/premium-gift-redeem';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -42,6 +48,9 @@ class AppRoutes {
       problems: (_) => const ProblemsListScreen(),
       problemDetails: (_) => const ProblemDetailsScreen(),
       privacy: (_) => const PrivacyScreen(),
+      notifications: (_) => const NotificationsScreen(),
+      premiumAnalytics: (_) => const PremiumAnalyticsScreen(),
+      premiumGiftRedeem: (_) => const PremiumGiftRedeemScreen(),
     };
   }
 }

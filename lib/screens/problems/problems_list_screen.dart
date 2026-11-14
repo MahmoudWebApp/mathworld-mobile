@@ -88,6 +88,7 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                 controller: _searchController,
                 hintText: 'search_placeholder'.tr(),
                 leading: const Icon(Icons.search_rounded),
+                elevation: const WidgetStatePropertyAll(0),
                 trailing: [
                   if (_searchController.text.isNotEmpty)
                     IconButton(
@@ -116,9 +117,45 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                 ),
                 data: (result) {
                   if (result.problems.isEmpty) {
-                    return AppEmptyView(
-                      icon: Icons.search_off_rounded,
-                      title: 'no_results'.tr(),
+                    // An empty page must still support pull-to-refresh and
+                    // an accessible clear-search action on small devices.
+                    return RefreshIndicator(
+                      onRefresh: () => ref.refresh(
+                        problemsProvider(parameters).future,
+                      ),
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            child: AppEmptyView(
+                              icon: Icons.search_off_rounded,
+                              title: 'no_results'.tr(),
+                              subtitle: _query == null
+                                  ? null
+                                  : context.locale.languageCode == 'ar'
+                                      ? 'جرّب كلمة بحث أخرى أو امسح البحث لعرض المسائل.'
+                                      : 'Try another term or clear search to browse problems.',
+                              action: _query == null
+                                  ? null
+                                  : OutlinedButton.icon(
+                                      onPressed: () {
+                                        _debounce?.cancel();
+                                        _searchController.clear();
+                                        setState(() {
+                                          _query = null;
+                                          _page = 1;
+                                        });
+                                      },
+                                      icon: const Icon(Icons.close_rounded),
+                                      label: Text(context.locale.languageCode == 'ar'
+                                          ? 'مسح البحث'
+                                          : 'Clear search'),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   }
 

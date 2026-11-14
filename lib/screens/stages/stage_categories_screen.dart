@@ -10,6 +10,8 @@ import '../../models/stage.dart';
 import '../../providers/categories_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/stages_provider.dart';
+import '../../providers/stage_category_access_provider.dart';
+import '../../utils/category_grid_layout.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
@@ -33,6 +35,11 @@ class StageCategoriesScreen extends ConsumerWidget {
 
     final stage = arguments;
     final categoriesState = ref.watch(stageCategoriesProvider(stage.id));
+    final accessState = ref.watch(stageCategoryAccessProvider(stage.id));
+    final user = ref.watch(authProvider.select((state) => state.user));
+    final premiumState = user?.role == 'Student'
+        ? ref.watch(studentPremiumProvider)
+        : null;
     final localeCode = context.locale.languageCode;
 
     final content = MathBackground(
@@ -45,11 +52,46 @@ class StageCategoriesScreen extends ConsumerWidget {
             ),
           ),
           data: (categories) {
+            if (accessState.isLoading || (premiumState?.isLoading ?? false)) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (accessState.hasError || (premiumState?.hasError ?? false)) {
+              return AppErrorView(
+                onRetry: () {
+                  ref.invalidate(stageCategoryAccessProvider(stage.id));
+                  ref.invalidate(studentPremiumProvider);
+                },
+              );
+            }
+            final access = accessState.valueOrNull;
+            if (access == null) {
+              return AppErrorView(
+                onRetry: () => ref.invalidate(stageCategoryAccessProvider(stage.id)),
+              );
+            }
+            final isPremium = premiumState?.valueOrNull ?? false;
             if (categories.isEmpty) {
-              return AppEmptyView(
-                icon: Icons.category_outlined,
-                title: 'no_categories'.tr(),
-                subtitle: 'no_categories_desc'.tr(),
+              return RefreshIndicator(
+                onRefresh: () => ref.refresh(stageCategoriesProvider(stage.id).future),
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  children: [
+                    AppEmptyView(
+                      icon: Icons.category_outlined,
+                      title: 'no_categories'.tr(),
+                      subtitle: 'no_categories_desc'.tr(),
+                      action: OutlinedButton.icon(
+                        onPressed: () {
+                          ref.invalidate(stageCategoriesProvider(stage.id));
+                          ref.invalidate(stageCategoryAccessProvider(stage.id));
+                        },
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: Text('retry'.tr()),
+                      ),
+                    ),
+                  ],
+                ),
               );
             }
 
@@ -81,13 +123,18 @@ class StageCategoriesScreen extends ConsumerWidget {
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                final columns = constraints.maxWidth >= 900
-                    ? 4
-                    : constraints.maxWidth >= 620
-                        ? 3
-                        : 2;
+                final textScale = MediaQuery.textScalerOf(context).scale(1);
+                final columns = StageCategoryGridLayout.columns(
+                  constraints.maxWidth,
+                  textScale: textScale,
+                );
+                final extent = StageCategoryGridLayout.cardExtent(
+                  columns,
+                  textScale: textScale,
+                );
 
                 return GridView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.lg,
                     AppSpacing.md,
@@ -98,7 +145,7 @@ class StageCategoriesScreen extends ConsumerWidget {
                     crossAxisCount: columns,
                     mainAxisSpacing: AppSpacing.lg,
                     crossAxisSpacing: AppSpacing.lg,
-                    mainAxisExtent: 215,
+                    mainAxisExtent: extent,
                   ),
                   itemCount: categories.length,
                   itemBuilder: (context, index) {
@@ -107,6 +154,8 @@ class StageCategoriesScreen extends ConsumerWidget {
                       category: category,
                       localeCode: localeCode,
                       stageId: stage.id,
+                      locked: user?.role == 'Student' && !isPremium && !access.freeCategoryIds.contains(category.id),
+                      freeCategory: access.freeCategoryIds.contains(category.id),
                     );
                   },
                 );
@@ -174,11 +223,15 @@ class _CategoryCard extends StatelessWidget {
   final Category category;
   final String localeCode;
   final int stageId;
+  final bool locked;
+  final bool freeCategory;
 
   const _CategoryCard({
     required this.category,
     required this.localeCode,
     required this.stageId,
+    required this.locked,
+    required this.freeCategory,
   });
 
   @override
@@ -190,7 +243,29 @@ class _CategoryCard extends StatelessWidget {
     final mutedColor = isDark ? AppColors.darkMuted : AppColors.lightMuted;
 
     return GlassCard(
-      onTap: () => Navigator.pushNamed(
+      onTap: locked ? () => showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(localeCode == 'ar' ? 'فئة Premium' : 'Premium category'),
+          content: Text(localeCode == 'ar'
+              ? 'الحساب المجاني بيحل مسائل بلا حد ضمن الفئتين المفتوحتين من كل مرحلة. هاي الفئة بحاجة Premium؛ الدفع الإلكتروني غير مفعّل حالياً، وفيك تستخدم كود هدية.'
+              : 'Free learners can solve unlimited questions in the two unlocked categories of each stage. This category needs Premium. Checkout is not live; you can redeem a gift code.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(localeCode == 'ar' ? 'رجوع' : 'Back'),
+            ),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                Navigator.pushNamed(context, AppRoutes.premiumGiftRedeem);
+              },
+              icon: const Icon(Icons.card_giftcard_rounded),
+              label: Text(localeCode == 'ar' ? 'تفعيل كود هدية' : 'Redeem a gift'),
+            ),
+          ],
+        ),
+      ) : () => Navigator.pushNamed(
         context,
         AppRoutes.problems,
         arguments: {
@@ -218,11 +293,30 @@ class _CategoryCard extends StatelessWidget {
                 color: accent.withValues(alpha: isDark ? 0.34 : 0.23),
               ),
             ),
-            child: category.icon != null && category.icon!.trim().isNotEmpty
-                ? Text(category.icon!, style: const TextStyle(fontSize: 25))
-                : Icon(Icons.calculate_outlined, color: accent, size: 26),
+            child: _categoryIcon(accent),
           ),
           const Spacer(),
+          if (locked || freeCategory) ...[
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  locked ? Icons.lock_outline : Icons.lock_open_rounded,
+                  size: 15,
+                  color: accent,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  locked ? 'Premium' : (localeCode == 'ar' ? 'مجاني' : 'Free'),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: accent,
+                      fontWeight: FontWeight.w800,
+                    )),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+          ],
           Text(
             title,
             maxLines: 3,
@@ -279,6 +373,11 @@ class _CategoryCard extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(99),
               child: LinearProgressIndicator(
+                semanticsLabel: localeCode == 'ar'
+                    ? 'تقدم $title'
+                    : '$title progress',
+                semanticsValue:
+                    '${(category.progress! * 100).round()}%',
                 value: category.progress,
                 minHeight: 6,
                 backgroundColor: accent.withValues(alpha: 0.10),
@@ -289,6 +388,29 @@ class _CategoryCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _categoryIcon(Color accent) {
+    final value = category.icon?.trim() ?? '';
+    if (value.startsWith('https://')) {
+      return Image.network(
+        value,
+        width: 30,
+        height: 30,
+        fit: BoxFit.contain,
+        errorBuilder: (_, __, ___) =>
+            Icon(Icons.calculate_outlined, color: accent, size: 26),
+      );
+    }
+    // The API may return an asset path or URL instead of a glyph.
+    // Never display a long raw URL or path over the category card.
+    if (value.isNotEmpty &&
+        value.runes.length <= 4 &&
+        !value.contains('/') &&
+        !value.contains('\\')) {
+      return Text(value, style: const TextStyle(fontSize: 25));
+    }
+    return Icon(Icons.calculate_outlined, color: accent, size: 26);
   }
 
   Color _categoryColor(int value) {

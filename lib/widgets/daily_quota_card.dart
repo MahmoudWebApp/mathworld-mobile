@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/design_tokens.dart';
-import '../models/stage_daily_quota.dart';
-import '../providers/stage_daily_quota_provider.dart';
+import '../providers/stage_category_access_provider.dart';
 import 'glass_card.dart';
 
-/// Same backend quota shown on Web and mobile; no client-side calculations.
+/// Compatibility widget kept for existing imports.
+/// Free learners have unlimited attempts within two stage categories.
+/// Never fetch or enforce the legacy 10-questions-per-day counter.
 class DailyQuotaCard extends ConsumerWidget {
   final int stageId;
   final bool compact;
@@ -20,114 +21,54 @@ class DailyQuotaCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (stageId <= 0) return const SizedBox.shrink();
     final isArabic = context.locale.languageCode == 'ar';
-    final quota = ref.watch(stageDailyQuotaProvider(stageId));
+    final premium = ref.watch(studentPremiumProvider);
+    final isPremium = premium.valueOrNull == true;
+
     return GlassCard(
       padding: EdgeInsets.all(compact ? AppSpacing.md : AppSpacing.lg),
-      child: quota.when(
-        loading: () => Row(
-          children: [
-            const SizedBox.square(
-              dimension: 18, child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Flexible(child: Text(isArabic
-              ? 'جاري تحميل حصة المسائل اليومية...'
-              : 'Loading daily question allowance...')),
-          ],
-        ),
-        error: (_, __) => Text(
-          isArabic ? 'تعذر تحميل الحصة اليومية. اسحب للتحديث.'
-            : 'Daily allowance unavailable. Pull to refresh.',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-        data: (data) => _Content(data: data, isArabic: isArabic),
-      ),
-    );
-  }
-}
-
-class _Content extends StatelessWidget {
-  final StageDailyQuota data;
-  final bool isArabic;
-  const _Content({required this.data, required this.isArabic});
-
-  @override
-  Widget build(BuildContext context) {
-    final title = isArabic ? 'المسائل الجديدة اليوم' : 'New questions today';
-    final color = Theme.of(context).colorScheme.primary;
-    final ratio = data.limit <= 0
-        ? 0.0 : (data.used / data.limit).clamp(0.0, 1.0).toDouble();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(
-              data.unlimited ? Icons.workspace_premium_rounded
-                  : Icons.fact_check_outlined,
-              color: color, size: 22,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(child: Column(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            isPremium ? Icons.workspace_premium_rounded : Icons.all_inclusive,
+            size: 26,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: Theme.of(context).textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.bold)),
-                Text(data.stageName(isArabic ? 'ar' : 'en'),
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                  isArabic ? 'تدرّب بلا حدود' : 'Unlimited practice',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  premium.isLoading
+                      ? (isArabic ? 'جارٍ التحقق من الاشتراك…' : 'Checking membership…')
+                      : premium.hasError
+                          ? (isArabic
+                              ? 'حل بلا حدود ضمن الفئات المفتوحة بحسابك.'
+                              : 'Unlimited practice in your unlocked categories.')
+                          : isPremium
+                          ? (isArabic
+                              ? 'Premium: كل الفئات مفتوحة، والمسائل غير محدودة.'
+                              : 'Premium: all categories unlocked, unlimited questions.')
+                          : (isArabic
+                              ? 'Free: حل بلا حدود ضمن الفئتين المفتوحتين من كل مرحلة.'
+                              : 'Free: unlimited questions in two unlocked categories per stage.'),
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ],
-            )),
-            Text(
-              data.unlimited
-                ? (isArabic ? 'بلا حدود' : 'Unlimited')
-                : '${data.used}/${data.limit}',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800, color: color,
-              ),
-            ),
-          ],
-        ),
-        if (!data.unlimited) ...[
-          const SizedBox(height: AppSpacing.md),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(99),
-            child: LinearProgressIndicator(
-              value: ratio,
-              minHeight: 8,
-              backgroundColor: color.withValues(alpha: 0.12),
-              color: color,
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(data.exhausted
-              ? isArabic
-                  ? 'خلصت حصة هذا المستوى اليوم. فيك تعيد حل المسائل السابقة.'
-                  : 'Today’s allowance is used. You can still retry old problems.'
-              : isArabic
-                  ? 'متبقي ${data.remaining ?? 0} مسائل جديدة بهذا المستوى.'
-                  : '${data.remaining ?? 0} new problems remaining in this stage.'),
-          const SizedBox(height: 4),
-          Text(isArabic
-            ? 'تتجدد كل يوم عند منتصف الليل UTC'
-            : 'Resets daily at midnight UTC',
-            style: Theme.of(context).textTheme.bodySmall),
-          if (data.exhausted) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Text(isArabic
-                ? 'مميزات Premium قريبًا — يمكن للأدمن تفعيله تجريبيًا.'
-                : 'Premium coming soon — admin can enable it for testing.',
-              style: Theme.of(context).textTheme.bodySmall
-                  ?.copyWith(color: color)),
-          ],
-        ] else
-          Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.sm),
-            child: Text(isArabic
-              ? 'حساب Premium: عدد غير محدود من المسائل الجديدة.'
-              : 'Premium: unlimited new problems every day.'),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }

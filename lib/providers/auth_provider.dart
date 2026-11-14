@@ -7,11 +7,16 @@ import '../core/network/api_client.dart';
 import '../models/user.dart';
 import '../repositories/auth_repository.dart';
 import '../services/google_identity_service.dart';
+import '../services/hive_service.dart';
 import 'categories_provider.dart';
 import 'dashboard_provider.dart';
 import 'learning_provider.dart';
 import 'problem_details_provider.dart';
 import 'problems_provider.dart';
+import 'notification_provider.dart';
+import 'premium_analytics_provider.dart';
+import 'stage_category_access_provider.dart';
+import 'student_badges_provider.dart';
 import 'repositories_provider.dart';
 import 'stages_provider.dart';
 import 'user_lists_provider.dart';
@@ -206,6 +211,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Update the cached subscription only after a confirmed server-side
+  /// Premium gift redemption. The backend remains the source of truth.
+  Future<void> confirmPremiumGiftRedeemed() async {
+    final current = state.user;
+    if (current == null || !state.isAuthenticated) return;
+    final updated = current.copyWith(subscriptionType: 'Premium');
+    state = state.copyWith(user: updated);
+    try {
+      await HiveService.saveUser(updated.toCacheJson());
+    } catch (_) {
+      // The authenticated backend grant already succeeded; a local cache
+      // write failure must not incorrectly report redemption as failed.
+    }
+  }
+
   Future<void> chooseLearningStage(int stageId) async {
     final current = state.user;
     if (current == null) {
@@ -254,6 +274,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _ref.invalidate(problemDetailsProvider);
     _ref.invalidate(problemAttemptHistoryProvider);
     _ref.invalidate(errorNotebookProvider);
+    // Account-isolated API caches must not show the previous user's
+    // subscription, notifications, private reports or achievements.
+    _ref.invalidate(studentPremiumProvider);
+    _ref.invalidate(stageCategoryAccessProvider);
+    _ref.invalidate(notificationInboxProvider);
+    _ref.invalidate(premiumAnalyticsProvider);
+    _ref.invalidate(studentBadgesProvider);
   }
 
   void consumeSessionExpired() {

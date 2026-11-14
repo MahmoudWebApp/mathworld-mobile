@@ -10,14 +10,13 @@ import '../../models/dashboard_stats.dart';
 import '../../models/learning_journey.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/learning_journey_provider.dart';
-import '../../providers/stage_daily_quota_provider.dart';
-import '../../widgets/daily_quota_card.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/animated_entry.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/premium_button.dart';
+import '../../widgets/student_badges_card.dart';
 import '../../widgets/rich_math_text.dart';
 
 /// Displays the user dashboard, progress summary, and learning shortcuts.
@@ -42,10 +41,6 @@ class HomeScreen extends ConsumerWidget {
           ),
           data: (dashboard) => RefreshIndicator(
             onRefresh: () async {
-              final stageId = learningJourney.valueOrNull?.stageId;
-              if (stageId != null) {
-                ref.invalidate(stageDailyQuotaProvider(stageId));
-              }
               ref.invalidate(learningJourneyProvider);
               await ref.refresh(dashboardProvider.future).then((_) {});
             },
@@ -76,17 +71,13 @@ class HomeScreen extends ConsumerWidget {
                   loading: () => const SizedBox.shrink(),
                 ),
                 if (learningJourney.valueOrNull != null) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child: DailyQuotaCard(
-                      stageId: learningJourney.valueOrNull!.stageId,
-                    ),
-                  ),
                   AnimatedEntry(
                     index: 1,
                     child: _StatsGrid(journey: learningJourney.valueOrNull!),
                   ),
                 ],
+                const SizedBox(height: AppSpacing.xl),
+                const StudentBadgesCard(),
                 const SizedBox(height: AppSpacing.xl),
                 AnimatedEntry(
                   index: 2,
@@ -326,7 +317,12 @@ class _StatsGrid extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 720 ? 4 : 2;
+        // Small phones and large accessibility text need room for Arabic labels.
+        final columns = constraints.maxWidth >= 720
+            ? 4
+            : constraints.maxWidth < 350
+                ? 1
+                : 2;
         final width =
             (constraints.maxWidth - AppSpacing.md * (columns - 1)) / columns;
         return Wrap(
@@ -458,15 +454,23 @@ class _LearningJourneyCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: AppSpacing.lg),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('stage_completion'.tr()),
+              Expanded(
+                child: Text(
+                  'stage_completion'.tr(),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
               Text('${journey.completionPercent}%',
                   style: TextStyle(fontWeight: FontWeight.bold, color: color)),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
           LinearProgressIndicator(
+            semanticsLabel: 'stage_completion'.tr(),
+            semanticsValue: '${journey.completionPercent}%',
             value: journey.completionPercent.clamp(0, 100) / 100,
             minHeight: 8,
             borderRadius: BorderRadius.circular(20),
@@ -496,7 +500,7 @@ class _LearningJourneyCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           if (const bool.fromEnvironment(
             'MATHWORLD_LEADERBOARD_ENABLED',
-            defaultValue: false,
+            defaultValue: true,
           ))
             OutlinedButton.icon(
             onPressed: () => Navigator.pushNamed(context, AppRoutes.leaderboard),

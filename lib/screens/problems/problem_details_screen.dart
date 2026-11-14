@@ -12,9 +12,12 @@ import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/premium_button.dart';
-import '../../widgets/daily_quota_card.dart';
-import '../../providers/stage_daily_quota_provider.dart';
 import '../../widgets/rich_math_text.dart';
+import '../../widgets/geometry_diagram.dart';
+import '../../widgets/premium_solution_panel.dart';
+import '../../services/premium_api_service.dart';
+import '../../services/geometry_api_service.dart';
+import '../../services/api_service.dart';
 
 /// Displays one problem, its learning summary, and all recorded attempts.
 class ProblemDetailsScreen extends ConsumerStatefulWidget {
@@ -90,13 +93,7 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
             state: state,
             historyState: historyState,
             onOptionChanged: notifier.selectOption,
-            onSubmit: () => _runAction(context, () async {
-              try {
-                await notifier.submitAnswer();
-              } finally {
-                ref.invalidate(stageDailyQuotaProvider(problem.stageId));
-              }
-            }),
+            onSubmit: () => _runAction(context, notifier.submitAnswer),
             onStartRetry: notifier.startRetry,
             onCancelRetry: notifier.cancelRetry,
             onToggleFavorite: () =>
@@ -148,9 +145,6 @@ class _ProblemContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isArabic = context.locale.languageCode == 'ar';
-    final quota = ref.watch(stageDailyQuotaProvider(problem.stageId));
-    final quotaBlocked = !problem.hasAttempted && !state.isRetryMode
-        && (quota.valueOrNull?.exhausted ?? false);
     final canSelect = state.answerResult == null &&
         (!problem.hasAttempted || state.isRetryMode);
     final solution = _solutionText(problem, state);
@@ -166,8 +160,6 @@ class _ProblemContent extends ConsumerWidget {
         AppSpacing.xxxl,
       ),
       children: [
-        DailyQuotaCard(stageId: problem.stageId, compact: true),
-        const SizedBox(height: AppSpacing.md),
         _ProblemHeader(
           problem: problem,
           isArabic: isArabic,
@@ -194,6 +186,16 @@ class _ProblemContent extends ConsumerWidget {
                 ),
           ),
         ),
+        _OptionalProblemDiagram(problemId: problem.id, isArabic: isArabic),
+        if (!problem.hasAttempted && !state.isRetryMode) ...[
+          const SizedBox(height: AppSpacing.md),
+          PremiumSolutionPanel(
+            problemId: problem.id,
+            service: PremiumApiService(ApiService()),
+            isArabic: isArabic,
+            options: problem.options,
+          ),
+        ],
         const SizedBox(height: AppSpacing.xl),
         Text(
           'choose_answer'.tr(),
@@ -225,7 +227,7 @@ class _ProblemContent extends ConsumerWidget {
           const SizedBox(height: AppSpacing.xl),
           PremiumButton(
             onPressed: state.selectedOptionId == null ||
-                    state.isSubmitting || quotaBlocked
+                    state.isSubmitting
                 ? null
                 : onSubmit,
             label: state.isRetryMode
@@ -610,11 +612,16 @@ class _LearningPill extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: color),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 220),
+            child: Text(
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
           ),
         ],
       ),
@@ -729,7 +736,9 @@ class _AnswerOptionCard extends StatelessWidget {
                 : scheme.outline;
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 180),
       decoration: BoxDecoration(
         color: stateColor.withValues(
           alpha: isCorrect || isWrong || isSelected ? 0.09 : 0.0,
@@ -753,13 +762,22 @@ class _AnswerOptionCard extends StatelessWidget {
             : isWrong
                 ? const Icon(Icons.cancel_rounded, color: AppColors.error)
                 : null,
-        title: RichMathText(
+        title: Semantics(
+          value: isCorrect
+              ? (isArabic ? 'إجابة صحيحة' : 'Correct answer')
+              : isWrong
+                  ? (isArabic ? 'إجابة خاطئة' : 'Incorrect answer')
+                  : isSelected
+                      ? (isArabic ? 'الإجابة المختارة' : 'Selected answer')
+                      : null,
+          child: RichMathText(
           text: option.latexCode,
           isArabic: isArabic,
           inline: true,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
+          ),
         ),
       ),
     );
@@ -927,5 +945,46 @@ String _formatDuration(int seconds) {
   }
   return 'minutes_seconds_short'.tr(
     namedArgs: {'minutes': '$minutes', 'seconds': '$remaining'},
+  );
+}
+
+
+/// Diagram is loaded separately so older problem payloads remain compatible.
+class _OptionalProblemDiagram extends StatefulWidget {
+  const _OptionalProblemDiagram({required this.problemId, required this.isArabic});
+  final int problemId;
+  final bool isArabic;
+
+  @override
+  State<_OptionalProblemDiagram> createState() => _OptionalProblemDiagramState();
+}
+
+class _OptionalProblemDiagramState extends State<_OptionalProblemDiagram> {
+  late Future<Map<String, dynamic>?> _diagram;
+
+  @override
+  void initState() {
+    super.initState();
+    _diagram = GeometryApiService(ApiService()).getDiagram(widget.problemId);
+  }
+
+  @override
+  void didUpdateWidget(covariant _OptionalProblemDiagram oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.problemId != widget.problemId) {
+      _diagram = GeometryApiService(ApiService()).getDiagram(widget.problemId);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<Map<String, dynamic>?>(
+    future: _diagram,
+    builder: (context, snapshot) {
+      final scene = snapshot.data;
+      if (scene == null) return const SizedBox.shrink();
+      // GeometryDiagram supplies the same bordered figure and caption as the web.
+      // Avoid nesting an additional glass card around it on small screens.
+      return GeometryDiagram(scene: scene, isArabic: widget.isArabic);
+    },
   );
 }
