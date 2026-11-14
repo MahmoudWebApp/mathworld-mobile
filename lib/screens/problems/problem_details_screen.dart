@@ -12,7 +12,6 @@ import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/premium_button.dart';
-import '../../widgets/daily_quota_card.dart';
 import '../../widgets/rich_math_text.dart';
 import '../../widgets/geometry_diagram.dart';
 import '../../widgets/premium_solution_panel.dart';
@@ -161,8 +160,6 @@ class _ProblemContent extends ConsumerWidget {
         AppSpacing.xxxl,
       ),
       children: [
-        DailyQuotaCard(stageId: problem.stageId, compact: true),
-        const SizedBox(height: AppSpacing.md),
         _ProblemHeader(
           problem: problem,
           isArabic: isArabic,
