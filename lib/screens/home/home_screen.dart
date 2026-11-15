@@ -18,6 +18,7 @@ import '../../widgets/math_background.dart';
 import '../../widgets/premium_button.dart';
 import '../../widgets/student_badges_card.dart';
 import '../../widgets/rich_math_text.dart';
+import '../../widgets/stage_math_glyph.dart';
 
 /// Displays the user dashboard, progress summary, and learning shortcuts.
 class HomeScreen extends ConsumerWidget {
@@ -68,8 +69,18 @@ class HomeScreen extends ConsumerWidget {
                             child: _LearningJourneyCard(journey: journey),
                           ),
                         ),
-                  error: (_, __) => const SizedBox.shrink(),
-                  loading: () => const SizedBox.shrink(),
+                  error: (error, _) => Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                    child: _JourneyStatusCard(
+                      isLoading: false,
+                      message: localizedErrorMessage(error),
+                      onRetry: () => ref.invalidate(learningJourneyProvider),
+                    ),
+                  ),
+                  loading: () => const Padding(
+                    padding: EdgeInsets.only(bottom: AppSpacing.lg),
+                    child: _JourneyStatusCard(isLoading: true),
+                  ),
                 ),
                 if (learningJourney.valueOrNull != null) ...[
                   AnimatedEntry(
@@ -177,6 +188,83 @@ class HomeScreen extends ConsumerWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Keep journey errors visible without replacing the rest of the dashboard.
+/// The learner can still practice while the optional journey API is down.
+class _JourneyStatusCard extends StatelessWidget {
+  const _JourneyStatusCard({
+    required this.isLoading,
+    this.message,
+    this.onRetry,
+  });
+
+  final bool isLoading;
+  final String? message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final ar = context.locale.languageCode == 'ar';
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: scheme.outlineVariant),
+        ),
+        child: Row(
+          children: [
+            if (isLoading)
+              const SizedBox.square(
+                dimension: 36,
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              )
+            else
+              const StageMathGlyph(
+                stageOrder: 2, color: AppColors.stageOrange, size: 36,
+              ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isLoading
+                        ? (ar ? 'جارٍ تحميل رحلتك التعليمية…'
+                            : 'Loading your learning journey…')
+                        : (ar ? 'تعذّر تحميل تقدّم المرحلة'
+                            : 'Stage progress is unavailable'),
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  if (!isLoading) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      message ??
+                          (ar ? 'باقي ميزات المنصة متاحة.'
+                              : 'You can still use the rest of the platform.'),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (!isLoading && onRetry != null)
+              IconButton(
+                onPressed: onRetry,
+                tooltip: ar ? 'إعادة تحميل التقدّم' : 'Retry stage progress',
+                icon: const Icon(Icons.refresh_rounded),
+              ),
+          ],
         ),
       ),
     );
