@@ -75,4 +75,18 @@ void main() {
     expect(parsed.attemptedProblems, 5);
     expect(parsed.firstTryCorrect, 1);
   });
+
+  test('missing category lock flag is never treated as unlocked', () {
+    final legacy = LearningJourneyCategory.fromJson({
+      'CategoryId': 4,
+      'NameAr': 'هندسة',
+      'NameEn': 'Geometry',
+      'TotalProblems': 10,
+      'SolvedProblems': 0,
+      'CompletionPercent': 0,
+      // A deployed older endpoint may omit IsLocked entirely.
+    });
+    expect(legacy.isLocked, isTrue);
+    expect(journey([legacy]).recommendedCategory, isNull);
+  });
 }
