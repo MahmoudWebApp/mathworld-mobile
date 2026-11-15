@@ -11,6 +11,7 @@ import '../../providers/notification_provider.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/stage_category_access_provider.dart';
 import '../../providers/student_badges_provider.dart';
+import '../../providers/learning_journey_provider.dart';
 import '../../widgets/brand_logo.dart';
 import '../dashboard/favorites_screen.dart';
 import '../home/home_screen.dart';
@@ -50,6 +51,7 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
       ref.invalidate(studentPremiumProvider);
       ref.invalidate(dashboardProvider);
       ref.invalidate(studentBadgesProvider);
+      ref.invalidate(learningJourneyProvider);
     }
     _isAppResumed = resumed;
   }
