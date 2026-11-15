@@ -542,6 +542,12 @@ class _LearningJourneyCard extends StatelessWidget {
     final reviewCount = journey.categories.where((category) =>
         !category.isLocked &&
         category.attemptedProblems > category.solvedProblems).length;
+    // Keep Free-unlocked topics above Premium-locked ones in the compact
+    // dashboard preview while retaining the API's order within each group.
+    final visibleCategories = [
+      ...journey.categories.where((category) => !category.isLocked),
+      ...journey.categories.where((category) => category.isLocked),
+    ];
 
     return GlassCard(
       child: Column(
@@ -673,7 +679,7 @@ class _LearningJourneyCard extends StatelessWidget {
                   ? 'لا توجد فئات منشورة لهذه المرحلة بعد.'
                   : 'No topics have been published for this stage yet.'),
             ),
-          ...journey.categories.take(6).map((category) {
+          ...visibleCategories.take(6).map((category) {
             final canPractice = !category.isLocked && category.totalProblems > 0;
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 3),
@@ -689,7 +695,12 @@ class _LearningJourneyCard extends StatelessWidget {
                         : '${category.solvedProblems} / ${category.totalProblems}'),
                 trailing: canPractice
                     ? LayoutUtils.forwardIcon(context, color: color)
-                    : const Icon(Icons.lock_outline_rounded, size: 20),
+                    : Icon(
+                        category.isLocked
+                            ? Icons.lock_outline_rounded
+                            : Icons.hourglass_empty_rounded,
+                        size: 20,
+                      ),
                 onTap: canPractice
                     ? () => Navigator.pushNamed(
                           context,
