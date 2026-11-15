@@ -10,6 +10,7 @@ import '../../providers/settings_provider.dart';
 import '../../providers/stages_provider.dart';
 import '../../services/google_identity_service.dart';
 import '../../core/utils/error_message.dart';
+import '../../core/errors/app_exception.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
@@ -218,6 +219,8 @@ class SettingsScreen extends ConsumerWidget {
                       );
                     } catch (error) {
                       if (!context.mounted) return;
+                      if (error is AppException &&
+                          error.type == AppExceptionType.cancelled) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(localizedErrorMessage(error))),
                       );
