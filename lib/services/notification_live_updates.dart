@@ -18,6 +18,7 @@ class NotificationLiveUpdates {
 
   HttpClient? _client;
   Timer? _retry;
+  Timer? _refreshDebounce;
   bool _active = false;
   bool _connecting = false;
   int _retrySeconds = 1;
@@ -31,10 +32,23 @@ class NotificationLiveUpdates {
 
   void stop() {
     _active = false;
+    _refreshDebounce?.cancel();
+    _refreshDebounce = null;
     _retry?.cancel();
     _retry = null;
     _client?.close(force: true);
     _client = null;
+  }
+
+  /// Multiple notices may arrive in one server transaction, or reconnect
+  /// immediately after returning foreground. One UI refresh is sufficient.
+  void _scheduleInboxRefresh() {
+    if (!_active) return;
+    if (_refreshDebounce?.isActive ?? false) return;
+    _refreshDebounce = Timer(const Duration(milliseconds: 180), () {
+      _refreshDebounce = null;
+      if (_active) onInboxChanged();
+    });
   }
 
   Future<void> _connect() async {
@@ -77,13 +91,13 @@ class NotificationLiveUpdates {
 
       connected = true;
       _retrySeconds = 1;
-      onInboxChanged(); // Reconcile any notices sent before connection.
+      _scheduleInboxRefresh(); // Reconcile any notices sent before connection.
       await for (final line in response
           .transform(utf8.decoder)
           .transform(const LineSplitter())) {
         if (!_active) break;
         if (line.length > 256) throw const FormatException('Invalid SSE line');
-        if (line.trim() == 'event: inbox') onInboxChanged();
+        if (line.trim() == 'event: inbox') _scheduleInboxRefresh();
       }
     } catch (_) {
       // Offline, prior backend version, proxy timeout and token expiry:
