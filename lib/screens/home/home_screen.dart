@@ -43,8 +43,12 @@ class HomeScreen extends ConsumerWidget {
           ),
           data: (dashboard) => RefreshIndicator(
             onRefresh: () async {
-              ref.invalidate(learningJourneyProvider);
-              await ref.refresh(dashboardProvider.future).then((_) {});
+              // Refresh both datasets together: points and the recommended
+              // next topic must reflect the same latest saved practice.
+              await Future.wait([
+                ref.refresh(dashboardProvider.future),
+                ref.refresh(learningJourneyProvider.future),
+              ]);
             },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -66,7 +70,7 @@ class HomeScreen extends ConsumerWidget {
                       : Padding(
                           padding: const EdgeInsets.only(bottom: AppSpacing.xl),
                           child: AnimatedEntry(
-                            child: _LearningJourneyCard(journey: journey),
+                            child: _LearningJourneyCard(journey: journey, onOpenStages: onOpenStages),
                           ),
                         ),
                   error: (error, _) => Padding(
@@ -524,13 +528,20 @@ class _ContinueLearningCard extends StatelessWidget {
 
 class _LearningJourneyCard extends StatelessWidget {
   final LearningJourney journey;
+  final VoidCallback onOpenStages;
 
-  const _LearningJourneyCard({required this.journey});
+  const _LearningJourneyCard({
+    required this.journey,
+    required this.onOpenStages,
+  });
 
   @override
   Widget build(BuildContext context) {
     final language = context.locale.languageCode;
     final color = Theme.of(context).colorScheme.primary;
+    final reviewCount = journey.categories.where((category) =>
+        !category.isLocked &&
+        category.attemptedProblems > category.solvedProblems).length;
 
     return GlassCard(
       child: Column(
@@ -630,6 +641,18 @@ class _LearningJourneyCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.md),
           ],
+          if (reviewCount > 0) ...[
+            OutlinedButton.icon(
+              onPressed: () => Navigator.pushNamed(
+                context, AppRoutes.errorNotebook,
+              ),
+              icon: const Icon(Icons.auto_stories_outlined),
+              label: Text(language == 'ar'
+                  ? 'راجع أخطاءك في دفتر المراجعة'
+                  : 'Review your attempts in the error notebook'),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           Text('stage_topics'.tr(),
               style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: AppSpacing.sm),
@@ -643,33 +666,54 @@ class _LearningJourneyCard extends StatelessWidget {
             label: Text('leaderboard_title'.tr()),
           ),
           const SizedBox(height: AppSpacing.sm),
-          ...journey.categories.map(
-            (category) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      category.getName(language),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Text(
-                    category.isLocked
-                        ? (language == 'ar' ? 'مقفلة' : 'Locked')
-                        : '${category.solvedProblems}/${category.totalProblems}',
-                    style: TextStyle(
-                      color: category.isLocked
-                          ? Theme.of(context).colorScheme.onSurfaceVariant
-                          : null,
-                    ),
-                  ),
-                ],
-              ),
+          if (journey.categories.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+              child: Text(language == 'ar'
+                  ? 'لا توجد فئات منشورة لهذه المرحلة بعد.'
+                  : 'No topics have been published for this stage yet.'),
             ),
-          ),
+          ...journey.categories.take(6).map((category) {
+            final canPractice = !category.isLocked && category.totalProblems > 0;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                title: Text(category.getName(language),
+                    maxLines: 2, overflow: TextOverflow.ellipsis),
+                subtitle: Text(category.isLocked
+                    ? (language == 'ar' ? 'تحتاج اشتراك Premium' : 'Premium access required')
+                    : category.totalProblems == 0
+                        ? (language == 'ar' ? 'قريباً' : 'Coming soon')
+                        : '${category.solvedProblems} / ${category.totalProblems}'),
+                trailing: canPractice
+                    ? LayoutUtils.forwardIcon(context, color: color)
+                    : const Icon(Icons.lock_outline_rounded, size: 20),
+                onTap: canPractice
+                    ? () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.problems,
+                          arguments: <String, dynamic>{
+                            'categoryId': category.categoryId,
+                            'stageId': journey.stageId,
+                            'title': category.getName(language),
+                          },
+                        )
+                    : null,
+              ),
+            );
+          }),
+          if (journey.categories.length > 6) ...[
+            const SizedBox(height: AppSpacing.sm),
+            OutlinedButton.icon(
+              onPressed: onOpenStages,
+              icon: LayoutUtils.forwardIcon(context),
+              label: Text(language == 'ar'
+                  ? 'عرض جميع فئات مرحلتي'
+                  : 'Browse all stage topics'),
+            ),
+          ],
         ],
       ),
     );
