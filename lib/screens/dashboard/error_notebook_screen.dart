@@ -61,12 +61,30 @@ class ErrorNotebookScreen extends ConsumerWidget {
                   ),
                   data: (problems) {
                     if (problems.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        child: AppEmptyView(
-                          icon: Icons.auto_stories_outlined,
-                          title: 'error_notebook_empty'.tr(),
-                          subtitle: 'error_notebook_empty_desc'.tr(),
+                      // The empty and archived-only states must remain
+                      // refreshable after the learner changes an answer on
+                      // another device or a background sync completes.
+                      return RefreshIndicator(
+                        onRefresh: notifier.load,
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          children: [
+                            AppEmptyView(
+                              icon: Icons.auto_stories_outlined,
+                              title: 'error_notebook_empty'.tr(),
+                              subtitle: state.includeArchived
+                                  ? 'error_notebook_empty_desc'.tr()
+                                  : (context.locale.languageCode == 'ar'
+                                      ? 'لا توجد أخطاء نشطة. فعّل عرض المؤرشف لرؤية المحاولات السابقة.'
+                                      : 'No active mistakes. Show archived problems to review earlier attempts.'),
+                              action: OutlinedButton.icon(
+                                onPressed: notifier.load,
+                                icon: const Icon(Icons.refresh_rounded),
+                                label: Text('retry'.tr()),
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     }
