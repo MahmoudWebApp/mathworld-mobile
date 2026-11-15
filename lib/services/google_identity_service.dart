@@ -14,6 +14,20 @@ class GoogleIdentityService {
 
   static bool get available => SocialAuthConfig.googleAvailable;
 
+  /// Clear the Google SDK session on explicit MathWorld logout, so another
+  /// person using the device can choose a different Google account. Avoid
+  /// initializing the SDK merely to perform logout.
+  static Future<void> signOutIfInitialized() async {
+    final initialized = _initialization;
+    if (initialized == null) return;
+    try {
+      await initialized;
+      await _google.signOut();
+    } catch (_) {
+      // MathWorld local-token removal must not rely on Google network state.
+    }
+  }
+
   static Future<String> requestIdToken() async {
     if (!available) {
       throw StateError('Google sign-in is not configured for this build.');
