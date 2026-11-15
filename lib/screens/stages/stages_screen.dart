@@ -10,6 +10,7 @@ import '../../utils/layout_utils.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
+import '../../widgets/stage_math_glyph.dart';
 
 /// Displays educational stages with accessible contrast in both themes.
 class StagesScreen extends ConsumerWidget {
@@ -23,6 +24,7 @@ class StagesScreen extends ConsumerWidget {
     final localeCode = context.locale.languageCode;
 
     final content = MathBackground(
+      showSymbols: true,
       child: SafeArea(
         bottom: false,
         child: stagesState.when(
@@ -152,7 +154,7 @@ class _StageCard extends StatelessWidget {
                 color: accent.withValues(alpha: isDark ? 0.34 : 0.22),
               ),
             ),
-            child: Icon(Icons.school_rounded, color: accent, size: 28),
+            child: Center(child: StageMathGlyph(stageOrder: order, color: accent, size: 40)),
           ),
           const SizedBox(width: AppSpacing.lg),
           Expanded(
@@ -202,10 +204,10 @@ class _StageCard extends StatelessWidget {
 
   Color _stageColor(int value) {
     const colors = [
-      AppColors.brandCyan,
-      AppColors.brandBlue,
-      AppColors.brandViolet,
-      AppColors.brandPurple,
+      AppColors.stageCyan,
+      AppColors.stageOrange,
+      AppColors.stageGreen,
+      AppColors.stageViolet,
     ];
 
     final index = (value <= 0 ? 0 : value - 1) % colors.length;
