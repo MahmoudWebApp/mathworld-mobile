@@ -59,6 +59,7 @@ class _StageGeometryPainter extends CustomPainter {
         canvas.drawLine(Offset(middle.dx, middle.dy - r),
             Offset(middle.dx, middle.dy + r), lighter);
         canvas.drawCircle(middle, r * .32, paint);
+        break;
       case 1:
         final top = Offset(middle.dx, middle.dy - r);
         final left = Offset(middle.dx - r, middle.dy + r * .75);
@@ -68,6 +69,7 @@ class _StageGeometryPainter extends CustomPainter {
         canvas.drawPath(triangle, paint);
         canvas.drawLine(top, middle, lighter);
         canvas.drawCircle(middle, r * .13, paint);
+        break;
       case 2:
         canvas.save();
         canvas.translate(middle.dx, middle.dy);
@@ -79,6 +81,7 @@ class _StageGeometryPainter extends CustomPainter {
         canvas.drawRect(Rect.fromCenter(center: Offset.zero,
             width: r * 1.02, height: r * 1.02), lighter);
         canvas.restore();
+        break;
       case 3:
         canvas.save();
         canvas.translate(middle.dx, middle.dy);
@@ -90,6 +93,7 @@ class _StageGeometryPainter extends CustomPainter {
             width: 2 * r, height: r * .78), lighter);
         canvas.restore();
         canvas.drawCircle(middle, r * .12, paint);
+        break;
     }
   }
 
