@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../core/errors/app_exception.dart';
 import '../core/network/api_client.dart';
@@ -155,11 +156,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
       _resetAccountScopedState();
       state = AuthState(status: AuthStatus.authenticated, user: user);
     } catch (error) {
+      final wasCancelled = error is GoogleSignInException &&
+          error.code == GoogleSignInExceptionCode.canceled;
+      // A rejected backend login must not pin the next attempt to the
+      // previous Google SDK account on a shared phone.
+      if (!wasCancelled) {
+        await GoogleIdentityService.signOutIfInitialized();
+      }
       final appError = error is AppException
           ? error
           : AppException(
-              type: AppExceptionType.unknown,
-              messageKey: 'social_login_failed',
+              type: wasCancelled
+                  ? AppExceptionType.cancelled
+                  : AppExceptionType.unknown,
+              messageKey: wasCancelled
+                  ? 'social_login_cancelled'
+                  : 'social_login_failed',
               cause: error,
             );
       state = AuthState(
@@ -245,6 +257,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logout() async {
     _resetAccountScopedState();
     await _repository.clearSession();
+    await GoogleIdentityService.signOutIfInitialized();
     _resetAccountScopedState();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
