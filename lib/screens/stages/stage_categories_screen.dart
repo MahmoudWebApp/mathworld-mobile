@@ -156,6 +156,7 @@ class StageCategoriesScreen extends ConsumerWidget {
                       category: category,
                       localeCode: localeCode,
                       stageId: stage.id,
+                      stageOrder: stage.order,
                       locked: user?.role == 'Student' && !isPremium && !access.freeCategoryIds.contains(category.id),
                       freeCategory: access.freeCategoryIds.contains(category.id),
                     );
@@ -225,6 +226,7 @@ class _CategoryCard extends StatelessWidget {
   final Category category;
   final String localeCode;
   final int stageId;
+  final int stageOrder;
   final bool locked;
   final bool freeCategory;
 
@@ -232,6 +234,7 @@ class _CategoryCard extends StatelessWidget {
     required this.category,
     required this.localeCode,
     required this.stageId,
+    required this.stageOrder,
     required this.locked,
     required this.freeCategory,
   });
@@ -239,7 +242,7 @@ class _CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accent = _categoryColor(stageId);
+    final accent = _categoryColor(stageOrder);
     final title = category.getName(localeCode);
     final titleColor = isDark ? AppColors.darkText : AppColors.lightText;
     final mutedColor = isDark ? AppColors.darkMuted : AppColors.lightMuted;
@@ -412,7 +415,7 @@ class _CategoryCard extends StatelessWidget {
         !value.contains('\\')) {
       return Text(value, style: const TextStyle(fontSize: 25));
     }
-    return StageMathGlyph(stageOrder: stageId, color: accent, size: 32);
+    return StageMathGlyph(stageOrder: stageOrder, color: accent, size: 32);
   }
 
   Color _categoryColor(int value) {
