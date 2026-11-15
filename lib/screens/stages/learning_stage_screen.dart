@@ -28,6 +28,15 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
 
   Future<void> _save(int id) async {
     if (_saving) return;
+    // Keeping the already-selected stage is navigation, not a new server
+    // mutation. Avoid a needless PUT or invalidating student progress caches.
+    if (ref.read(authProvider).user?.currentStageId == id) {
+      if (!mounted) return;
+      Navigator.pushNamedAndRemoveUntil(
+        context, AppRoutes.home, (_) => false,
+      );
+      return;
+    }
     setState(() => _saving = true);
     try {
       await ref.read(authProvider.notifier).chooseLearningStage(id);
@@ -116,6 +125,14 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
                   style: Theme.of(context).textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  language == 'ar'
+                      ? 'يمكنك تغيير المرحلة لاحقاً دون فقدان نقاطك أو حلولك القديمة.'
+                      : 'You can switch stages later without losing earlier points or solutions.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: AppSpacing.xl),
                 ...items.map((stage) {
                   final selected = effective == stage.id;
@@ -150,6 +167,11 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         selected: selected,
+                        subtitle: user?.currentStageId == stage.id
+                            ? Text(language == 'ar'
+                                ? 'مرحلتك الحالية'
+                                : 'Your current stage')
+                            : null,
                         onTap: _saving
                             ? null
                             : () => setState(() {
@@ -161,7 +183,9 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
                 }),
                 const SizedBox(height: AppSpacing.lg),
                 PremiumButton(
-                  label: 'save_learning_stage'.tr(),
+                  label: effective != null && effective == user?.currentStageId
+                      ? (language == 'ar' ? 'المتابعة لصفحتي' : 'Continue to dashboard')
+                      : 'save_learning_stage'.tr(),
                   leadingIcon: Icons.arrow_forward_rounded,
                   onPressed: effective == null || _saving
                       ? null
