@@ -10,14 +10,21 @@ import 'premium_analytics_service.dart';
 /// response. The first font load may require a network connection; the font
 /// is embedded in the PDF (no broken Arabic fallback squares).
 class PremiumAnalyticsPdfService {
-  const PremiumAnalyticsPdfService();
+  const PremiumAnalyticsPdfService({this.fontLoader});
+
+  /// An explicit loader keeps PDF generation testable offline. Normal app
+  /// exports always use embedded Arabic-capable Noto fonts.
+  final Future<List<pw.Font>> Function()? fontLoader;
 
   Future<Uint8List> export(PremiumAnalyticsReport report,
       {required bool arabic}) async {
-    final fonts = await Future.wait([
+    final fonts = await (fontLoader?.call() ?? Future.wait([
       PdfGoogleFonts.notoNaskhArabicRegular(),
       PdfGoogleFonts.notoNaskhArabicBold(),
-    ]);
+    ]));
+    if (fonts.length != 2) {
+      throw const FormatException('Two PDF font weights are required');
+    }
     final purple = PdfColor.fromInt(0xFF6D28D9);
     final dark = PdfColor.fromInt(0xFF1F2937);
     final muted = PdfColor.fromInt(0xFF475569);
