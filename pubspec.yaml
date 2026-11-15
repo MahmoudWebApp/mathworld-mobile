@@ -29,6 +29,9 @@ dependencies:
   # Versions compatible with Flutter 3.32 / Dart <3.12 in CI.
   pdf: '>=3.12.0 <3.13.0'
   printing: '>=5.14.3 <5.15.0'
+  # Prevent image 4.11.0 using archive.decodeLazy not available in
+  # the transitively selected archive version on our Flutter CI.
+  image: 4.10.2
 
 dev_dependencies:
   flutter_test:
