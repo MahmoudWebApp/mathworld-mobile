@@ -10,6 +10,14 @@ class AppColors {
   static const Color brandPink = Color(0xFFEC4899);
   static const Color brandLavender = Color(0xFF9B83DF);
 
+  // Stage identities: playful color differentiation alongside the original
+  // MathWorld purple brand. Always pair with text/icons, not color alone.
+  static const Color stageCyan = Color(0xFF087E99);
+  static const Color stageOrange = Color(0xFFC05B18);
+  static const Color stageGreen = Color(0xFF21785F);
+  static const Color stageViolet = Color(0xFF7937C3);
+
+
   // Compatibility aliases for existing widgets; both now use the brand palette.
   static const Color brandBlue = brandViolet;
   static const Color brandCyan = brandPink;
