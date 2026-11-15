@@ -115,6 +115,36 @@ class ApiService implements ApiClient {
   }
 
   @override
+  Future<List<int>> getBinary(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    // Preserve the same auth/locale interceptors and 401 handling used by
+    // JSON requests, but do NOT decode the workbook as text or JSON.
+    final result = await _execute(
+      () => _dio.get<List<int>>(
+        path,
+        queryParameters: queryParameters,
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: const {
+            'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          },
+        ),
+      ),
+      handleUnauthorized: true,
+    );
+    final bytes = result.data;
+    if (bytes is! List<int> || bytes.length < 100 || bytes.length > 20000000) {
+      throw const AppException(
+        type: AppExceptionType.invalidResponse,
+        messageKey: 'invalid_response',
+      );
+    }
+    return bytes;
+  }
+
+  @override
   Future<Response<dynamic>> post(
     String path, {
     Map<String, dynamic>? data,
