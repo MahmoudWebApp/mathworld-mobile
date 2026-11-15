@@ -1,0 +1,89 @@
+name: Android staging QA APK (explicit API, debug-signed)
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: 'Dedicated test API in HTTPS form, e.g. https://my-staging.onrender.com/api. Never production.'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  staging-android:
+    # Avoid accidentally building from main, which is not the active feature set.
+    if: github.ref == 'refs/heads/feature/premium-entitlements-client'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate dedicated staging API and create bundled Flutter environment
+        env:
+          QA_API_BASE_URL: ${{ inputs.api_base_url }}
+        run: |
+          python3 - <<'PY'
+          import ipaddress
+          import os
+          from pathlib import Path
+          from urllib.parse import urlsplit
+
+          raw = os.environ.get('QA_API_BASE_URL', '').strip()
+          url = urlsplit(raw)
+          host = (url.hostname or '').lower().rstrip('.')
+          denied_hosts = {
+              'mathwordbackend.onrender.com',
+              'mathwords.netlify.app',
+              'math-world-frontend.vercel.app',
+          }
+          if (url.scheme != 'https' or not host or not raw.endswith('/api')
+              or url.path != '/api' or url.username or url.password
+              or url.query or url.fragment or url.port is not None):
+              raise SystemExit('QA_API_BASE_URL must be a plain https://<staging-host>/api URL.')
+          if host in denied_hosts or host == 'localhost' or host.endswith('.localhost') or host.endswith('.local'):
+              raise SystemExit('Production/local backend URLs are prohibited in the staging QA APK.')
+          try:
+              ipaddress.ip_address(host)
+          except ValueError:
+              if '.' not in host:
+                  raise SystemExit('The staging API must have a fully qualified host name.')
+          else:
+              raise SystemExit('The staging API must use an HTTPS hostname, not an IP address.')
+          Path('.env').write_text(
+              f'API_BASE_URL={raw}\nSEARCH_ENGINE=postgresql\nENABLE_HTTP_LOGS=false\n',
+              encoding='utf-8',
+          )
+          print(f'Accepted dedicated staging host: {host}')
+          PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.38.10'
+          cache: true
+      - name: Restore dependencies
+        run: flutter pub get
+      - name: Dart static analysis
+        run: flutter analyze --no-fatal-infos
+      - name: Free unlimited practice regression
+        run: flutter test test/models/stage_daily_quota_test.dart
+      - name: Build QA-marked release-mode APK
+        run: flutter build apk --release --dart-define=MATHWORLD_QA_BUILD=true --dart-define=MATHWORLD_SOCIAL_LOGIN_ENABLED=false
+      - name: Publish test APK with safe description
+        uses: actions/upload-artifact@v4
+        with:
+          name: mathworld-staging-qa-apk-debug-signed
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
+          if-no-files-found: error
+      - name: QA build summary
+        run: |
+          echo '### MathWorld staging-only Android QA' >> "$GITHUB_STEP_SUMMARY"
+          echo 'A manual-test APK was built using the explicitly supplied staging API and the QA in-app banner.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Release-mode binary is signed using the repository debug key, NOT the Google Play key.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Google/Facebook sign-in remain disabled until official OAuth configuration is provided.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Install only on a test device/account. This build has the existing Android application ID, and may replace another installed MathWorld build.' >> "$GITHUB_STEP_SUMMARY"
