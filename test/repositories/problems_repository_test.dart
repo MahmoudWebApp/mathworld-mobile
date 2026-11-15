@@ -113,6 +113,14 @@ class _FakeApiClient implements ApiClient {
   }
 
   @override
+  Future<List<int>> getBinary(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    throw UnimplementedError('This fake only exercises JSON problem routes.');
+  }
+
+  @override
   Future<Response<dynamic>> post(
     String path, {
     Map<String, dynamic>? data,
