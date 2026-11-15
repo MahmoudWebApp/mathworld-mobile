@@ -45,6 +45,13 @@ class LearningJourney {
       completionPercent: _integer(
         data['CompletionPercent'] ?? data['completionPercent'],
       ),
+      attemptedProblems: _integer(
+        data['AttemptedProblems'] ?? data['attemptedProblems'],
+      ),
+      firstTryCorrect: _integer(
+        data['FirstTryCorrect'] ?? data['firstTryCorrect'],
+      ),
+      isLocked: (data['IsLocked'] ?? data['isLocked']) == true,
       categories: raw is List
           ? raw.whereType<Map>().map((category) =>
               LearningJourneyCategory.fromJson(
@@ -52,6 +59,23 @@ class LearningJourney {
               )).toList()
           : <LearningJourneyCategory>[],
     );
+  }
+
+  /// Recommend only genuinely unlocked inventory: never send a Free learner
+  /// into a Premium category. Prefer unfinished started topics, then new ones.
+  LearningJourneyCategory? get recommendedCategory {
+    final available = categories.where((category) =>
+        !category.isLocked && category.totalProblems > 0 &&
+        category.solvedProblems < category.totalProblems).toList();
+    if (available.isEmpty) return null;
+    available.sort((a, b) {
+      final aStarted = a.attemptedProblems > 0 ? 0 : 1;
+      final bStarted = b.attemptedProblems > 0 ? 0 : 1;
+      if (aStarted != bStarted) return aStarted.compareTo(bStarted);
+      final completion = a.completionPercent.compareTo(b.completionPercent);
+      return completion != 0 ? completion : a.categoryId.compareTo(b.categoryId);
+    });
+    return available.first;
   }
 
   String getName(String locale) => locale == 'en' ? nameEn : nameAr;
@@ -64,6 +88,9 @@ class LearningJourneyCategory {
   final int totalProblems;
   final int solvedProblems;
   final int completionPercent;
+  final int attemptedProblems;
+  final int firstTryCorrect;
+  final bool isLocked;
 
   const LearningJourneyCategory({
     required this.categoryId,
@@ -72,6 +99,9 @@ class LearningJourneyCategory {
     required this.totalProblems,
     required this.solvedProblems,
     required this.completionPercent,
+    this.attemptedProblems = 0,
+    this.firstTryCorrect = 0,
+    this.isLocked = false,
   });
 
   factory LearningJourneyCategory.fromJson(Map<String, dynamic> data) {
