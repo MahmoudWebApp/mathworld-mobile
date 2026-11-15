@@ -45,13 +45,6 @@ class LearningJourney {
       completionPercent: _integer(
         data['CompletionPercent'] ?? data['completionPercent'],
       ),
-      attemptedProblems: _integer(
-        data['AttemptedProblems'] ?? data['attemptedProblems'],
-      ),
-      firstTryCorrect: _integer(
-        data['FirstTryCorrect'] ?? data['firstTryCorrect'],
-      ),
-      isLocked: (data['IsLocked'] ?? data['isLocked']) == true,
       categories: raw is List
           ? raw.whereType<Map>().map((category) =>
               LearningJourneyCategory.fromJson(
@@ -114,6 +107,13 @@ class LearningJourneyCategory {
       completionPercent: _integer(
         data['CompletionPercent'] ?? data['completionPercent'],
       ),
+      attemptedProblems: _integer(
+        data['AttemptedProblems'] ?? data['attemptedProblems'],
+      ),
+      firstTryCorrect: _integer(
+        data['FirstTryCorrect'] ?? data['firstTryCorrect'],
+      ),
+      isLocked: (data['IsLocked'] ?? data['isLocked']) == true,
     );
   }
 
