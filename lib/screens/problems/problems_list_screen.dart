@@ -29,15 +29,36 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
   int? _stageId;
   String? _query;
   String? _title;
+  bool _routeInitialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final arguments = ModalRoute.of(context)?.settings.arguments;
-    if (arguments is Map<String, dynamic>) {
-      _categoryId ??= arguments['categoryId'] as int?;
-      _stageId ??= arguments['stageId'] as int?;
-      _title ??= (arguments['title'] ?? arguments['categoryName']) as String?;
+    final categoryValue = arguments is Map ? arguments['categoryId'] : null;
+    final stageValue = arguments is Map ? arguments['stageId'] : null;
+    final titleValue = arguments is Map
+        ? arguments['title'] ?? arguments['categoryName']
+        : null;
+    final nextCategoryId = categoryValue is int && categoryValue > 0
+        ? categoryValue : null;
+    final nextStageId = stageValue is int && stageValue > 0
+        ? stageValue : null;
+    final nextTitle = titleValue is String && titleValue.trim().isNotEmpty
+        ? titleValue : null;
+
+    // Reused routes must never show a previous stage's or category's results.
+    // Do not reset the learner's search just because locale/theme rebuilt.
+    if (!_routeInitialized || _categoryId != nextCategoryId ||
+        _stageId != nextStageId || _title != nextTitle) {
+      _routeInitialized = true;
+      _debounce?.cancel();
+      _categoryId = nextCategoryId;
+      _stageId = nextStageId;
+      _title = nextTitle;
+      _page = 1;
+      _query = null;
+      _searchController.clear();
     }
   }
 
