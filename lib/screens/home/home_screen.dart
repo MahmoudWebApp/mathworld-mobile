@@ -31,6 +31,7 @@ class HomeScreen extends ConsumerWidget {
     final learningJourney = ref.watch(learningJourneyProvider);
 
     return MathBackground(
+      showSymbols: true,
       child: SafeArea(
         bottom: false,
         child: dashboardState.when(
