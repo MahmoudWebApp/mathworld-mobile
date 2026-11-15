@@ -135,8 +135,19 @@ class StageCategoriesScreen extends ConsumerWidget {
                   textScale: textScale,
                 );
 
-                return GridView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    // Refresh access and Premium at the same time as categories,
+                    // so locked badges reflect the current server policy.
+                    await Future.wait([
+                      ref.refresh(stageCategoriesProvider(stage.id).future),
+                      ref.refresh(stageCategoryAccessProvider(stage.id).future),
+                      if (user?.role == 'Student')
+                        ref.refresh(studentPremiumProvider.future),
+                    ]);
+                  },
+                  child: GridView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.lg,
                     AppSpacing.md,
@@ -161,6 +172,7 @@ class StageCategoriesScreen extends ConsumerWidget {
                       freeCategory: access.freeCategoryIds.contains(category.id),
                     );
                   },
+                  ),
                 );
                     },
                   ),
