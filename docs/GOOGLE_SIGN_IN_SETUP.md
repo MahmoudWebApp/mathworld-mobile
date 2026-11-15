@@ -51,7 +51,7 @@ Flutter's `SocialAuthConfig.googleAvailable` shows the Google button only
 on supported native builds with a plausible OAuth client ID. The default
 `flutter build apk --release` **does not enable** Google login. For iOS
 also supply `--dart-define=MATHWORLD_GOOGLE_IOS_CLIENT_ID=<IOS_OAUTH_CLIENT_ID>`
-and configure the iOS native URL scheme before distributing test builds.
+and configure the iOS native URL scheme before distributing test builds. Once that native scheme is actually installed, also use `--dart-define=MATHWORLD_GOOGLE_IOS_URL_SCHEME_CONFIGURED=true`; otherwise the Google button intentionally stays hidden on iOS.
 
 No Firebase dependency is required solely to use this plugin with explicit
 OAuth IDs. Never bundle Google client **secrets** or service-account keys in
