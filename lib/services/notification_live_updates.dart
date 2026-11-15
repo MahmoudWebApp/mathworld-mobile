@@ -53,6 +53,9 @@ class NotificationLiveUpdates {
       }
       final uri = Uri.parse('${ApiConstants.baseUrl}/notifications/stream');
       final request = await client.getUrl(uri);
+      // SSE authentication is never redirected to another host.
+      request.followRedirects = false;
+      request.maxRedirects = 0;
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
       request.headers.set(HttpHeaders.acceptHeader, 'text/event-stream');
       request.headers.set(HttpHeaders.cacheControlHeader, 'no-store');
@@ -61,7 +64,9 @@ class NotificationLiveUpdates {
 
       // Expired/revoked tokens must never reconnect in a tight loop.
       if (response.statusCode == HttpStatus.unauthorized ||
-          response.statusCode == HttpStatus.forbidden) {
+          response.statusCode == HttpStatus.forbidden ||
+          response.statusCode == HttpStatus.notFound ||
+          response.statusCode == HttpStatus.methodNotAllowed) {
         stop();
         return;
       }
