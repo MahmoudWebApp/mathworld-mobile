@@ -75,7 +75,7 @@ class SocialAuthConfig {
   /// without a configured native OAuth application. OAuth client IDs are not
   /// secrets; backend validation still checks the actual ID token audience.
   static bool isValidGoogleClientId(String value) => RegExp(
-    r'^\\d+-[a-z0-9_-]+\\.apps\\.googleusercontent\\.com
+    r'^\d+-[a-z0-9_-]+\.apps\.googleusercontent\.com
 }
 
 /// Application-wide configuration values.
