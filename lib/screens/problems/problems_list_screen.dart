@@ -92,10 +92,15 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                 trailing: [
                   if (_searchController.text.isNotEmpty)
                     IconButton(
+                      tooltip: context.locale.languageCode == 'ar'
+                          ? 'مسح البحث' : 'Clear search',
                       onPressed: () {
+                        _debounce?.cancel();
                         _searchController.clear();
-                        _handleSearch('');
-                        setState(() {});
+                        setState(() {
+                          _query = null;
+                          _page = 1;
+                        });
                       },
                       icon: const Icon(Icons.close_rounded),
                     ),
@@ -103,6 +108,13 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                 onChanged: (value) {
                   _handleSearch(value);
                   setState(() {});
+                },
+                onSubmitted: (value) {
+                  _debounce?.cancel();
+                  setState(() {
+                    _query = value.trim().isEmpty ? null : value.trim();
+                    _page = 1;
+                  });
                 },
               ),
             ),
@@ -130,15 +142,30 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                             padding: const EdgeInsets.all(AppSpacing.lg),
                             child: AppEmptyView(
                               icon: Icons.search_off_rounded,
-                              title: 'no_results'.tr(),
-                              subtitle: _query == null
-                                  ? null
-                                  : context.locale.languageCode == 'ar'
-                                      ? 'جرّب كلمة بحث أخرى أو امسح البحث لعرض المسائل.'
-                                      : 'Try another term or clear search to browse problems.',
-                              action: _query == null
-                                  ? null
-                                  : OutlinedButton.icon(
+                              title: _page > 1
+                                  ? (context.locale.languageCode == 'ar'
+                                      ? 'لا توجد مسائل في هذه الصفحة'
+                                      : 'No problems on this page')
+                                  : 'no_results'.tr(),
+                              subtitle: _page > 1
+                                  ? (context.locale.languageCode == 'ar'
+                                      ? 'يمكن أن يكون المحتوى تغيّر أثناء التصفح.'
+                                      : 'The question list may have changed.')
+                                  : _query == null
+                                      ? null
+                                      : context.locale.languageCode == 'ar'
+                                          ? 'جرّب كلمة بحث أخرى أو امسح البحث لعرض المسائل.'
+                                          : 'Try another term or clear search to browse problems.',
+                              action: _page > 1
+                                  ? FilledButton.icon(
+                                      onPressed: () => setState(() => _page = 1),
+                                      icon: const Icon(Icons.first_page_rounded),
+                                      label: Text(context.locale.languageCode == 'ar'
+                                          ? 'العودة لأول صفحة' : 'Back to first page'),
+                                    )
+                                  : _query == null
+                                      ? null
+                                      : OutlinedButton.icon(
                                       onPressed: () {
                                         _debounce?.cancel();
                                         _searchController.clear();
