@@ -14,6 +14,8 @@ import '../../providers/student_badges_provider.dart';
 import '../../providers/learning_journey_provider.dart';
 import '../../providers/learner_presence_provider.dart';
 import '../../services/learner_presence_service.dart';
+import '../../services/notification_live_updates.dart';
+import '../../providers/repositories_provider.dart';
 import '../../widgets/brand_logo.dart';
 import '../dashboard/favorites_screen.dart';
 import '../home/home_screen.dart';
@@ -34,6 +36,7 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
   bool _isAppResumed = true;
   bool _presenceInFlight = false;
   late final LearnerPresenceService _presence;
+  late final NotificationLiveUpdates _liveNotifications;
 
   Future<void> _beatPresence() async {
     if (!mounted || !_isAppResumed || _presenceInFlight) return;
@@ -60,8 +63,19 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _presence = ref.read(learnerPresenceServiceProvider);
+    _liveNotifications = NotificationLiveUpdates(
+      readToken: ref.read(apiClientProvider).readToken,
+      onInboxChanged: () {
+        if (!mounted || !_isAppResumed) return;
+        ref.invalidate(notificationInboxProvider);
+        ref.invalidate(notificationPageProvider);
+      },
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_beatPresence());
+      if (mounted) {
+        unawaited(_beatPresence());
+        _liveNotifications.start();
+      }
     });
     _notificationRefresh = Timer.periodic(const Duration(minutes: 1), (_) {
       // No background polling/heartbeat for a suspended mobile app.
@@ -84,13 +98,19 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
       ref.invalidate(learningJourneyProvider);
     }
     _isAppResumed = resumed;
-    if (resumed && mounted) unawaited(_beatPresence());
+    if (resumed && mounted) {
+      unawaited(_beatPresence());
+      _liveNotifications.start();
+    } else {
+      _liveNotifications.stop();
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _notificationRefresh?.cancel();
+    _liveNotifications.stop();
     unawaited(_closePresence());
     super.dispose();
   }
