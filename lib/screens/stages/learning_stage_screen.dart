@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/stages_provider.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
+import '../../widgets/stage_math_glyph.dart';
 import '../../widgets/premium_button.dart';
 
 /// First-login stage onboarding and later stage switching.
@@ -56,6 +57,7 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
     return Scaffold(
       appBar: AppBar(title: Text('learning_stage'.tr())),
       body: MathBackground(
+        showSymbols: true,
         child: SafeArea(
           child: stages.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -117,6 +119,11 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
                 const SizedBox(height: AppSpacing.xl),
                 ...items.map((stage) {
                   final selected = effective == stage.id;
+                  const tones = [
+                    AppColors.stageCyan, AppColors.stageOrange,
+                    AppColors.stageGreen, AppColors.stageViolet,
+                  ];
+                  final accent = tones[(stage.order <= 0 ? 0 : stage.order - 1) % tones.length];
                   return Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.md),
                     child: GlassCard(
@@ -126,11 +133,17 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
                           horizontal: AppSpacing.md,
                           vertical: AppSpacing.sm,
                         ),
-                        leading: Icon(
-                          selected ? Icons.check_circle : Icons.school_outlined,
-                          color: selected
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                        leading: Container(
+                          width: 48, height: 48,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            color: accent.withValues(alpha: .12),
+                            border: Border.all(color: accent.withValues(alpha: .28)),
+                          ),
+                          child: selected
+                              ? Icon(Icons.check_circle_rounded, color: accent, size: 28)
+                              : StageMathGlyph(stageOrder: stage.order, color: accent, size: 36),
                         ),
                         title: Text(
                           stage.getName(language),
