@@ -495,6 +495,52 @@ class _LearningJourneyCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
+          if (journey.recommendedCategory case final suggested?) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.32),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.20),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(language == 'ar' ? 'الخطوة المقترحة لك' : 'Suggested next step',
+                    style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(suggested.getName(language),
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(suggested.attemptedProblems > 0
+                      ? (language == 'ar'
+                          ? 'كمّل فئتك الحالية حتى تحسّن تقدّمك.'
+                          : 'Continue this unfinished topic to improve your progress.')
+                      : (language == 'ar'
+                          ? 'بلّش بفئة جديدة ومفتوحة لحسابك.'
+                          : 'Explore a new topic already unlocked for you.')),
+                  const SizedBox(height: AppSpacing.sm),
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.problems,
+                      arguments: <String, dynamic>{
+                        'categoryId': suggested.categoryId,
+                        'stageId': journey.stageId,
+                        'title': suggested.getName(language),
+                      },
+                    ),
+                    icon: const Icon(Icons.play_arrow_rounded),
+                    label: Text(language == 'ar' ? 'تابع حل المسائل' : 'Practice this category'),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           Text('stage_topics'.tr(),
               style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: AppSpacing.sm),
@@ -522,7 +568,14 @@ class _LearningJourneyCard extends StatelessWidget {
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Text(
-                    '${category.solvedProblems}/${category.totalProblems}',
+                    category.isLocked
+                        ? (language == 'ar' ? 'مقفلة' : 'Locked')
+                        : '${category.solvedProblems}/${category.totalProblems}',
+                    style: TextStyle(
+                      color: category.isLocked
+                          ? Theme.of(context).colorScheme.onSurfaceVariant
+                          : null,
+                    ),
                   ),
                 ],
               ),
