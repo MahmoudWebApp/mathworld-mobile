@@ -71,6 +71,13 @@ class SocialAuthConfig {
     'MATHWORLD_GOOGLE_IOS_CLIENT_ID',
   );
 
+  // iOS also requires its reversed client ID registered as a native URL
+  // scheme in Info.plist. Never show a broken sign-in button without it.
+  static const bool googleIosUrlSchemeConfigured = bool.fromEnvironment(
+    'MATHWORLD_GOOGLE_IOS_URL_SCHEME_CONFIGURED',
+    defaultValue: false,
+  );
+
   /// Guard against placeholder IDs, unsupported platforms, and iOS builds
   /// without a configured native OAuth application. OAuth client IDs are not
   /// secrets; backend validation still checks the actual ID token audience.
@@ -116,7 +123,8 @@ class CacheKeys {
     }
     if (defaultTargetPlatform == TargetPlatform.android) return true;
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return isValidGoogleClientId(googleIosClientId);
+      return googleIosUrlSchemeConfigured &&
+          isValidGoogleClientId(googleIosClientId);
     }
     return false;
   }
