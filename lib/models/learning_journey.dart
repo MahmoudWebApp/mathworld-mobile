@@ -113,7 +113,8 @@ class LearningJourneyCategory {
       firstTryCorrect: _integer(
         data['FirstTryCorrect'] ?? data['firstTryCorrect'],
       ),
-      isLocked: (data['IsLocked'] ?? data['isLocked']) == true,
+      // Missing or malformed server access metadata must fail closed.
+      isLocked: (data['IsLocked'] ?? data['isLocked']) != false,
     );
   }
 
