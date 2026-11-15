@@ -8,6 +8,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/design_tokens.dart';
 import '../../config/app_routes.dart';
 import '../../providers/notification_provider.dart';
+import '../../providers/dashboard_provider.dart';
+import '../../providers/stage_category_access_provider.dart';
+import '../../providers/student_badges_provider.dart';
 import '../../widgets/brand_logo.dart';
 import '../dashboard/favorites_screen.dart';
 import '../home/home_screen.dart';
@@ -41,8 +44,12 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final resumed = state == AppLifecycleState.resumed;
     if (resumed && !_isAppResumed && mounted) {
-      // Reconcile missed notifications after returning to the foreground.
+      // Reconcile notifications, server-granted Premium and student stats
+      // after external admin changes while the phone was in the background.
       ref.invalidate(notificationInboxProvider);
+      ref.invalidate(studentPremiumProvider);
+      ref.invalidate(dashboardProvider);
+      ref.invalidate(studentBadgesProvider);
     }
     _isAppResumed = resumed;
   }
