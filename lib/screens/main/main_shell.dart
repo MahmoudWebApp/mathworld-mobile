@@ -22,20 +22,34 @@ class MainShell extends ConsumerStatefulWidget {
   ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends ConsumerState<MainShell> {
+class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserver {
   int _selectedIndex = 0;
   Timer? _notificationRefresh;
+  bool _isAppResumed = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _notificationRefresh = Timer.periodic(const Duration(minutes: 1), (_) {
-      ref.invalidate(notificationInboxProvider);
+      // In-app polling only: never keep requesting an inbox in background.
+      if (mounted && _isAppResumed) ref.invalidate(notificationInboxProvider);
     });
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final resumed = state == AppLifecycleState.resumed;
+    if (resumed && !_isAppResumed && mounted) {
+      // Reconcile missed notifications after returning to the foreground.
+      ref.invalidate(notificationInboxProvider);
+    }
+    _isAppResumed = resumed;
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _notificationRefresh?.cancel();
     super.dispose();
   }
