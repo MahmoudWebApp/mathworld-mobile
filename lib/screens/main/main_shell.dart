@@ -12,6 +12,8 @@ import '../../providers/dashboard_provider.dart';
 import '../../providers/stage_category_access_provider.dart';
 import '../../providers/student_badges_provider.dart';
 import '../../providers/learning_journey_provider.dart';
+import '../../providers/learner_presence_provider.dart';
+import '../../services/learner_presence_service.dart';
 import '../../widgets/brand_logo.dart';
 import '../dashboard/favorites_screen.dart';
 import '../home/home_screen.dart';
@@ -30,14 +32,42 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
   int _selectedIndex = 0;
   Timer? _notificationRefresh;
   bool _isAppResumed = true;
+  bool _presenceInFlight = false;
+  late final LearnerPresenceService _presence;
+
+  Future<void> _beatPresence() async {
+    if (!mounted || !_isAppResumed || _presenceInFlight) return;
+    _presenceInFlight = true;
+    try {
+      await _presence.heartbeat();
+    } catch (_) {
+      // Connection failure never prevents the learner from practicing.
+    } finally {
+      _presenceInFlight = false;
+    }
+  }
+
+  Future<void> _closePresence() async {
+    try {
+      await _presence.close();
+    } catch (_) {
+      // Force-quit, offline use and revoked tokens expire on the server.
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _presence = ref.read(learnerPresenceServiceProvider);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_beatPresence());
+    });
     _notificationRefresh = Timer.periodic(const Duration(minutes: 1), (_) {
-      // In-app polling only: never keep requesting an inbox in background.
-      if (mounted && _isAppResumed) ref.invalidate(notificationInboxProvider);
+      // No background polling/heartbeat for a suspended mobile app.
+      if (!mounted || !_isAppResumed) return;
+      ref.invalidate(notificationInboxProvider);
+      unawaited(_beatPresence());
     });
   }
 
@@ -54,12 +84,14 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
       ref.invalidate(learningJourneyProvider);
     }
     _isAppResumed = resumed;
+    if (resumed && mounted) unawaited(_beatPresence());
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _notificationRefresh?.cancel();
+    unawaited(_closePresence());
     super.dispose();
   }
 
