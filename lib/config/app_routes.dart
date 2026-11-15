@@ -12,6 +12,7 @@ import '../screens/problems/problem_details_screen.dart';
 import '../screens/problems/problems_list_screen.dart';
 import '../screens/settings/privacy_screen.dart';
 import '../screens/settings/premium_gift_redeem_screen.dart';
+import '../screens/settings/premium_checkout_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/stages/stage_categories_screen.dart';
 import '../screens/stages/learning_stage_screen.dart';
@@ -33,6 +34,7 @@ class AppRoutes {
   static const String notifications = '/notifications';
   static const String premiumAnalytics = '/premium-analytics';
   static const String premiumGiftRedeem = '/premium-gift-redeem';
+  static const String premiumCheckout = '/premium-checkout';
 
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -51,6 +53,7 @@ class AppRoutes {
       notifications: (_) => const NotificationsScreen(),
       premiumAnalytics: (_) => const PremiumAnalyticsScreen(),
       premiumGiftRedeem: (_) => const PremiumGiftRedeemScreen(),
+      premiumCheckout: (_) => const PremiumCheckoutScreen(),
     };
   }
 }
