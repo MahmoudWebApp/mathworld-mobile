@@ -268,6 +268,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    // Only explicit logout is logged; session expiry/device termination
+    // must never be labelled as a confirmed sign-out.
+    await _repository.recordExplicitSignOut();
     _resetAccountScopedState();
     await _repository.clearSession();
     await GoogleIdentityService.signOutIfInitialized();
