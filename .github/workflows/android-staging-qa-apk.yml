@@ -1,6 +1,22 @@
 name: Android staging QA APK (explicit API, debug-signed)
 
 on:
+  # Feature-branch builds can run without merging the workflow into main,
+  # once MATHWORLD_STAGING_API_URL is set as an Actions repository variable.
+  pull_request:
+    paths:
+      - '.github/workflows/android-staging-qa-apk.yml'
+      - 'lib/**'
+      - 'android/**'
+      - 'pubspec.yaml'
+      - '.env.example'
+  push:
+    branches:
+      - feature/premium-entitlements-client
+    paths:
+      - '.github/workflows/android-staging-qa-apk.yml'
+      - 'lib/**'
+      - 'android/**'
   workflow_dispatch:
     inputs:
       api_base_url:
@@ -14,14 +30,16 @@ permissions:
 jobs:
   staging-android:
     # Avoid accidentally building from main, which is not the active feature set.
-    if: github.ref == 'refs/heads/feature/premium-entitlements-client'
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature/premium-entitlements-client')
+      || ((github.event_name == 'push' || github.event_name == 'pull_request') && vars.MATHWORLD_STAGING_API_URL != '')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - name: Validate dedicated staging API and create bundled Flutter environment
         env:
-          QA_API_BASE_URL: ${{ inputs.api_base_url }}
+          QA_API_BASE_URL: ${{ inputs.api_base_url || vars.MATHWORLD_STAGING_API_URL }}
         run: |
           python3 - <<'PY'
           import ipaddress
