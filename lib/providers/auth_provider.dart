@@ -12,6 +12,7 @@ import '../services/hive_service.dart';
 import 'categories_provider.dart';
 import 'dashboard_provider.dart';
 import 'learning_provider.dart';
+import 'learning_journey_provider.dart';
 import 'problem_details_provider.dart';
 import 'problems_provider.dart';
 import 'notification_provider.dart';
@@ -259,6 +260,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final updated = await _repository.chooseLearningStage(current, stageId);
       state = state.copyWith(user: updated, isSubmitting: false);
       _ref.invalidate(dashboardProvider);
+      _ref.invalidate(learningJourneyProvider);
     } catch (_) {
       state = state.copyWith(isSubmitting: false);
       rethrow;
@@ -292,6 +294,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _ref.invalidate(categoriesProvider);
     _ref.invalidate(stageCategoriesProvider);
     _ref.invalidate(dashboardProvider);
+    _ref.invalidate(learningJourneyProvider);
     _ref.invalidate(favoritesProvider);
     _ref.invalidate(solvedProvider);
     _ref.invalidate(problemsProvider);
