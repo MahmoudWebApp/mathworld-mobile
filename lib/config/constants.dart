@@ -82,38 +82,7 @@ class SocialAuthConfig {
   /// without a configured native OAuth application. OAuth client IDs are not
   /// secrets; backend validation still checks the actual ID token audience.
   static bool isValidGoogleClientId(String value) => RegExp(
-    r'^\d+-[a-z0-9_-]+\.apps\.googleusercontent\.com
-}
-
-/// Application-wide configuration values.
-class AppConstants {
-  const AppConstants._();
-
-  static const String appName = 'MathWorld';
-  static const String appVersion = '1.2.0';
-  static const String defaultLanguage = 'ar';
-  static const String tokenKey = 'auth_token';
-  static const int pageSize = 10;
-  static const Duration contentCacheDuration = Duration(days: 7);
-}
-
-/// Hive box names used by the application.
-class HiveBoxes {
-  const HiveBoxes._();
-
-  static const String authBox = 'auth_box';
-  static const String cacheBox = 'cache_box';
-  static const String settingsBox = 'settings_box';
-}
-
-/// Cache keys used by repositories.
-class CacheKeys {
-  const CacheKeys._();
-
-  static const String stages = 'stages';
-  static const String categories = 'categories';
-}
-,
+    r'^\d+-[a-z0-9_-]+\.apps\.googleusercontent\.com$',
     caseSensitive: false,
   ).hasMatch(value.trim());
 
