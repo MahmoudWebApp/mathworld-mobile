@@ -16,6 +16,7 @@ import '../../utils/layout_utils.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
+import '../../widgets/stage_math_glyph.dart';
 
 /// Displays localized categories for the selected educational stage.
 class StageCategoriesScreen extends ConsumerWidget {
@@ -43,6 +44,7 @@ class StageCategoriesScreen extends ConsumerWidget {
     final localeCode = context.locale.languageCode;
 
     final content = MathBackground(
+      showSymbols: true,
         child: categoriesState.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, __) => AppErrorView(
@@ -237,7 +239,7 @@ class _CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accent = _categoryColor(category.order);
+    final accent = _categoryColor(stageId);
     final title = category.getName(localeCode);
     final titleColor = isDark ? AppColors.darkText : AppColors.lightText;
     final mutedColor = isDark ? AppColors.darkMuted : AppColors.lightMuted;
@@ -410,17 +412,15 @@ class _CategoryCard extends StatelessWidget {
         !value.contains('\\')) {
       return Text(value, style: const TextStyle(fontSize: 25));
     }
-    return Icon(Icons.calculate_outlined, color: accent, size: 26);
+    return StageMathGlyph(stageOrder: stageId, color: accent, size: 32);
   }
 
   Color _categoryColor(int value) {
     const colors = [
-      AppColors.brandPurple,
-      AppColors.brandCyan,
-      AppColors.brandBlue,
-      AppColors.brandViolet,
-      Color(0xFF6D5DFB),
-      Color(0xFF32B8D8),
+      AppColors.stageCyan,
+      AppColors.stageOrange,
+      AppColors.stageGreen,
+      AppColors.stageViolet,
     ];
 
     final index = (value <= 0 ? 0 : value - 1) % colors.length;
