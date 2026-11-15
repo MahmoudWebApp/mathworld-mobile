@@ -200,6 +200,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
           cause: error,
         );
       }
+      // A rejected identity must not silently remain selected for retries.
+      await GoogleIdentityService.signOutIfInitialized();
+      rethrow;
+    } catch (_) {
+      await GoogleIdentityService.signOutIfInitialized();
       rethrow;
     }
   }
@@ -262,7 +267,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(user: updated, isSubmitting: false);
       _ref.invalidate(dashboardProvider);
       _ref.invalidate(learningJourneyProvider);
-    _ref.invalidate(learnerPresenceServiceProvider);
+      _ref.invalidate(learnerPresenceServiceProvider);
     } catch (_) {
       state = state.copyWith(isSubmitting: false);
       rethrow;
@@ -289,6 +294,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> _handleExpiredSession() async {
     _resetAccountScopedState();
     await _repository.clearSession();
+    // Expired MathWorld JWTs also clear the optional Google SDK account.
+    // On shared devices, a fresh login must not inherit that SDK selection.
+    await GoogleIdentityService.signOutIfInitialized();
     _resetAccountScopedState();
     state = const AuthState(
       status: AuthStatus.unauthenticated,
