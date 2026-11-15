@@ -301,6 +301,8 @@ class _ReportBody extends ConsumerWidget {
               label: Text(ar ? 'مشاركة ملف CSV / Excel' : 'Share Excel-ready CSV file'),
             ),
             const SizedBox(height: AppSpacing.sm),
+            const _XlsxDownloadButton(),
+            const SizedBox(height: AppSpacing.sm),
             OutlinedButton.icon(
               onPressed: () async {
                 await Clipboard.setData(ClipboardData(text: _csv()));
@@ -318,8 +320,8 @@ class _ReportBody extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Text(
                 ar
-                    ? 'يمكنك الآن مشاركة ملف CSV من الجوال وفتحه في Excel؛ إصدار PDF يبقى متاحاً من المتصفح عبر الطباعة.'
-                    : 'You can now share a CSV file from the app and open it in Excel. Save-as-PDF is available from the Web print view.',
+                    ? 'يمكنك مشاركة ملف Excel أصلي بصيغة XLSX أو CSV من الجوال؛ أما حفظ PDF فما زال متاحاً عبر طباعة التقرير على الويب.'
+                    : 'You can share a real Excel workbook (XLSX) or CSV from the app. Save-as-PDF remains available through Web printing.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
@@ -327,6 +329,71 @@ class _ReportBody extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _XlsxDownloadButton extends ConsumerStatefulWidget {
+  const _XlsxDownloadButton();
+
+  @override
+  ConsumerState<_XlsxDownloadButton> createState() =>
+      _XlsxDownloadButtonState();
+}
+
+class _XlsxDownloadButtonState extends ConsumerState<_XlsxDownloadButton> {
+  bool _sharing = false;
+
+  Future<void> _shareExcel() async {
+    if (_sharing) return;
+    setState(() => _sharing = true);
+    final ar = context.locale.languageCode == 'ar';
+    try {
+      final bytes = await ref.read(premiumAnalyticsServiceProvider)
+          .exportXlsx(language: ar ? 'ar' : 'en');
+      if (!mounted) return;
+      final origin = context.findRenderObject() as RenderBox?;
+      await SharePlus.instance.share(ShareParams(
+        files: [
+          XFile.fromData(
+            bytes,
+            name: 'mathworld-premium-analytics.xlsx',
+            mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          ),
+        ],
+        fileNameOverrides: const ['mathworld-premium-analytics.xlsx'],
+        subject: ar ? 'تقرير MathWorld بصيغة Excel' : 'MathWorld Excel report',
+        sharePositionOrigin: origin == null
+            ? null
+            : origin.localToGlobal(Offset.zero) & origin.size,
+      ));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(ar
+            ? 'تعذّر تجهيز ملف Excel. تأكد من اشتراك Premium والاتصال.'
+            : 'Could not export Excel. Check Premium access and your connection.'),
+      ));
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ar = context.locale.languageCode == 'ar';
+    return OutlinedButton.icon(
+      onPressed: _sharing ? null : _shareExcel,
+      icon: _sharing
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.table_chart_outlined),
+      label: Text(_sharing
+          ? (ar ? 'جارٍ تجهيز Excel…' : 'Preparing Excel…')
+          : (ar ? 'مشاركة تقرير Excel (XLSX)' : 'Share native Excel workbook (XLSX)')),
     );
   }
 }
