@@ -187,8 +187,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (!state.isAuthenticated) {
       throw StateError('Sign in to MathWorld before linking Google.');
     }
-    final token = await GoogleIdentityService.requestIdToken();
-    await _repository.linkGoogle(token);
+    try {
+      final token = await GoogleIdentityService.requestIdToken();
+      await _repository.linkGoogle(token);
+    } on GoogleSignInException catch (error) {
+      if (error.code == GoogleSignInExceptionCode.canceled) {
+        throw AppException(
+          type: AppExceptionType.cancelled,
+          messageKey: 'social_login_cancelled',
+          cause: error,
+        );
+      }
+      rethrow;
+    }
   }
 
   Future<void> register(
