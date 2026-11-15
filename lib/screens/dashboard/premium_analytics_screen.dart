@@ -13,6 +13,7 @@ import '../../core/utils/error_message.dart';
 import '../../providers/premium_analytics_provider.dart';
 import '../../providers/stage_category_access_provider.dart';
 import '../../services/premium_analytics_service.dart';
+import '../../services/premium_analytics_pdf_service.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
@@ -269,6 +270,8 @@ class _ReportBody extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
+            _PdfShareButton(report: report),
+            const SizedBox(height: AppSpacing.sm),
             OutlinedButton.icon(
               onPressed: () async {
                 final bytes = Uint8List.fromList([
@@ -320,8 +323,8 @@ class _ReportBody extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Text(
                 ar
-                    ? 'يمكنك مشاركة ملف Excel أصلي بصيغة XLSX أو CSV من الجوال؛ أما حفظ PDF فما زال متاحاً عبر طباعة التقرير على الويب.'
-                    : 'You can share a real Excel workbook (XLSX) or CSV from the app. Save-as-PDF remains available through Web printing.',
+                    ? 'يمكنك مشاركة تقرير PDF عربي أو إنكليزي، وملف Excel بصيغة XLSX أو CSV. قد تحتاج اتصالاً بالإنترنت عند إنشاء أول PDF لتحميل الخط.'
+                    : 'Share a native PDF in Arabic or English, as well as XLSX or CSV. First PDF export may require internet access to fetch the embedded font.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
@@ -394,6 +397,71 @@ class _XlsxDownloadButtonState extends ConsumerState<_XlsxDownloadButton> {
       label: Text(_sharing
           ? (ar ? 'جارٍ تجهيز Excel…' : 'Preparing Excel…')
           : (ar ? 'مشاركة تقرير Excel (XLSX)' : 'Share native Excel workbook (XLSX)')),
+    );
+  }
+}
+
+
+/// Kept separate from the report view so export progress does not rebuild
+/// the entire analytics page. The source report is already Premium-gated.
+class _PdfShareButton extends StatefulWidget {
+  const _PdfShareButton({required this.report});
+  final PremiumAnalyticsReport report;
+
+  @override
+  State<_PdfShareButton> createState() => _PdfShareButtonState();
+}
+
+class _PdfShareButtonState extends State<_PdfShareButton> {
+  bool _sharing = false;
+
+  Future<void> _sharePdf() async {
+    if (_sharing) return;
+    setState(() => _sharing = true);
+    final ar = context.locale.languageCode == 'ar';
+    try {
+      final bytes = await const PremiumAnalyticsPdfService().export(
+        widget.report, arabic: ar,
+      );
+      if (!mounted) return;
+      final origin = context.findRenderObject() as RenderBox?;
+      await SharePlus.instance.share(ShareParams(
+        files: [
+          XFile.fromData(
+            bytes,
+            name: 'mathworld-premium-analytics.pdf',
+            mimeType: 'application/pdf',
+          ),
+        ],
+        fileNameOverrides: const ['mathworld-premium-analytics.pdf'],
+        subject: ar ? 'تقرير MathWorld PDF' : 'MathWorld PDF report',
+        sharePositionOrigin: origin == null
+            ? null : origin.localToGlobal(Offset.zero) & origin.size,
+      ));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(ar
+            ? 'تعذّر إنشاء PDF. تأكد من الاتصال بالإنترنت، ثم أعد المحاولة.'
+            : 'Could not create the PDF. Check your connection and retry.'),
+      ));
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ar = context.locale.languageCode == 'ar';
+    return OutlinedButton.icon(
+      onPressed: _sharing ? null : _sharePdf,
+      icon: _sharing
+          ? const SizedBox(width: 18, height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2))
+          : const Icon(Icons.picture_as_pdf_outlined),
+      label: Text(_sharing
+          ? (ar ? 'جارٍ تجهيز PDF…' : 'Preparing PDF…')
+          : (ar ? 'مشاركة تقرير PDF' : 'Share PDF report')),
     );
   }
 }
