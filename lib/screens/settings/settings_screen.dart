@@ -170,6 +170,23 @@ class SettingsScreen extends ConsumerWidget {
               GlassCard(
                 padding: EdgeInsets.zero,
                 child: ListTile(
+                  leading: const Icon(Icons.workspace_premium_rounded),
+                  title: Text(context.locale.languageCode == 'ar'
+                      ? 'Premium والخصومات'
+                      : 'Premium & discounts'),
+                  subtitle: Text(context.locale.languageCode == 'ar'
+                      ? 'معاينة السعر وسجل طلبات الاشتراك'
+                      : 'Price preview and checkout order history'),
+                  trailing: LayoutUtils.forwardIcon(context),
+                  onTap: () => Navigator.pushNamed(
+                    context, AppRoutes.premiumCheckout,
+                  ),
+                ),
+              ),
+            if (currentUser?.role == 'Student')
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: ListTile(
                   leading: const Icon(Icons.card_giftcard_rounded),
                   title: Text(context.locale.languageCode == 'ar'
                       ? 'تفعيل كود هدية Premium'
