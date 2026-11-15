@@ -72,7 +72,34 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
                 ],
               ),
             ),
-            data: (items) => ListView(
+            data: (items) => items.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.school_outlined, size: 48,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            language == 'ar'
+                                ? 'لا توجد مراحل تعليمية متاحة حالياً'
+                                : 'No learning stages are available yet',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          FilledButton.icon(
+                            onPressed: () => ref.invalidate(stagesProvider),
+                            icon: const Icon(Icons.refresh),
+                            label: Text('retry'.tr()),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : ListView(
               padding: const EdgeInsets.all(AppSpacing.lg),
               children: [
                 const SizedBox(height: AppSpacing.md),
