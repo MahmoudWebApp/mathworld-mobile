@@ -7,13 +7,16 @@ void main() {
     'stageId': 1,
     'freeCategoryIds': [2, 3],
     'categories': [
-      {'id': 2, 'nameAr': 'الجمع', 'nameEn': 'Addition', 'icon': '➕', 'isFree': true},
-      {'id': 4, 'nameAr': 'الضرب', 'nameEn': 'Multiplication', 'icon': '✖️', 'isFree': false},
+      {'id': 2, 'nameAr': 'الجمع', 'nameEn': 'Addition', 'icon': '➕', 'order': 1, 'problemsCount': 12, 'isFree': true},
+      {'id': 4, 'nameAr': 'الضرب', 'nameEn': 'Multiplication', 'icon': '✖️', 'order': 2, 'problemsCount': 0, 'isFree': false},
     ],
   });
 
   test('Free and Premium access follow server-provided category flags', () {
     expect(catalog.stageId, 1);
+    expect(catalog.categories.first.problemsCount, 12);
+    expect(catalog.categories.last.problemsCount, 0);
+    expect(catalog.categories.last.order, 2);
     expect(catalog.categories.first.canOpen(isPremium: false), isTrue);
     expect(catalog.categories.last.canOpen(isPremium: false), isFalse);
     expect(catalog.categories.last.canOpen(isPremium: true), isTrue);
