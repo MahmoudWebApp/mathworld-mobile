@@ -34,6 +34,7 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(
         context, AppRoutes.home, (_) => false,
+        arguments: const {'initialTab': 1},
       );
       return;
     }
@@ -45,6 +46,7 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
         context,
         AppRoutes.home,
         (_) => false,
+        arguments: const {'initialTab': 1},
       );
     } catch (error) {
       if (!mounted) return;
@@ -184,8 +186,8 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 PremiumButton(
                   label: effective != null && effective == user?.currentStageId
-                      ? (language == 'ar' ? 'المتابعة لصفحتي' : 'Continue to dashboard')
-                      : 'save_learning_stage'.tr(),
+                      ? (language == 'ar' ? 'عرض فئاتي المفتوحة' : 'See my unlocked topics')
+                      : (language == 'ar' ? 'حفظ المرحلة وعرض الفئات' : 'Save stage and show topics'),
                   leadingIcon: Icons.arrow_forward_rounded,
                   onPressed: effective == null || _saving
                       ? null
