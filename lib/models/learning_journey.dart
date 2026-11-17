@@ -58,6 +58,7 @@ class LearningJourney {
   /// into a Premium category. Prefer unfinished started topics, then new ones.
   LearningJourneyCategory? get recommendedCategory {
     final available = categories.where((category) =>
+        category.accessVerified &&
         !category.isLocked && category.totalProblems > 0 &&
         category.solvedProblems < category.totalProblems).toList();
     if (available.isEmpty) return null;
@@ -84,6 +85,8 @@ class LearningJourneyCategory {
   final int attemptedProblems;
   final int firstTryCorrect;
   final bool isLocked;
+  /// False on older APIs that omit IsLocked; never call this Premium-locked.
+  final bool accessVerified;
 
   const LearningJourneyCategory({
     required this.categoryId,
@@ -95,9 +98,11 @@ class LearningJourneyCategory {
     this.attemptedProblems = 0,
     this.firstTryCorrect = 0,
     this.isLocked = false,
+    this.accessVerified = true,
   });
 
   factory LearningJourneyCategory.fromJson(Map<String, dynamic> data) {
+    final accessFlag = data['IsLocked'] ?? data['isLocked'];
     return LearningJourneyCategory(
       categoryId: _integer(data['CategoryId'] ?? data['categoryId']),
       nameAr: _string(data['NameAr'] ?? data['nameAr']),
@@ -113,8 +118,10 @@ class LearningJourneyCategory {
       firstTryCorrect: _integer(
         data['FirstTryCorrect'] ?? data['firstTryCorrect'],
       ),
-      // Missing or malformed server access metadata must fail closed.
-      isLocked: (data['IsLocked'] ?? data['isLocked']) != false,
+      // Missing metadata on an old backend is unknown, not a subscription
+      // decision. Stay fail-closed, but don't mislead the user with Premium.
+      isLocked: accessFlag != false,
+      accessVerified: accessFlag is bool,
     );
   }
 
