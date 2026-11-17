@@ -11,6 +11,7 @@ void main() {
       'Page': 1,
       'PageSize': 20,
       'TotalLearners': 1,
+      'StageParticipants': 3,
       'MyRank': 1,
       'Entries': [
         {
@@ -26,6 +27,7 @@ void main() {
 
     expect(report.stageId, 1);
     expect(report.totalLearners, 1);
+    expect(report.stageParticipants, 3);
     expect(report.myRank, 1);
     expect(report.entries, hasLength(1));
     expect(report.entries.single.rank, 1);
@@ -44,6 +46,7 @@ void main() {
       'page': 1,
       'pageSize': 20,
       'totalLearners': 0,
+      'stageParticipants': 1,
       'entries': <Map<String, Object>>[],
     });
 
@@ -51,6 +54,7 @@ void main() {
     expect(report.period, 'weekly');
     expect(report.myRank, isNull);
     expect(report.totalLearners, 0);
+    expect(report.stageParticipants, 1);
     expect(report.entries, isEmpty);
   });
 }
