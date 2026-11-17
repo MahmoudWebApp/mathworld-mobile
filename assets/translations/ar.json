@@ -187,5 +187,12 @@
   "active_stage_categories": "الفئات",
   "change_stage_keeps_progress": "تغيير المرحلة لا يمسح تقدمك السابق",
   "category_premium_locked": "هذه الفئة متاحة في Premium",
-  "category_no_problems": "لا توجد مسائل في هذه الفئة بعد"
+  "category_no_problems": "لا توجد مسائل في هذه الفئة بعد",
+  "category_free_access_explanation": "أول فئتين مفتوحتان مجاناً في كل مرحلة، وباقي الفئات ضمن Premium.",
+  "category_all_open": "جميع فئات هذه المرحلة مفتوحة لحسابك.",
+  "category_open": "مفتوحة",
+  "category_locked": "مقفلة",
+  "search_no_matches_hint": "ما لقينا مسائل تطابق بحثك. امسح البحث لعرض مسائل هذه الفئة.",
+  "problems_empty_hint": "ما ظهرت مسائل بهذه القائمة حالياً. اسحب للتحديث أو اضغط إعادة المحاولة.",
+  "clear_search": "مسح البحث"
 }

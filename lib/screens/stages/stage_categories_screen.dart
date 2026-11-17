@@ -34,10 +34,11 @@ class StageCategoriesScreen extends ConsumerWidget {
     final stage = arguments;
     final categoriesState = ref.watch(stageCategoriesProvider(stage.id));
     final localeCode = context.locale.languageCode;
-    final subscription = ref.watch(
-      authProvider.select((state) => state.user?.subscriptionType),
+    final currentUser = ref.watch(
+      authProvider.select((state) => state.user),
     );
-    final isPremium = subscription?.toLowerCase() == 'premium';
+    final isPremium = currentUser?.role == 'Admin' ||
+        currentUser?.subscriptionType.toLowerCase() == 'premium';
 
     final content = MathBackground(
         child: categoriesState.when(
@@ -82,6 +83,33 @@ class StageCategoriesScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.sm,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isPremium ? Icons.verified_outlined : Icons.info_outline_rounded,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          isPremium
+                              ? 'category_all_open'.tr()
+                              : 'category_free_access_explanation'.tr(),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
@@ -145,10 +173,21 @@ class CurrentStageCategoriesScreen extends ConsumerWidget {
     final stageId = user?.currentStageId;
     if (stageId == null || user?.role != 'Student') {
       return Center(
-        child: TextButton.icon(
-          onPressed: () => Navigator.pushNamed(context, AppRoutes.learningStage),
-          icon: const Icon(Icons.school_outlined),
-          label: Text('choose_learning_stage_title'.tr()),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: AppEmptyView(
+            icon: Icons.school_outlined,
+            title: 'choose_learning_stage_title'.tr(),
+            subtitle: 'choose_learning_stage_desc'.tr(),
+            action: FilledButton.icon(
+              onPressed: () => Navigator.pushNamed(
+                context,
+                AppRoutes.learningStage,
+              ),
+              icon: const Icon(Icons.arrow_forward_rounded),
+              label: Text('learning_stage'.tr()),
+            ),
+          ),
         ),
       );
     }
@@ -231,6 +270,20 @@ class _CategoryCard extends StatelessWidget {
             child: _categoryIcon(accent),
           ),
           const Spacer(),
+          if (!locked && !empty)
+            Row(
+              children: [
+                Icon(Icons.lock_open_rounded, size: 16, color: accent),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  'category_open'.tr(),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: accent,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
           if (locked || empty)
             Row(
               children: [
@@ -242,7 +295,7 @@ class _CategoryCard extends StatelessWidget {
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Text(
-                    locked ? 'category_premium_locked'.tr() : 'category_no_problems'.tr(),
+                    locked ? 'category_locked'.tr() : 'category_no_problems'.tr(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
