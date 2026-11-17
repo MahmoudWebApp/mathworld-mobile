@@ -119,13 +119,12 @@ class StageCategoriesScreen extends ConsumerWidget {
             // Guests have the same Free access as students. Only a verified
             // Admin or Premium account can see every category as unlocked.
             final isAdmin = user?.role == 'Admin';
+            final hasFullAccess = isAdmin || isPremium;
             final available = categories.where((category) =>
-                isAdmin ||
-                isPremium ||
+                hasFullAccess ||
                 access.freeCategoryIds.contains(category.id)).toList();
             final unavailable = categories.where((category) =>
-                !isAdmin &&
-                !isPremium &&
+                !hasFullAccess &&
                 !access.freeCategoryIds.contains(category.id)).toList();
             final ready = available.where((c) => (c.problemsCount ?? 0) > 0).toList();
             final unverified = available.where((c) => c.problemsCount == null).toList();
@@ -196,20 +195,24 @@ class StageCategoriesScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              isPremium
+                              hasFullAccess
                                   ? (ar ? 'كل الفئات متاحة لحسابك' : 'All topics are unlocked')
                                   : (ar ? 'هاي فئاتك المفتوحة' : 'These are your unlocked topics'),
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                             const SizedBox(height: AppSpacing.xs),
                             Text(
-                              isPremium
+                              hasFullAccess
                                   ? (ar
                                       ? 'اختَر فئة فيها مسائل وابدأ الحل.'
                                       : 'Choose any topic with questions to start.')
                                   : (ar
-                                      ? 'حسابك المجاني بيسمحلك تحل بلا حد داخل الفئتين المفتوحتين في كل مرحلة. ابدأ من الفئات تحت.'
-                                      : 'Your Free account includes two unlocked topics per stage, with unlimited practice. Start below.'),
+                                      ? (user == null
+                                          ? 'بتقدر تتصفح الفئتين المجانيتين بكل مرحلة. سجّل الدخول حتى تبدأ الحل وتحفظ تقدمك.'
+                                          : 'حسابك المجاني بيسمحلك تحل بلا حد داخل الفئتين المفتوحتين في كل مرحلة. ابدأ من الفئات تحت.')
+                                      : (user == null
+                                          ? 'Browse the two Free topics in each stage. Sign in to solve and save progress.'
+                                          : 'Your Free account includes two unlocked topics per stage, with unlimited practice. Start below.')),
                             ),
                             const SizedBox(height: AppSpacing.sm),
                             Text(
