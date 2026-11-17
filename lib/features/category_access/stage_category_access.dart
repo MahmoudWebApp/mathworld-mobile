@@ -31,6 +31,8 @@ class StageCategoryItem {
   final String nameAr;
   final String nameEn;
   final String icon;
+  final int order;
+  final int? problemsCount;
   final bool isFree;
 
   const StageCategoryItem({
@@ -38,6 +40,8 @@ class StageCategoryItem {
     required this.nameAr,
     required this.nameEn,
     required this.icon,
+    required this.order,
+    required this.problemsCount,
     required this.isFree,
   });
 
@@ -47,6 +51,8 @@ class StageCategoryItem {
       nameAr: (json['NameAr'] ?? json['nameAr']) as String? ?? '',
       nameEn: (json['NameEn'] ?? json['nameEn']) as String? ?? '',
       icon: (json['Icon'] ?? json['icon']) as String? ?? '📐',
+      order: ((json['Order'] ?? json['order']) as num?)?.toInt() ?? 0,
+      problemsCount: ((json['ProblemsCount'] ?? json['problemsCount']) as num?)?.toInt(),
       isFree: (json['IsFree'] ?? json['isFree']) == true,
     );
   }
