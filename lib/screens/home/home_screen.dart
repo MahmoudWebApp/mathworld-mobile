@@ -8,8 +8,10 @@ import '../../core/utils/error_message.dart';
 import '../../core/utils/relative_time.dart';
 import '../../models/dashboard_stats.dart';
 import '../../models/learning_journey.dart';
+import '../../models/daily_challenge.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/learning_journey_provider.dart';
+import '../../providers/daily_challenge_provider.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/animated_entry.dart';
 import '../../widgets/app_states.dart';
@@ -30,6 +32,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardState = ref.watch(dashboardProvider);
     final learningJourney = ref.watch(learningJourneyProvider);
+    final dailyPractice = ref.watch(dailyChallengeProvider);
 
     return MathBackground(
       showSymbols: true,
@@ -48,6 +51,7 @@ class HomeScreen extends ConsumerWidget {
               await Future.wait([
                 ref.refresh(dashboardProvider.future),
                 ref.refresh(learningJourneyProvider.future),
+                ref.refresh(dailyChallengeProvider.future),
               ]);
             },
             child: ListView(
@@ -84,6 +88,57 @@ class HomeScreen extends ConsumerWidget {
                   loading: () => const Padding(
                     padding: EdgeInsets.only(bottom: AppSpacing.lg),
                     child: _JourneyStatusCard(isLoading: true),
+                  ),
+                ),
+                dailyPractice.when(
+                  data: (challenge) => challenge == null
+                      ? const SizedBox.shrink()
+                      : Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+                          child: AnimatedEntry(
+                            child: _DailyPracticeCard(
+                              challenge: challenge,
+                              onOpen: (problemId) async {
+                                await Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.problemDetails,
+                                  arguments: problemId,
+                                );
+                                if (!context.mounted) return;
+                                ref.invalidate(dailyChallengeProvider);
+                                ref.invalidate(dashboardProvider);
+                                ref.invalidate(learningJourneyProvider);
+                              },
+                            ),
+                          ),
+                        ),
+                  loading: () => const Padding(
+                    padding: EdgeInsets.only(bottom: AppSpacing.lg),
+                    child: GlassCard(
+                      child: Row(children: [
+                        SizedBox.square(dimension: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2)),
+                        SizedBox(width: AppSpacing.md),
+                        Expanded(child: Text('Loading daily practice…')),
+                      ]),
+                    ),
+                  ),
+                  error: (error, _) => Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                    child: GlassCard(child: Row(children: [
+                      const Icon(Icons.refresh_outlined,
+                        color: AppColors.warning),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(child: Text(context.locale.languageCode == 'ar'
+                        ? 'تعذّر تحميل تمارين اليوم.'
+                        : 'Daily practice is unavailable.')),
+                      IconButton(
+                        tooltip: context.locale.languageCode == 'ar'
+                          ? 'إعادة المحاولة' : 'Retry',
+                        onPressed: () => ref.invalidate(dailyChallengeProvider),
+                        icon: const Icon(Icons.refresh_rounded),
+                      ),
+                    ])),
                   ),
                 ),
                 if (learningJourney.valueOrNull != null) ...[
@@ -193,6 +248,82 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _DailyPracticeCard extends StatelessWidget {
+  const _DailyPracticeCard({
+    required this.challenge,
+    required this.onOpen,
+  });
+
+  final DailyChallenge challenge;
+  final ValueChanged<int> onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final ar = context.locale.languageCode == 'ar';
+    final color = Theme.of(context).colorScheme.primary;
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.today_outlined, color: color),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(child: Text(
+              ar ? 'تحدّي اليوم الاختياري' : 'Optional daily practice',
+              style: Theme.of(context).textTheme.titleLarge,
+            )),
+            Text('${challenge.completed}/${challenge.total}',
+              style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+          ]),
+          const SizedBox(height: AppSpacing.xs),
+          Text(ar
+            ? 'حتى خمس مسائل من فئاتك المفتوحة؛ هذا مو حد يومي للحل.'
+            : 'Up to five questions from unlocked topics, not a daily solving limit.',
+            style: Theme.of(context).textTheme.bodySmall),
+          if (challenge.dateUtc.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text('${challenge.dateUtc} UTC',
+              style: Theme.of(context).textTheme.labelSmall),
+          ],
+          const SizedBox(height: AppSpacing.md),
+          if (challenge.problems.isEmpty)
+            Text(ar
+              ? 'ما في مسائل منشورة ضمن فئاتك المفتوحة حالياً.'
+              : 'No published questions in your unlocked categories yet.')
+          else
+            ...challenge.problems.map((problem) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                title: RichMathText(
+                  text: problem.getName(context.locale.languageCode),
+                  isArabic: ar,
+                  inline: true,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                subtitle: Text(problem.isSolved
+                  ? (ar ? 'تم حلّها' : 'Solved')
+                  : (ar ? 'اضغط للتدرّب' : 'Tap to practice')),
+                trailing: problem.isSolved
+                  ? const Icon(Icons.check_circle_outline_rounded,
+                      color: AppColors.success)
+                  : LayoutUtils.forwardIcon(context, color: color),
+                onTap: () => onOpen(problem.id),
+              ),
+            )),
+        ],
       ),
     );
   }
