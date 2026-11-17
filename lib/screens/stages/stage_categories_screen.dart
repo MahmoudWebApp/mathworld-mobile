@@ -58,16 +58,27 @@ class StageCategoriesScreen extends ConsumerWidget {
               return const Center(child: CircularProgressIndicator());
             }
             if (accessState.hasError || (premiumState?.hasError ?? false)) {
+              final failure = accessState.error ?? premiumState?.error;
+              // Do not silently lock everything or present an unavailable
+              // entitlement API as "you must buy Premium".
               return AppErrorView(
+                message: failure == null
+                    ? 'error_loading'.tr()
+                    : localizedErrorMessage(failure),
                 onRetry: () {
                   ref.invalidate(stageCategoryAccessProvider(stage.id));
-                  ref.invalidate(studentPremiumProvider);
+                  if (user?.role == 'Student') {
+                    ref.invalidate(studentPremiumProvider);
+                  }
                 },
               );
             }
             final access = accessState.valueOrNull;
             if (access == null) {
               return AppErrorView(
+                message: localeCode == 'ar'
+                    ? 'تعذّر التحقق من الفئات المفتوحة حاليًا. لا يمكن تحديد صلاحيات الحساب بأمان.'
+                    : 'Cannot verify unlocked categories from this server. Access is not assumed.',
                 onRetry: () => ref.invalidate(stageCategoryAccessProvider(stage.id)),
               );
             }
