@@ -112,14 +112,16 @@ class HomeScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
-                  loading: () => const Padding(
-                    padding: EdgeInsets.only(bottom: AppSpacing.lg),
+                  loading: () => Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                     child: GlassCard(
                       child: Row(children: [
-                        SizedBox.square(dimension: 20,
+                        const SizedBox.square(dimension: 20,
                           child: CircularProgressIndicator(strokeWidth: 2)),
-                        SizedBox(width: AppSpacing.md),
-                        Expanded(child: Text('Loading daily practice…')),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(child: Text(context.locale.languageCode == 'ar'
+                          ? 'جارٍ تحميل مسائل اليوم…'
+                          : 'Loading daily practice…')),
                       ]),
                     ),
                   ),
