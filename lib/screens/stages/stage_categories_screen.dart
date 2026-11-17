@@ -34,10 +34,11 @@ class StageCategoriesScreen extends ConsumerWidget {
     final stage = arguments;
     final categoriesState = ref.watch(stageCategoriesProvider(stage.id));
     final localeCode = context.locale.languageCode;
-    final subscription = ref.watch(
-      authProvider.select((state) => state.user?.subscriptionType),
+    final currentUser = ref.watch(
+      authProvider.select((state) => state.user),
     );
-    final isPremium = subscription?.toLowerCase() == 'premium';
+    final isPremium = currentUser?.role == 'Admin' ||
+        currentUser?.subscriptionType.toLowerCase() == 'premium';
 
     final content = MathBackground(
         child: categoriesState.when(
