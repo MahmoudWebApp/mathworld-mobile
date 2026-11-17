@@ -6,6 +6,7 @@ import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
 import '../../core/utils/validators.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/stages_provider.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/brand_logo.dart';
 import '../../widgets/math_background.dart';
@@ -25,6 +26,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  int? _selectedStageId;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   @override
@@ -40,11 +42,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+    if (_selectedStageId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('registration_stage_required'.tr())),
+      );
+      return;
+    }
     try {
       await ref.read(authProvider.notifier).register(
             _nameController.text.trim(),
             _emailController.text.trim(),
             _passwordController.text,
+            _selectedStageId!,
           );
       if (!mounted) {
         return;
@@ -70,6 +79,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final isLoading = ref.watch(
       authProvider.select((state) => state.isSubmitting),
     );
+    final stages = ref.watch(stagesProvider);
     return Scaffold(
       appBar: AppBar(),
       body: MathBackground(
@@ -112,6 +122,45 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           validator: (value) => (value?.trim().length ?? 0) >= 2
                               ? null
                               : 'full_name_required'.tr(),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          'registration_stage_label'.tr(),
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        stages.when(
+                          loading: () => const Padding(
+                            padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                            child: LinearProgressIndicator(),
+                          ),
+                          error: (error, _) => OutlinedButton.icon(
+                            onPressed: () => ref.invalidate(stagesProvider),
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: Text('retry'.tr()),
+                          ),
+                          data: (items) => DropdownButtonFormField<int>(
+                            value: _selectedStageId,
+                            isExpanded: true,
+                            decoration: InputDecoration(
+                              labelText: 'registration_stage_select'.tr(),
+                              prefixIcon: const Icon(Icons.school_outlined),
+                            ),
+                            items: items.map((stage) => DropdownMenuItem<int>(
+                              value: stage.id,
+                              child: Text(stage.getName(context.locale.languageCode)),
+                            )).toList(),
+                            onChanged: isLoading ? null : (value) =>
+                                setState(() => _selectedStageId = value),
+                            validator: (value) => value == null
+                                ? 'registration_stage_required'.tr()
+                                : null,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          'registration_stage_hint'.tr(),
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const SizedBox(height: AppSpacing.md),
                         TextFormField(
