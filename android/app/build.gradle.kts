@@ -19,6 +19,20 @@ val hasReleaseSigning = listOf("storeFile", "storePassword", "keyAlias", "keyPas
 // remain unchanged for every ordinary Android build.
 val isolatedQaApk = System.getenv("MATHWORLD_ISOLATED_QA_APK") == "true"
 
+// Unlike the Android debug keystore generated separately on each CI runner,
+// the isolated QA variant requires a persistent signing key provided through
+// repository secrets. It must never fall back to an ephemeral key.
+val qaSigningEnvironment = listOf(
+    "MATHWORLD_QA_KEYSTORE_FILE",
+    "MATHWORLD_QA_STORE_PASSWORD",
+    "MATHWORLD_QA_KEY_ALIAS",
+    "MATHWORLD_QA_KEY_PASSWORD",
+)
+val hasQaSigning = qaSigningEnvironment.all { !System.getenv(it).isNullOrBlank() }
+if (isolatedQaApk && !hasQaSigning) {
+    throw GradleException("Isolated QA builds require a persistent QA keystore and all signing environment variables.")
+}
+
 android {
     namespace = "com.mathworld.mathworld_mobile"
     compileSdk = flutter.compileSdkVersion
@@ -43,6 +57,14 @@ android {
     }
 
     signingConfigs {
+        if (hasQaSigning) {
+            create("isolatedQaRelease") {
+                storeFile = file(System.getenv("MATHWORLD_QA_KEYSTORE_FILE"))
+                storePassword = System.getenv("MATHWORLD_QA_STORE_PASSWORD")
+                keyAlias = System.getenv("MATHWORLD_QA_KEY_ALIAS")
+                keyPassword = System.getenv("MATHWORLD_QA_KEY_PASSWORD")
+            }
+        }
         if (hasReleaseSigning) {
             create("productionRelease") {
                 storeFile = file(releaseKeystoreProperties.getProperty("storeFile"))
@@ -63,11 +85,13 @@ android {
                 manifestPlaceholders["mathworldAppLabel"] = "MathWorld QA"
             }
             // Without a production keystore, CI builds are debug-signed QA only.
-            signingConfig = if (hasReleaseSigning) {
-                signingConfigs.getByName("productionRelease")
-            } else {
-                logger.warn("MathWorld: DEBUG-SIGNED QA APK, not for store upload.")
-                signingConfigs.getByName("debug")
+            signingConfig = when {
+                isolatedQaApk -> signingConfigs.getByName("isolatedQaRelease")
+                hasReleaseSigning -> signingConfigs.getByName("productionRelease")
+                else -> {
+                    logger.warn("MathWorld: ONE-OFF DEBUG-SIGNED APK; updates may fail across CI runs.")
+                    signingConfigs.getByName("debug")
+                }
             }
         }
     }
