@@ -80,6 +80,13 @@ class HomeScreen extends ConsumerWidget {
                   dashboard: dashboard,
                   journey: learningJourney.valueOrNull,
                 )),
+                const SizedBox(height: AppSpacing.md),
+                // The learner's next action must remain visible before stats,
+                // optional badges or a long activity history.
+                AnimatedEntry(
+                  index: 1,
+                  child: _ContinueLearningCard(onTap: onOpenStages),
+                ),
                 const SizedBox(height: AppSpacing.xl),
                 if (backendMismatch) ...[
                   GlassCard(
@@ -203,10 +210,6 @@ class HomeScreen extends ConsumerWidget {
                 if (!isBackendMismatch(badges.asError?.error))
                   const StudentBadgesCard(),
                 const SizedBox(height: AppSpacing.xl),
-                AnimatedEntry(
-                  index: 2,
-                  child: _ContinueLearningCard(onTap: onOpenStages),
-                ),
                 const SizedBox(height: AppSpacing.xxl),
                 AnimatedEntry(
                   index: 3,
@@ -689,7 +692,9 @@ class _ContinueLearningCard extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      'continue_learning_desc'.tr(),
+                      context.locale.languageCode == 'ar'
+                          ? 'شوف الفئتين المفتوحتين إلك ضمن مرحلتك وابدأ حل المسائل خطوة بخطوة.'
+                          : 'See your two unlocked stage topics and start practising step by step.',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -700,8 +705,10 @@ class _ContinueLearningCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           PremiumButton(
             onPressed: onTap,
-            label: 'explore'.tr(),
-            trailingIcon: LayoutUtils.forwardChevron(context),
+            label: context.locale.languageCode == 'ar'
+                ? 'ابدأ من فئاتي المفتوحة'
+                : 'Start with my unlocked topics',
+            trailingIcon: Icons.arrow_forward_rounded,
             expand: true,
           ),
         ],
