@@ -7,6 +7,7 @@ on:
       - 'assets/branding/**'
       - 'android/**'
       - 'test/models/stage_daily_quota_test.dart'
+      - 'test/daily_challenge_model_test.dart'
       - 'pubspec.yaml'
       - '.github/workflows/stage-daily-quota-mobile-ci.yml'
   push:
@@ -34,8 +35,8 @@ jobs:
         run: cp .env.example .env
       - name: Resolve Flutter packages
         run: flutter pub get
-      - name: Verify legacy daily quota response stays unlimited
-        run: flutter test test/models/stage_daily_quota_test.dart
+      - name: Verify Free unlimited access and optional daily practice model
+        run: flutter test test/models/stage_daily_quota_test.dart test/daily_challenge_model_test.dart
       - name: Build Android release-mode QA APK (debug-signed)
         run: flutter build apk --release
       - name: Explain artifact signing and release limitation
