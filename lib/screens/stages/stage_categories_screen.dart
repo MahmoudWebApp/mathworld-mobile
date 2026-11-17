@@ -239,15 +239,19 @@ class _CategoryCard extends StatelessWidget {
 
     final empty = category.problemsCount == 0;
     return GlassCard(
-      onTap: locked || empty ? null : () => Navigator.pushNamed(
-        context,
-        AppRoutes.problems,
-        arguments: {
-          'categoryId': category.id,
-          'stageId': stageId,
-          'title': title,
-        },
-      ),
+      onTap: locked
+          ? () => _explainLockedCategory(context)
+          : empty
+              ? null
+              : () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.problems,
+                    arguments: {
+                      'categoryId': category.id,
+                      'stageId': stageId,
+                      'title': title,
+                    },
+                  ),
       color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
       border: BorderSide(
         color: accent.withValues(alpha: isDark ? 0.27 : 0.18),
@@ -370,6 +374,63 @@ class _CategoryCard extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  /// Give a tapped locked card a useful explanation instead of ignoring it.
+  /// Keep the upgrade details in one central page, not on every card.
+  void _explainLockedCategory(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.sm,
+            AppSpacing.lg,
+            AppSpacing.xl,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Icon(
+                Icons.lock_outline_rounded,
+                size: 40,
+                color: Theme.of(sheetContext).colorScheme.primary,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'category_locked_explanation_title'.tr(),
+                textAlign: TextAlign.center,
+                style: Theme.of(sheetContext).textTheme.titleLarge,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'category_locked_explanation_body'.tr(),
+                textAlign: TextAlign.center,
+                style: Theme.of(sheetContext).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  Navigator.pushNamed(context, AppRoutes.premiumBenefits);
+                },
+                icon: const Icon(Icons.workspace_premium_outlined),
+                label: Text('premium_benefits_title'.tr()),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              TextButton(
+                onPressed: () => Navigator.pop(sheetContext),
+                child: Text('category_locked_continue_free'.tr()),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
