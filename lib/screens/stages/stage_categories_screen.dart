@@ -161,6 +161,7 @@ class StageCategoriesScreen extends ConsumerWidget {
                           stageId: stage.id,
                           stageOrder: stage.order,
                           locked: locked,
+                          guest: user == null,
                         );
                       },
                     );
@@ -273,9 +274,15 @@ class StageCategoriesScreen extends ConsumerWidget {
                         const SizedBox(height: AppSpacing.md),
                         OutlinedButton.icon(
                           onPressed: () => Navigator.pushNamed(
-                              context, AppRoutes.premiumCheckout),
-                          icon: const Icon(Icons.workspace_premium_outlined),
-                          label: Text(ar ? 'مزايا الاشتراك' : 'Membership benefits'),
+                              context, user == null
+                                  ? AppRoutes.login
+                                  : AppRoutes.premiumCheckout),
+                          icon: Icon(user == null
+                              ? Icons.login_rounded
+                              : Icons.workspace_premium_outlined),
+                          label: Text(user == null
+                              ? (ar ? 'سجّل الدخول للمتابعة' : 'Sign in to continue')
+                              : (ar ? 'مزايا الاشتراك' : 'Membership benefits')),
                         ),
                       ],
                       const SizedBox(height: AppSpacing.lg),
@@ -351,6 +358,7 @@ class _CategoryCard extends StatelessWidget {
   final int stageId;
   final int stageOrder;
   final bool locked;
+  final bool guest;
 
   const _CategoryCard({
     required this.category,
@@ -358,6 +366,7 @@ class _CategoryCard extends StatelessWidget {
     required this.stageId,
     required this.stageOrder,
     required this.locked,
+    required this.guest,
   });
 
   @override
@@ -376,8 +385,8 @@ class _CategoryCard extends StatelessWidget {
       // One single membership page is offered below the topic sections.
       onTap: (noPublishedProblems || locked) ? null : () => Navigator.pushNamed(
         context,
-        AppRoutes.problems,
-        arguments: {
+        guest ? AppRoutes.login : AppRoutes.problems,
+        arguments: guest ? null : {
           'categoryId': category.id,
           'stageId': stageId,
           'title': title,
