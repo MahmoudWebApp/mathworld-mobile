@@ -2,6 +2,7 @@ import '../config/constants.dart';
 import '../core/network/api_envelope.dart';
 import '../models/dashboard_stats.dart';
 import '../models/learning_journey.dart';
+import '../models/daily_challenge.dart';
 import '../models/stage_daily_quota.dart';
 import '../models/leaderboard.dart';
 import '../core/network/api_client.dart';
@@ -18,6 +19,14 @@ class DashboardRepository {
       ApiEnvelope.map(response.data),
       languageCode: languageCode,
     );
+  }
+
+  Future<DailyChallenge> getDailyChallenge(int stageId) async {
+    final response = await _apiService.get(
+      ApiConstants.userDailyChallenge,
+      queryParameters: {'stageId': stageId},
+    );
+    return DailyChallenge.fromJson(ApiEnvelope.map(response.data));
   }
 
   Future<LearningJourney> getJourney(int stageId) async {
