@@ -181,7 +181,8 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
     ErrorNotebookNotifier notifier,
     Set<int> busyProblemIds,
   ) {
-                            return RefreshIndicator(
+    if (problems.isEmpty) {
+      return RefreshIndicator(
                         onRefresh: notifier.load,
                         child: ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
