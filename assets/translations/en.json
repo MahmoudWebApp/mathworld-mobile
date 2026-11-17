@@ -221,5 +221,8 @@
   "premium_coming_soon": "Coming soon",
   "premium_free_includes_title": "What Free includes",
   "premium_free_includes_detail": "The first two categories per stage and unlimited problems in those categories, with no daily cap.",
-  "premium_payment_notice": "Planned annual price: $5. Online payments and discount codes are not yet active. Admins can activate Premium manually for now."
+  "premium_payment_notice": "Planned annual price: $5. Online payments and discount codes are not yet active. Admins can activate Premium manually for now.",
+  "category_locked_explanation_title": "This category is locked",
+  "category_locked_explanation_body": "Free includes the first two categories in every stage, with unlimited practice. Remaining categories are available with Premium.",
+  "category_locked_continue_free": "Return to free categories"
 }

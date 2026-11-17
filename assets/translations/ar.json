@@ -221,5 +221,8 @@
   "premium_coming_soon": "قريباً",
   "premium_free_includes_title": "مميزات حساب Free",
   "premium_free_includes_detail": "أول فئتين من كل مرحلة، مع حل عدد غير محدود من المسائل المتاحة، بلا حد يومي.",
-  "premium_payment_notice": "السعر السنوي المخطط 5 دولارات. الدفع الإلكتروني وأكواد الخصم غير مفعّلين بعد. الإدارة تقدر تفعّل Premium حالياً."
+  "premium_payment_notice": "السعر السنوي المخطط 5 دولارات. الدفع الإلكتروني وأكواد الخصم غير مفعّلين بعد. الإدارة تقدر تفعّل Premium حالياً.",
+  "category_locked_explanation_title": "هذه الفئة مقفلة حالياً",
+  "category_locked_explanation_body": "حساب Free بيفتح أول فئتين من كل مرحلة، وبتقدر تحل ضمنهن بدون حد يومي. بقية الفئات متاحة مع Premium.",
+  "category_locked_continue_free": "العودة للفئات المفتوحة"
 }
