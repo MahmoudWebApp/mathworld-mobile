@@ -7,6 +7,8 @@ class LeaderboardData {
   final int page;
   final int pageSize;
   final int totalLearners;
+  /// Active students who have selected this stage, including those with no solves.
+  final int? stageParticipants;
   final int? myRank;
   final List<LeaderboardEntry> entries;
 
@@ -18,6 +20,7 @@ class LeaderboardData {
     required this.page,
     required this.pageSize,
     required this.totalLearners,
+    this.stageParticipants,
     required this.myRank,
     required this.entries,
   });
@@ -33,6 +36,9 @@ class LeaderboardData {
       page: _toInt(json['Page'] ?? json['page']),
       pageSize: _toInt(json['PageSize'] ?? json['pageSize']),
       totalLearners: _toInt(json['TotalLearners'] ?? json['totalLearners']),
+      stageParticipants: (json['StageParticipants'] ?? json['stageParticipants']) == null
+          ? null
+          : _toInt(json['StageParticipants'] ?? json['stageParticipants']),
       myRank: rank == null ? null : _toInt(rank),
       entries: rawEntries is List
           ? rawEntries.whereType<Map>().map((item) =>
