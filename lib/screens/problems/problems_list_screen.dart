@@ -116,9 +116,47 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                 ),
                 data: (result) {
                   if (result.problems.isEmpty) {
-                    return AppEmptyView(
-                      icon: Icons.search_off_rounded,
-                      title: 'no_results'.tr(),
+                    final hasSearch = _query?.isNotEmpty == true;
+                    return RefreshIndicator(
+                      onRefresh: () => ref.refresh(
+                        problemsProvider(parameters).future,
+                      ).then((_) {}),
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        children: [
+                          const SizedBox(height: AppSpacing.xxl),
+                          AppEmptyView(
+                            icon: hasSearch
+                                ? Icons.manage_search_rounded
+                                : Icons.search_off_rounded,
+                            title: 'no_results'.tr(),
+                            subtitle: hasSearch
+                                ? 'search_no_matches_hint'.tr()
+                                : 'problems_empty_hint'.tr(),
+                            action: OutlinedButton.icon(
+                              onPressed: () {
+                                if (hasSearch) {
+                                  _debounce?.cancel();
+                                  _searchController.clear();
+                                  setState(() {
+                                    _query = null;
+                                    _page = 1;
+                                  });
+                                } else {
+                                  ref.invalidate(problemsProvider(parameters));
+                                }
+                              },
+                              icon: Icon(hasSearch
+                                  ? Icons.close_rounded
+                                  : Icons.refresh_rounded),
+                              label: Text(hasSearch
+                                  ? 'clear_search'.tr()
+                                  : 'retry'.tr()),
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   }
 
