@@ -34,6 +34,10 @@ class StageCategoriesScreen extends ConsumerWidget {
     final stage = arguments;
     final categoriesState = ref.watch(stageCategoriesProvider(stage.id));
     final localeCode = context.locale.languageCode;
+    final subscription = ref.watch(
+      authProvider.select((state) => state.user?.subscriptionType),
+    );
+    final isPremium = subscription?.toLowerCase() == 'premium';
 
     final content = MathBackground(
         child: categoriesState.when(
@@ -103,10 +107,13 @@ class StageCategoriesScreen extends ConsumerWidget {
                   itemCount: categories.length,
                   itemBuilder: (context, index) {
                     final category = categories[index];
+                    // The API and server order categories by Order then Id.
+                    // Only the first two in each stage are free.
                     return _CategoryCard(
                       category: category,
                       localeCode: localeCode,
                       stageId: stage.id,
+                      locked: !isPremium && index >= 2,
                     );
                   },
                 );
@@ -174,11 +181,13 @@ class _CategoryCard extends StatelessWidget {
   final Category category;
   final String localeCode;
   final int stageId;
+  final bool locked;
 
   const _CategoryCard({
     required this.category,
     required this.localeCode,
     required this.stageId,
+    required this.locked,
   });
 
   @override
@@ -189,8 +198,9 @@ class _CategoryCard extends StatelessWidget {
     final titleColor = isDark ? AppColors.darkText : AppColors.lightText;
     final mutedColor = isDark ? AppColors.darkMuted : AppColors.lightMuted;
 
+    final empty = category.problemsCount == 0;
     return GlassCard(
-      onTap: () => Navigator.pushNamed(
+      onTap: locked || empty ? null : () => Navigator.pushNamed(
         context,
         AppRoutes.problems,
         arguments: {
@@ -221,6 +231,28 @@ class _CategoryCard extends StatelessWidget {
             child: _categoryIcon(accent),
           ),
           const Spacer(),
+          if (locked || empty)
+            Row(
+              children: [
+                Icon(
+                  locked ? Icons.lock_outline_rounded : Icons.info_outline_rounded,
+                  size: 16,
+                  color: mutedColor,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    locked ? 'category_premium_locked'.tr() : 'category_no_problems'.tr(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: mutedColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           Text(
             title,
             maxLines: 3,
