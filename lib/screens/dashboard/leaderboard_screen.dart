@@ -52,7 +52,16 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     final result = ref.watch(leaderboardProvider(filter));
 
     return Scaffold(
-      appBar: AppBar(title: Text('leaderboard_title'.tr())),
+      appBar: AppBar(
+        title: Text('leaderboard_title'.tr()),
+        actions: [
+          IconButton(
+            onPressed: () => ref.invalidate(leaderboardProvider(filter)),
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'retry'.tr(),
+          ),
+        ],
+      ),
       body: MathBackground(
         child: SafeArea(
           child: RefreshIndicator(
@@ -156,9 +165,12 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                               )
                             else
                               OutlinedButton.icon(
-                                onPressed: () => Navigator.maybePop(context),
+                                onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                                  context, AppRoutes.home, (route) => false),
                                 icon: LayoutUtils.backIcon(context),
-                                label: Text(isArabic ? 'الرجوع للمسائل' : 'Back to practice'),
+                                label: Text(isArabic
+                                    ? 'العودة لمتابعة التعلّم'
+                                    : 'Return to learning'),
                               ),
                           ],
                         ),
