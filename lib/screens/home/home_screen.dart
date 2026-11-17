@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
+import '../../core/errors/app_exception.dart';
 import '../../core/utils/relative_time.dart';
 import '../../models/dashboard_stats.dart';
 import '../../models/learning_journey.dart';
@@ -12,6 +13,7 @@ import '../../models/daily_challenge.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/learning_journey_provider.dart';
 import '../../providers/daily_challenge_provider.dart';
+import '../../providers/student_badges_provider.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/animated_entry.dart';
 import '../../widgets/app_states.dart';
@@ -33,6 +35,17 @@ class HomeScreen extends ConsumerWidget {
     final dashboardState = ref.watch(dashboardProvider);
     final learningJourney = ref.watch(learningJourneyProvider);
     final dailyPractice = ref.watch(dailyChallengeProvider);
+    final badges = ref.watch(studentBadgesProvider);
+    // An outdated backend often rejects several optional learning endpoints
+    // at once. Show one actionable explanation instead of many error cards.
+    bool isBackendMismatch(Object? error) =>
+        error is AppException &&
+        error.messageKey == 'server_feature_unavailable';
+    final backendMismatch = [
+      learningJourney.asError?.error,
+      dailyPractice.asError?.error,
+      badges.asError?.error,
+    ].any(isBackendMismatch);
 
     return MathBackground(
       showSymbols: true,
@@ -68,6 +81,41 @@ class HomeScreen extends ConsumerWidget {
                   journey: learningJourney.valueOrNull,
                 )),
                 const SizedBox(height: AppSpacing.xl),
+                if (backendMismatch) ...[
+                  GlassCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          const Icon(Icons.sync_problem_rounded,
+                              color: AppColors.warning),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                              context.locale.languageCode == 'ar'
+                                  ? 'تحديث بيانات التعلّم'
+                                  : 'Learning services need an update',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                        ]),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text('server_feature_unavailable'.tr()),
+                        const SizedBox(height: AppSpacing.sm),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            ref.invalidate(learningJourneyProvider);
+                            ref.invalidate(dailyChallengeProvider);
+                            ref.invalidate(studentBadgesProvider);
+                          },
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: Text('retry'.tr()),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
                 learningJourney.when(
                   data: (journey) => journey == null
                       ? const SizedBox.shrink()
@@ -77,7 +125,9 @@ class HomeScreen extends ConsumerWidget {
                             child: _LearningJourneyCard(journey: journey, onOpenStages: onOpenStages),
                           ),
                         ),
-                  error: (error, _) => Padding(
+                  error: (error, _) => isBackendMismatch(error)
+                      ? const SizedBox.shrink()
+                      : Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                     child: _JourneyStatusCard(
                       isLoading: false,
@@ -125,7 +175,9 @@ class HomeScreen extends ConsumerWidget {
                       ]),
                     ),
                   ),
-                  error: (error, _) => Padding(
+                  error: (error, _) => isBackendMismatch(error)
+                      ? const SizedBox.shrink()
+                      : Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                     child: GlassCard(child: Row(children: [
                       const Icon(Icons.refresh_outlined,
@@ -148,7 +200,8 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ],
                 const SizedBox(height: AppSpacing.xl),
-                const StudentBadgesCard(),
+                if (!isBackendMismatch(badges.asError?.error))
+                  const StudentBadgesCard(),
                 const SizedBox(height: AppSpacing.xl),
                 AnimatedEntry(
                   index: 2,
