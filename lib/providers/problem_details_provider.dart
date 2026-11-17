@@ -6,6 +6,7 @@ import 'dashboard_provider.dart';
 import 'daily_challenge_provider.dart';
 import 'leaderboard_provider.dart';
 import 'learning_journey_provider.dart';
+import 'premium_analytics_provider.dart';
 import 'student_badges_provider.dart';
 import 'learning_provider.dart';
 import 'problems_provider.dart';
@@ -79,6 +80,7 @@ final problemDetailsProvider = StateNotifierProvider.autoDispose
         ref.invalidate(learningJourneyProvider);
         ref.invalidate(dailyChallengeProvider);
         ref.invalidate(studentBadgesProvider);
+        ref.invalidate(premiumAnalyticsProvider);
         ref.invalidate(problemsProvider);
         ref.invalidate(problemAttemptHistoryProvider(problemId));
         ref.invalidate(errorNotebookProvider);
