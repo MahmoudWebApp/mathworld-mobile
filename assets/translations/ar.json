@@ -185,5 +185,6 @@
   "leaderboard_next": "التالي",
   "leaderboard_privacy": "نخفي أسماء الطلاب الآخرين احترامًا للخصوصية.",
   "active_stage_categories": "الفئات",
-  "change_stage_keeps_progress": "تغيير المرحلة لا يمسح تقدمك السابق"
+  "change_stage_keeps_progress": "تغيير المرحلة لا يمسح تقدمك السابق",
+  "server_feature_unavailable": "الميزة غير متاحة على إصدار الخادم المتصل حاليًا. حدّث خدمة MathWorld لتتوافق مع التطبيق؛ إعادة المحاولة وحدها لن تحل المشكلة."
 }
