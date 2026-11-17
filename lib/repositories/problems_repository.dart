@@ -3,6 +3,7 @@ import '../core/network/api_client.dart';
 import '../core/network/api_envelope.dart';
 import '../models/problem.dart';
 import '../models/problem_search.dart';
+import '../models/solution_preview.dart';
 
 /// Handles problem search, details, answers, favorites, and user lists.
 class ProblemsRepository {
@@ -74,6 +75,15 @@ class ProblemsRepository {
       ApiEnvelope.map(response.data),
       languageCode: languageCode,
     );
+  }
+
+  /// Fetches the solution only after an explicit Premium request.
+  /// Free learners are rejected by the server even if they call this route.
+  Future<SolutionPreview> previewSolution(int problemId) async {
+    final response = await _apiService.get(
+      '${ApiConstants.problemDetail}/$problemId/solution-preview',
+    );
+    return SolutionPreview.fromJson(ApiEnvelope.map(response.data));
   }
 
   /// Submits one answer and parses the server-validated result.

@@ -7,6 +7,7 @@ import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
 import '../../models/problem.dart';
 import '../../providers/learning_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/problem_details_provider.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
@@ -97,6 +98,7 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
                 ref.invalidate(stageDailyQuotaProvider(problem.stageId));
               }
             }),
+            onPreview: () => _runAction(context, notifier.previewSolution),
             onStartRetry: notifier.startRetry,
             onCancelRetry: notifier.cancelRetry,
             onToggleFavorite: () =>
@@ -130,6 +132,7 @@ class _ProblemContent extends ConsumerWidget {
   final AsyncValue<ProblemAttemptHistory>? historyState;
   final ValueChanged<int?> onOptionChanged;
   final VoidCallback onSubmit;
+  final VoidCallback onPreview;
   final VoidCallback onStartRetry;
   final VoidCallback onCancelRetry;
   final VoidCallback onToggleFavorite;
@@ -140,6 +143,7 @@ class _ProblemContent extends ConsumerWidget {
     required this.historyState,
     required this.onOptionChanged,
     required this.onSubmit,
+    required this.onPreview,
     required this.onStartRetry,
     required this.onCancelRetry,
     required this.onToggleFavorite,
@@ -148,13 +152,21 @@ class _ProblemContent extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isArabic = context.locale.languageCode == 'ar';
+    final isPremium = ref.watch(
+      authProvider.select((auth) =>
+        auth.user?.subscriptionType.toLowerCase() == 'premium'),
+    );
     final quota = ref.watch(stageDailyQuotaProvider(problem.stageId));
     final quotaBlocked = !problem.hasAttempted && !state.isRetryMode
         && (quota.valueOrNull?.exhausted ?? false);
     final canSelect = state.answerResult == null &&
         (!problem.hasAttempted || state.isRetryMode);
-    final solution = _solutionText(problem, state);
-    final videoUrl =
+    final preview = state.solutionPreview;
+    final previewSolution = preview?.detailedSolution.trim() ?? '';
+    final solution = previewSolution.isNotEmpty
+        ? previewSolution
+        : _solutionText(problem, state);
+    final videoUrl = preview?.youtubeSolutionUrl ??
         state.answerResult?.youtubeSolutionUrl ?? problem.youtubeSolutionUrl;
     final history = historyState?.valueOrNull;
 
@@ -221,6 +233,16 @@ class _ProblemContent extends ConsumerWidget {
             ],
           ),
         ),
+        if (isPremium && canSelect && preview == null) ...[
+          const SizedBox(height: AppSpacing.md),
+          OutlinedButton.icon(
+            onPressed: state.isPreviewLoading ? null : onPreview,
+            icon: const Icon(Icons.visibility_outlined),
+            label: Text(state.isPreviewLoading
+                ? 'preview_solution_loading'.tr()
+                : 'preview_solution_before_answer'.tr()),
+          ),
+        ],
         if (canSelect) ...[
           const SizedBox(height: AppSpacing.xl),
           PremiumButton(

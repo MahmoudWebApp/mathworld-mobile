@@ -194,5 +194,7 @@
   "category_locked": "مقفلة",
   "search_no_matches_hint": "ما لقينا مسائل تطابق بحثك. امسح البحث لعرض مسائل هذه الفئة.",
   "problems_empty_hint": "ما ظهرت مسائل بهذه القائمة حالياً. اسحب للتحديث أو اضغط إعادة المحاولة.",
-  "clear_search": "مسح البحث"
+  "clear_search": "مسح البحث",
+  "preview_solution_before_answer": "عرض الحل قبل الإجابة",
+  "preview_solution_loading": "جارٍ تحميل الحل..."
 }
