@@ -10,6 +10,7 @@ import '../../models/dashboard_stats.dart';
 import '../../models/learning_journey.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/learning_journey_provider.dart';
+import '../../providers/notifications_provider.dart';
 import '../../providers/stage_daily_quota_provider.dart';
 import '../../widgets/daily_quota_card.dart';
 import '../../utils/layout_utils.dart';
@@ -191,14 +192,16 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _HeroCard extends StatelessWidget {
+class _HeroCard extends ConsumerWidget {
   final DashboardStats dashboard;
   final LearningJourney? journey;
 
   const _HeroCard({required this.dashboard, required this.journey});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unreadNotifications = ref.watch(notificationsUnreadCountProvider)
+        .valueOrNull ?? 0;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final initial = dashboard.fullName.trim().isEmpty
         ? 'M'
@@ -273,6 +276,17 @@ class _HeroCard extends StatelessWidget {
                       ),
                     ],
                   ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'notifications_title'.tr(),
+                onPressed: () => Navigator.pushNamed(
+                  context, AppRoutes.notifications,
+                ),
+                icon: Badge(
+                  isLabelVisible: unreadNotifications > 0,
+                  smallSize: 9,
+                  child: const Icon(Icons.notifications_none_rounded),
                 ),
               ),
             ],

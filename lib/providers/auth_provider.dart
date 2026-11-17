@@ -12,6 +12,7 @@ import 'categories_provider.dart';
 import 'dashboard_provider.dart';
 import 'learning_provider.dart';
 import 'learning_journey_provider.dart';
+import 'notifications_provider.dart';
 import 'problem_details_provider.dart';
 import 'problems_provider.dart';
 import 'repositories_provider.dart';
@@ -301,6 +302,8 @@ class AuthNotifier extends StateNotifier<AuthState>
     _ref.invalidate(problemDetailsProvider);
     _ref.invalidate(problemAttemptHistoryProvider);
     _ref.invalidate(errorNotebookProvider);
+    _ref.invalidate(notificationsPageProvider);
+    _ref.invalidate(notificationsUnreadCountProvider);
   }
 
   void consumeSessionExpired() {
