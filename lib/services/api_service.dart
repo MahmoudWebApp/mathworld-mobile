@@ -211,6 +211,22 @@ class ApiService implements ApiClient {
     final statusCode = error.response?.statusCode;
     final responseMessage = _extractResponseMessage(error.response?.data);
 
+    // A route-level 404 for a newer feature is different from a missing
+    // question/category. Many older deployed APIs don't expose the feature
+    // endpoints yet; don't tell the learner that their data disappeared.
+    // Preserve normal 404 errors when the server supplied a domain message
+    // such as StageNotFound or CategoryNotFound.
+    if (statusCode == 404 &&
+        responseMessage == null &&
+        _isNewFeatureEndpoint(error.requestOptions.uri.path)) {
+      return AppException(
+        type: AppExceptionType.notFound,
+        messageKey: 'server_feature_unavailable',
+        statusCode: statusCode,
+        cause: error,
+      );
+    }
+
     switch (statusCode) {
       case 400:
       case 409:
@@ -305,6 +321,32 @@ class ApiService implements ApiClient {
           cause: error,
         );
     }
+  }
+
+  /// Only feature-level paths: never turn missing individual resources into
+  /// an upgrade notice. Does not grant access or retry against legacy routes.
+  bool _isNewFeatureEndpoint(String path) {
+    final segments = Uri(path: path).pathSegments.where((s) => s.isNotEmpty).toList();
+    if (segments.isNotEmpty && segments.first == 'api') {
+      segments.removeAt(0);
+    }
+    if (segments.length == 3 &&
+        segments[0] == 'stages' &&
+        int.tryParse(segments[1]) != null &&
+        segments[2] == 'free-categories') {
+      return true;
+    }
+    if (segments.isEmpty) return false;
+    final route = segments.join('/');
+    return const {
+      'users/leaderboard',
+      'users/daily-challenge',
+      'users/journey',
+      'users/subscription',
+      'users/achievements',
+      'users/error-notebook',
+      'notifications',
+    }.contains(route);
   }
 
   String? _extractResponseMessage(dynamic body) {
