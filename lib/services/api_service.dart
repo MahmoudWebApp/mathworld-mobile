@@ -216,8 +216,11 @@ class ApiService implements ApiClient {
     // endpoints yet; don't tell the learner that their data disappeared.
     // Preserve normal 404 errors when the server supplied a domain message
     // such as StageNotFound or CategoryNotFound.
+    final generic404 = responseMessage == null ||
+        responseMessage.toLowerCase() == 'not found' ||
+        responseMessage.toLowerCase() == '404 not found';
     if (statusCode == 404 &&
-        responseMessage == null &&
+        generic404 &&
         _isNewFeatureEndpoint(error.requestOptions.uri.path)) {
       return AppException(
         type: AppExceptionType.notFound,
@@ -352,7 +355,13 @@ class ApiService implements ApiClient {
   String? _extractResponseMessage(dynamic body) {
     if (body is String) {
       final value = body.trim();
-      return value.isEmpty ? null : value;
+      // Reverse proxies often return HTML for missing API paths. Never
+      // render HTML/error documents inside the learner's error card.
+      if (value.isEmpty || value.length > 300 ||
+          value.startsWith('<') || value.contains('<html')) {
+        return null;
+      }
+      return value;
     }
 
     if (body is! Map) {
