@@ -131,9 +131,7 @@ class HomeScreen extends ConsumerWidget {
                       const Icon(Icons.refresh_outlined,
                         color: AppColors.warning),
                       const SizedBox(width: AppSpacing.sm),
-                      Expanded(child: Text(context.locale.languageCode == 'ar'
-                        ? 'تعذّر تحميل تمارين اليوم.'
-                        : 'Daily practice is unavailable.')),
+                      Expanded(child: Text(localizedErrorMessage(error))),
                       IconButton(
                         tooltip: context.locale.languageCode == 'ar'
                           ? 'إعادة المحاولة' : 'Retry',
@@ -675,12 +673,14 @@ class _LearningJourneyCard extends StatelessWidget {
     final reviewCount = journey.categories.where((category) =>
         !category.isLocked &&
         category.attemptedProblems > category.solvedProblems).length;
-    // Keep Free-unlocked topics above Premium-locked ones in the compact
-    // dashboard preview while retaining the API's order within each group.
-    final visibleCategories = [
-      ...journey.categories.where((category) => !category.isLocked),
-      ...journey.categories.where((category) => category.isLocked),
-    ];
+    // An old backend can omit IsLocked. That's unknown, not Premium.
+    final accessUnknown = journey.categories.any((c) => !c.accessVerified);
+    // The home screen highlights available lessons instead of a paywall list.
+    final visibleCategories = journey.categories
+        .where((c) => c.accessVerified && !c.isLocked)
+        .take(4).toList();
+    final lockedCount = journey.categories
+        .where((c) => c.accessVerified && c.isLocked).length;
 
     return GlassCard(
       child: Column(
@@ -809,10 +809,25 @@ class _LearningJourneyCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Text(language == 'ar'
-                  ? 'لا توجد فئات منشورة لهذه المرحلة بعد.'
-                  : 'No topics have been published for this stage yet.'),
+                  ? 'ما في فئات منشورة لهالمرحلة بعد. جرّب مرحلة ثانية أو ارجع لاحقاً.'
+                  : 'This stage has no published topics yet. Try another stage or check again later.'),
             ),
-          ...visibleCategories.take(6).map((category) {
+          if (accessUnknown)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+              child: Text(language == 'ar'
+                  ? 'ما قدرنا نتحقق من الفئات المفتوحة: الخادم الحالي ما أرسل صلاحيات الوصول. ما رح نعتبرها Premium بدون تأكيد.'
+                  : 'The connected server did not send category-access permissions. We cannot safely identify free topics or label them Premium.',
+                style: Theme.of(context).textTheme.bodyMedium),
+            ),
+          if (visibleCategories.isEmpty && journey.categories.isNotEmpty && !accessUnknown)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+              child: Text(language == 'ar'
+                  ? 'ما في فئات متاحة للحل ضمن مرحلتك الحالية. افتح قسم الفئات لتعرف المتاح.'
+                  : 'No topics are currently available to practise in this stage. Open Categories to check availability.'),
+            ),
+          ...visibleCategories.map((category) {
             final canPractice = !category.isLocked && category.totalProblems > 0;
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 3),
@@ -821,19 +836,12 @@ class _LearningJourneyCard extends StatelessWidget {
                 dense: true,
                 title: Text(category.getName(language),
                     maxLines: 2, overflow: TextOverflow.ellipsis),
-                subtitle: Text(category.isLocked
-                    ? (language == 'ar' ? 'تحتاج اشتراك Premium' : 'Premium access required')
-                    : category.totalProblems == 0
-                        ? (language == 'ar' ? 'قريباً' : 'Coming soon')
-                        : '${category.solvedProblems} / ${category.totalProblems}'),
+                subtitle: Text(category.totalProblems == 0
+                    ? (language == 'ar' ? 'لا توجد مسائل منشورة بعد' : 'No published questions yet')
+                    : '${category.solvedProblems} / ${category.totalProblems}'),
                 trailing: canPractice
                     ? LayoutUtils.forwardIcon(context, color: color)
-                    : Icon(
-                        category.isLocked
-                            ? Icons.lock_outline_rounded
-                            : Icons.hourglass_empty_rounded,
-                        size: 20,
-                      ),
+                    : const Icon(Icons.hourglass_empty_rounded, size: 20),
                 onTap: canPractice
                     ? () => Navigator.pushNamed(
                           context,
@@ -848,14 +856,15 @@ class _LearningJourneyCard extends StatelessWidget {
               ),
             );
           }),
-          if (journey.categories.length > 6) ...[
+          if (!accessUnknown &&
+              (lockedCount > 0 || journey.categories.length > visibleCategories.length)) ...[
             const SizedBox(height: AppSpacing.sm),
             OutlinedButton.icon(
               onPressed: onOpenStages,
               icon: LayoutUtils.forwardIcon(context),
               label: Text(language == 'ar'
-                  ? 'عرض جميع فئات مرحلتي'
-                  : 'Browse all stage topics'),
+                  ? 'استعراض فئات مرحلتي'
+                  : 'Browse stage topics'),
             ),
           ],
         ],
