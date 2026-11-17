@@ -10,6 +10,8 @@ import '../repositories/auth_repository.dart';
 import '../services/google_identity_service.dart';
 import '../services/hive_service.dart';
 import 'categories_provider.dart';
+import 'daily_challenge_provider.dart';
+import 'leaderboard_provider.dart';
 import 'dashboard_provider.dart';
 import 'learning_provider.dart';
 import 'learning_journey_provider.dart';
@@ -265,8 +267,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final updated = await _repository.chooseLearningStage(current, stageId);
       state = state.copyWith(user: updated, isSubmitting: false);
+      // Stage changes affect far more than the summary dashboard. Clearing
+      // all stage-specific state prevents the old stage's free topics,
+      // challenge, statistics and problems showing up under the new stage.
+      _ref.invalidate(categoriesProvider);
+      _ref.invalidate(stageCategoriesProvider);
+      _ref.invalidate(stageCategoryAccessProvider);
       _ref.invalidate(dashboardProvider);
       _ref.invalidate(learningJourneyProvider);
+      _ref.invalidate(dailyChallengeProvider);
+      _ref.invalidate(leaderboardProvider);
+      _ref.invalidate(studentBadgesProvider);
+      _ref.invalidate(problemsProvider);
+      _ref.invalidate(problemDetailsProvider);
+      _ref.invalidate(problemAttemptHistoryProvider);
+      _ref.invalidate(errorNotebookProvider);
+      _ref.invalidate(favoritesProvider);
+      _ref.invalidate(solvedProvider);
+      _ref.invalidate(premiumAnalyticsProvider);
       _ref.invalidate(learnerPresenceServiceProvider);
     } catch (_) {
       state = state.copyWith(isSubmitting: false);
@@ -314,6 +332,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _ref.invalidate(stageCategoriesProvider);
     _ref.invalidate(dashboardProvider);
     _ref.invalidate(learningJourneyProvider);
+    _ref.invalidate(dailyChallengeProvider);
+    _ref.invalidate(leaderboardProvider);
     _ref.invalidate(learnerPresenceServiceProvider);
     _ref.invalidate(favoritesProvider);
     _ref.invalidate(solvedProvider);
