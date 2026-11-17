@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/problem.dart';
 import '../repositories/problems_repository.dart';
 import 'dashboard_provider.dart';
+import 'daily_challenge_provider.dart';
+import 'leaderboard_provider.dart';
+import 'learning_journey_provider.dart';
+import 'student_badges_provider.dart';
 import 'learning_provider.dart';
 import 'problems_provider.dart';
 import 'repositories_provider.dart';
@@ -68,6 +72,13 @@ final problemDetailsProvider = StateNotifierProvider.autoDispose
       onAttemptCompleted: () {
         ref.invalidate(solvedProvider);
         ref.invalidate(dashboardProvider);
+        // A successful API submission changes the stage rankings, journey,
+        // achievements and today's solved state. Refresh these even when the
+        // learner keeps the app open and never revisits the home tab.
+        ref.invalidate(leaderboardProvider);
+        ref.invalidate(learningJourneyProvider);
+        ref.invalidate(dailyChallengeProvider);
+        ref.invalidate(studentBadgesProvider);
         ref.invalidate(problemsProvider);
         ref.invalidate(problemAttemptHistoryProvider(problemId));
         ref.invalidate(errorNotebookProvider);
