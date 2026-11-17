@@ -62,6 +62,11 @@ class HomeScreen extends ConsumerWidget {
                   dashboard: dashboard,
                   journey: learningJourney.valueOrNull,
                 )),
+                const SizedBox(height: AppSpacing.md),
+                AnimatedEntry(
+                  index: 1,
+                  child: _ContinueLearningCard(onTap: onOpenStages),
+                ),
                 const SizedBox(height: AppSpacing.xl),
                 learningJourney.when(
                   data: (journey) => journey == null
@@ -87,11 +92,6 @@ class HomeScreen extends ConsumerWidget {
                     child: _StatsGrid(journey: learningJourney.valueOrNull!),
                   ),
                 ],
-                const SizedBox(height: AppSpacing.xl),
-                AnimatedEntry(
-                  index: 2,
-                  child: _ContinueLearningCard(onTap: onOpenStages),
-                ),
                 const SizedBox(height: AppSpacing.xxl),
                 AnimatedEntry(
                   index: 3,
@@ -494,11 +494,7 @@ class _LearningJourneyCard extends StatelessWidget {
           Text('stage_topics'.tr(),
               style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: AppSpacing.sm),
-          if (const bool.fromEnvironment(
-            'MATHWORLD_LEADERBOARD_ENABLED',
-            defaultValue: false,
-          ))
-            OutlinedButton.icon(
+          OutlinedButton.icon(
             onPressed: () => Navigator.pushNamed(context, AppRoutes.leaderboard),
             icon: const Icon(Icons.emoji_events_outlined),
             label: Text('leaderboard_title'.tr()),
