@@ -135,7 +135,8 @@ class StageCategoriesScreen extends ConsumerWidget {
                 return RefreshIndicator(
                   onRefresh: () async {
                     ref.invalidate(categoriesProvider);
-                    await ref.refresh(stageCategoriesProvider(stage.id).future);
+                    await ref.refresh(stageCategoriesProvider(stage.id).future)
+                        .then((_) {});
                   },
                   child: GridView.builder(
                     physics: const AlwaysScrollableScrollPhysics(),
