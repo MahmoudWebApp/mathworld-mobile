@@ -185,5 +185,7 @@
   "leaderboard_next": "التالي",
   "leaderboard_privacy": "نخفي أسماء الطلاب الآخرين احترامًا للخصوصية.",
   "active_stage_categories": "الفئات",
-  "change_stage_keeps_progress": "تغيير المرحلة لا يمسح تقدمك السابق"
+  "change_stage_keeps_progress": "تغيير المرحلة لا يمسح تقدمك السابق",
+  "category_premium_locked": "هذه الفئة متاحة في Premium",
+  "category_no_problems": "لا توجد مسائل في هذه الفئة بعد"
 }
