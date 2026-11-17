@@ -122,11 +122,15 @@ class StageCategoriesScreen extends ConsumerWidget {
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
+                // On narrow phones, a single readable card is preferable
+                // to two cramped cards with truncated Arabic titles.
                 final columns = constraints.maxWidth >= 900
                     ? 4
                     : constraints.maxWidth >= 620
                         ? 3
-                        : 2;
+                        : constraints.maxWidth >= 420
+                            ? 2
+                            : 1;
 
                 return RefreshIndicator(
                   onRefresh: () async {
