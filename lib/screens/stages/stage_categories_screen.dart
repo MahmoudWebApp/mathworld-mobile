@@ -94,13 +94,28 @@ class StageCategoriesScreen extends ConsumerWidget {
                       icon: Icons.category_outlined,
                       title: 'no_categories'.tr(),
                       subtitle: 'no_categories_desc'.tr(),
-                      action: OutlinedButton.icon(
-                        onPressed: () {
-                          ref.invalidate(stageCategoriesProvider(stage.id));
-                          ref.invalidate(stageCategoryAccessProvider(stage.id));
-                        },
-                        icon: const Icon(Icons.refresh_rounded),
-                        label: Text('retry'.tr()),
+                      action: Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.sm,
+                        alignment: WrapAlignment.center,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              ref.invalidate(stageCategoriesProvider(stage.id));
+                              ref.invalidate(stageCategoryAccessProvider(stage.id));
+                            },
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: Text('retry'.tr()),
+                          ),
+                          FilledButton.icon(
+                            onPressed: () => Navigator.pushNamed(
+                                context, AppRoutes.learningStage),
+                            icon: const Icon(Icons.school_outlined),
+                            label: Text(localeCode == 'ar'
+                                ? 'اختيار مرحلة ثانية'
+                                : 'Choose another stage'),
+                          ),
+                        ],
                       ),
                     ),
                   ],
