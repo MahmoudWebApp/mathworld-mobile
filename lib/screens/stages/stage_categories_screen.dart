@@ -45,9 +45,10 @@ class StageCategoriesScreen extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, __) => AppErrorView(
             message: localizedErrorMessage(error),
-            onRetry: () => ref.invalidate(
-              stageCategoriesProvider(stage.id),
-            ),
+            onRetry: () {
+              ref.invalidate(categoriesProvider);
+              ref.invalidate(stageCategoriesProvider(stage.id));
+            },
           ),
           data: (categories) {
             if (categories.isEmpty) {
@@ -55,6 +56,14 @@ class StageCategoriesScreen extends ConsumerWidget {
                 icon: Icons.category_outlined,
                 title: 'no_categories'.tr(),
                 subtitle: 'no_categories_desc'.tr(),
+                action: OutlinedButton.icon(
+                  onPressed: () {
+                    ref.invalidate(categoriesProvider);
+                    ref.invalidate(stageCategoriesProvider(stage.id));
+                  },
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: Text('retry'.tr()),
+                ),
               );
             }
 
@@ -119,8 +128,14 @@ class StageCategoriesScreen extends ConsumerWidget {
                         ? 3
                         : 2;
 
-                return GridView.builder(
-                  padding: const EdgeInsets.fromLTRB(
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(categoriesProvider);
+                    await ref.refresh(stageCategoriesProvider(stage.id).future);
+                  },
+                  child: GridView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(
                     AppSpacing.lg,
                     AppSpacing.md,
                     AppSpacing.lg,
@@ -144,6 +159,7 @@ class StageCategoriesScreen extends ConsumerWidget {
                       locked: !isPremium && index >= 2,
                     );
                   },
+                  ),
                 );
                     },
                   ),
