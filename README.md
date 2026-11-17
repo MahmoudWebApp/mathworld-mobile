@@ -80,12 +80,8 @@ ENABLE_HTTP_LOGS=false
 
 Never put JWT signing keys, database passwords, MeiliSearch administration keys, ImgBB keys, Google secrets, or Facebook secrets inside the Flutter application.
 
-## Safe Android staging APK
+## Android builds with GitHub Actions
 
-For visual/launcher-only inspection, download the existing debug-signed Android artifact from [GitHub Actions](https://github.com/MahmoudWebApp/mathworld-mobile/actions/runs/43730687183) → **Artifacts**. **Warning:** that existing build bundles `.env.example` and points at the live Render API. Do not submit answers, register test students, redeem codes, edit admin records or otherwise perform write-flow QA using it.
+Development changes are pushed to the feature branch and validated by the existing GitHub Actions workflows, including Flutter analysis, bilingual navigation, and Android test APK builds. The standard debug-signed release-mode QA artifact is available under **Artifacts** in the [Flutter Free-access and Android build workflow](https://github.com/MahmoudWebApp/mathworld-mobile/actions/workflows/stage-daily-quota-mobile-ci.yml).
 
-For safe interactive QA against a dedicated non-production backend/database, use the new [Android staging QA workflow](.github/workflows/android-staging-qa-apk.yml). Set the GitHub Actions repository variable `MATHWORLD_STAGING_API_URL` to the isolated HTTPS API ending in `/api`; on a new feature-branch PR/push run, retrieve the `mathworld-staging-qa-apk-debug-signed` artifact. The workflow refuses known production hosts; the installed QA build displays a visible **QA** ribbon.
-
-GitHub's `workflow_dispatch` for a *new* workflow is not available until its definition exists on the default branch. **Do not merge merely to activate it**: the feature-branch PR/push trigger can build the artifact once the repository variable is configured. A skipped QA workflow is **not** a build pass.
-
-The staging APK remains debug-signed, not Play Store signed, and uses the existing Android application ID. Installing may replace an existing MathWorld installation. Google/Facebook native sign-in are disabled pending verified OAuth configuration.
+That existing build uses the repository's example environment and the default live Render API. Treat it as a **layout and launcher-icon inspection artifact** only until a separate, explicitly approved test backend exists; avoid submitting answers or changing real accounts. It is not Google Play signed, and installing it can replace an existing MathWorld installation because it keeps the same application ID. Do not activate live payments, ads or social sign-in from CI.
