@@ -239,7 +239,7 @@ class _ProblemContent extends ConsumerWidget {
             onPressed: state.isPreviewLoading ? null : onPreview,
             icon: const Icon(Icons.visibility_outlined),
             label: Text(state.isPreviewLoading
-                ? 'loading'.tr()
+                ? 'preview_solution_loading'.tr()
                 : 'preview_solution_before_answer'.tr()),
           ),
         ],
