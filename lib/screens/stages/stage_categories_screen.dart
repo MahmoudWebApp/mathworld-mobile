@@ -116,7 +116,8 @@ class StageCategoriesScreen extends ConsumerWidget {
                 user?.role == 'Student' &&
                 !isPremium &&
                 !access.freeCategoryIds.contains(category.id)).toList();
-            final ready = available.where((c) => c.problemsCount != 0).toList();
+            final ready = available.where((c) => (c.problemsCount ?? 0) > 0).toList();
+            final unverified = available.where((c) => c.problemsCount == null).toList();
             final ar = localeCode == 'ar';
 
             return LayoutBuilder(
@@ -204,11 +205,19 @@ class StageCategoriesScreen extends ConsumerWidget {
                             const SizedBox(height: AppSpacing.sm),
                             Text(
                               ar
-                                  ? '${ready.length} جاهزة للبدء من أصل ${available.length} متاحة'
-                                  : '${ready.length} ready to practise out of ${available.length} unlocked',
+                                  ? '${available.length} فئة مفتوحة · ${ready.length} فيها مسائل منشورة'
+                                  : '${available.length} unlocked · ${ready.length} with published questions',
                               style: Theme.of(context).textTheme.labelLarge,
                             ),
-                            if (ready.isEmpty) ...[
+                            if (unverified.isNotEmpty) ...[
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                ar
+                                    ? 'عدد المسائل غير متاح لبعض الفئات على هذا الخادم؛ افتح الفئة لتتحقق من محتواها.'
+                                    : 'This server has not provided question counts for every topic. Open one to check its content.',
+                              ),
+                            ],
+                            if (ready.isEmpty && unverified.isEmpty) ...[
                               const SizedBox(height: AppSpacing.sm),
                               Text(
                                 ar
