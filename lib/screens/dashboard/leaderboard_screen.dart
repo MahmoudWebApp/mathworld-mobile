@@ -142,9 +142,14 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                             ),
                             const SizedBox(height: AppSpacing.sm),
                             Text(
-                              isArabic
-                                  ? 'حتى يظهر طالب بالمتفوقين، لازم يحل مسألة ويكسب نقاط ضمن المرحلة المحددة.'
-                                  : 'A learner appears after earning points by solving a problem in this stage.',
+                              leaderboard.stageParticipants != null &&
+                                      leaderboard.stageParticipants! > 0
+                                  ? (isArabic
+                                      ? 'يوجد ${leaderboard.stageParticipants} طالب في مرحلتك، لكن ما في حلول مسجلة خلال هالفترة. حلّ مسألة لتظهر بالترتيب.'
+                                      : '${leaderboard.stageParticipants} learners selected this stage, but nobody has recorded a solve this period. Solve a problem to join the ranking.')
+                                  : (isArabic
+                                      ? 'حتى يظهر طالب بالمتفوقين، لازم يحل مسألة ويكسب نقاط ضمن المرحلة المحددة.'
+                                      : 'A learner appears after earning points by solving a problem in this stage.'),
                             ),
                             const SizedBox(height: AppSpacing.md),
                             if (_period != 'all')
@@ -179,6 +184,15 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                           leaderboard.stageName(language),
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
+                        if (leaderboard.stageParticipants != null) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            isArabic
+                                ? 'طلاب المرحلة: ${leaderboard.stageParticipants} · الطلاب المتفوقون: ${leaderboard.totalLearners}'
+                                : 'Stage learners: ${leaderboard.stageParticipants} · Ranked solvers: ${leaderboard.totalLearners}',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
                         if (leaderboard.myRank != null)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
