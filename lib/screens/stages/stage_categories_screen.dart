@@ -269,9 +269,12 @@ class _CategoryCard extends StatelessWidget {
     final title = category.getName(localeCode);
     final titleColor = isDark ? AppColors.darkText : AppColors.lightText;
     final mutedColor = isDark ? AppColors.darkMuted : AppColors.lightMuted;
+    final noPublishedProblems = category.problemsCount == 0;
 
     return GlassCard(
-      onTap: locked ? () => showDialog<void>(
+      // The API now returns a real per-stage count. Never navigate into a
+      // category known to have zero questions and then show a dead-end page.
+      onTap: noPublishedProblems ? null : locked ? () => showDialog<void>(
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: Text(localeCode == 'ar' ? 'فئة Premium' : 'Premium category'),
@@ -335,7 +338,9 @@ class _CategoryCard extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
-                  locked ? 'Premium' : (localeCode == 'ar' ? 'مجاني' : 'Free'),
+                  locked
+                      ? (localeCode == 'ar' ? 'مقفلة' : 'Locked')
+                      : (localeCode == 'ar' ? 'متاحة' : 'Available'),
                     style: TextStyle(
                       fontSize: 12,
                       color: accent,
@@ -355,7 +360,18 @@ class _CategoryCard extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          if (category.problemsCount != null)
+          if (noPublishedProblems)
+            Text(
+              localeCode == 'ar'
+                  ? 'لا توجد مسائل منشورة بعد'
+                  : 'No published problems yet',
+              maxLines: 2,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: mutedColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+            )
+          else if (category.problemsCount != null)
             Text(
               category.solvedCount != null
                   ? 'category_progress'.tr(
