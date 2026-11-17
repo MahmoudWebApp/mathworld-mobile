@@ -162,7 +162,6 @@ class StageCategoriesScreen extends ConsumerWidget {
                           stageId: stage.id,
                           stageOrder: stage.order,
                           locked: locked,
-                          freeCategory: access.freeCategoryIds.contains(category.id),
                         );
                       },
                     );
@@ -349,7 +348,6 @@ class _CategoryCard extends StatelessWidget {
   final int stageId;
   final int stageOrder;
   final bool locked;
-  final bool freeCategory;
 
   const _CategoryCard({
     required this.category,
@@ -357,7 +355,6 @@ class _CategoryCard extends StatelessWidget {
     required this.stageId,
     required this.stageOrder,
     required this.locked,
-    required this.freeCategory,
   });
 
   @override
@@ -405,7 +402,6 @@ class _CategoryCard extends StatelessWidget {
             child: _categoryIcon(accent),
           ),
           const Spacer(),
-          if (locked || freeCategory) ...[
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -427,7 +423,6 @@ class _CategoryCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.xs),
-          ],
           Text(
             title,
             maxLines: 3,
