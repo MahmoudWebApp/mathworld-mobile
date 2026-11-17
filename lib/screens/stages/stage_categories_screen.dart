@@ -108,34 +108,19 @@ class StageCategoriesScreen extends ConsumerWidget {
               );
             }
 
-            return Column(
-              children: [
-                if (embedded)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.sm,
-                    ),
-                    child: Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'active_stage_categories'.tr(),
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          Text(
-                            stage.getName(localeCode),
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
+            final available = categories.where((category) =>
+                user?.role != 'Student' ||
+                isPremium ||
+                access.freeCategoryIds.contains(category.id)).toList();
+            final unavailable = categories.where((category) =>
+                user?.role == 'Student' &&
+                !isPremium &&
+                !access.freeCategoryIds.contains(category.id)).toList();
+            final ready = available.where((c) => c.problemsCount != 0).toList();
+            final ar = localeCode == 'ar';
+
+            return LayoutBuilder(
+              builder: (context, constraints) {
                 final textScale = MediaQuery.textScalerOf(context).scale(1);
                 final columns = StageCategoryGridLayout.columns(
                   constraints.maxWidth,
@@ -146,10 +131,32 @@ class StageCategoriesScreen extends ConsumerWidget {
                   textScale: textScale,
                 );
 
+                Widget cards(List<Category> items, {required bool locked}) =>
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columns,
+                        mainAxisSpacing: AppSpacing.md,
+                        crossAxisSpacing: AppSpacing.md,
+                        mainAxisExtent: extent,
+                      ),
+                      itemCount: items.length,
+                      itemBuilder: (context, index) {
+                        final category = items[index];
+                        return _CategoryCard(
+                          category: category,
+                          localeCode: localeCode,
+                          stageId: stage.id,
+                          stageOrder: stage.order,
+                          locked: locked,
+                          freeCategory: access.freeCategoryIds.contains(category.id),
+                        );
+                      },
+                    );
+
                 return RefreshIndicator(
                   onRefresh: () async {
-                    // Refresh access and Premium at the same time as categories,
-                    // so locked badges reflect the current server policy.
                     await Future.wait([
                       ref.refresh(stageCategoriesProvider(stage.id).future),
                       ref.refresh(stageCategoryAccessProvider(stage.id).future),
@@ -157,38 +164,110 @@ class StageCategoriesScreen extends ConsumerWidget {
                         ref.refresh(studentPremiumProvider.future),
                     ]);
                   },
-                  child: GridView.builder(
+                  child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg,
-                    AppSpacing.md,
-                    AppSpacing.lg,
-                    AppSpacing.xxl,
-                  ),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: columns,
-                    mainAxisSpacing: AppSpacing.lg,
-                    crossAxisSpacing: AppSpacing.lg,
-                    mainAxisExtent: extent,
-                  ),
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    final category = categories[index];
-                    return _CategoryCard(
-                      category: category,
-                      localeCode: localeCode,
-                      stageId: stage.id,
-                      stageOrder: stage.order,
-                      locked: user?.role == 'Student' && !isPremium && !access.freeCategoryIds.contains(category.id),
-                      freeCategory: access.freeCategoryIds.contains(category.id),
-                    );
-                  },
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                      AppSpacing.lg,
+                      AppSpacing.xxl,
+                    ),
+                    children: [
+                      Text(
+                        ar ? 'فئات مرحلتك' : 'Your stage topics',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(stage.getName(localeCode),
+                          style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: AppSpacing.md),
+                      GlassCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isPremium
+                                  ? (ar ? 'كل الفئات متاحة لحسابك' : 'All topics are unlocked')
+                                  : (ar ? 'هاي فئاتك المفتوحة' : 'These are your unlocked topics'),
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              isPremium
+                                  ? (ar
+                                      ? 'اختَر فئة فيها مسائل وابدأ الحل.'
+                                      : 'Choose any topic with questions to start.')
+                                  : (ar
+                                      ? 'حسابك المجاني بيسمحلك تحل بلا حد داخل الفئتين المفتوحتين في كل مرحلة. ابدأ من الفئات تحت.'
+                                      : 'Your Free account includes two unlocked topics per stage, with unlimited practice. Start below.'),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(
+                              ar
+                                  ? '${ready.length} جاهزة للبدء من أصل ${available.length} متاحة'
+                                  : '${ready.length} ready to practise out of ${available.length} unlocked',
+                              style: Theme.of(context).textTheme.labelLarge,
+                            ),
+                            if (ready.isEmpty) ...[
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                ar
+                                    ? 'ما في مسائل جاهزة للحل بهالمرحلة حاليًا. جرّب التحديث أو غيّر مرحلتك.'
+                                    : 'No questions are ready in this stage. Refresh or change your stage.',
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              OutlinedButton.icon(
+                                onPressed: () => Navigator.pushNamed(
+                                    context, AppRoutes.learningStage),
+                                icon: const Icon(Icons.school_outlined),
+                                label: Text(ar ? 'تغيير المرحلة' : 'Change stage'),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      if (available.isNotEmpty) ...[
+                        Text(
+                          ar ? '1. ابدأ بفئاتك المفتوحة' : '1. Start with unlocked topics',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        cards(available, locked: false),
+                      ],
+                      if (unavailable.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xl),
+                        Text(
+                          ar ? '2. فئات إضافية مقفلة' : '2. Other locked topics',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          ar
+                              ? 'هاي الفئات مو ضمن حسابك المجاني. فيك تشوف مميزات الاشتراك من مكان واحد.'
+                              : 'These topics are not included with Free. View membership benefits in one place.',
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        cards(unavailable, locked: true),
+                        const SizedBox(height: AppSpacing.md),
+                        OutlinedButton.icon(
+                          onPressed: () => Navigator.pushNamed(
+                              context, AppRoutes.premiumCheckout),
+                          icon: const Icon(Icons.workspace_premium_outlined),
+                          label: Text(ar ? 'مزايا الاشتراك' : 'Membership benefits'),
+                        ),
+                      ],
+                      const SizedBox(height: AppSpacing.lg),
+                      TextButton.icon(
+                        onPressed: () => Navigator.pushNamed(
+                            context, AppRoutes.learningStage),
+                        icon: const Icon(Icons.school_outlined),
+                        label: Text(ar ? 'مو مرحلتك؟ غيّر المرحلة' : 'Wrong stage? Change stage'),
+                      ),
+                    ],
                   ),
                 );
-                    },
-                  ),
-                ),
-              ],
+              },
             );
           },
         ),
@@ -274,29 +353,9 @@ class _CategoryCard extends StatelessWidget {
     return GlassCard(
       // The API now returns a real per-stage count. Never navigate into a
       // category known to have zero questions and then show a dead-end page.
-      onTap: noPublishedProblems ? null : locked ? () => showDialog<void>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text(localeCode == 'ar' ? 'فئة Premium' : 'Premium category'),
-          content: Text(localeCode == 'ar'
-              ? 'الحساب المجاني بيحل مسائل بلا حد ضمن الفئتين المفتوحتين من كل مرحلة. هاي الفئة بحاجة Premium؛ الدفع الإلكتروني غير مفعّل حالياً، وفيك تستخدم كود هدية.'
-              : 'Free learners can solve unlimited questions in the two unlocked categories of each stage. This category needs Premium. Checkout is not live; you can redeem a gift code.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(localeCode == 'ar' ? 'رجوع' : 'Back'),
-            ),
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-                Navigator.pushNamed(context, AppRoutes.premiumGiftRedeem);
-              },
-              icon: const Icon(Icons.card_giftcard_rounded),
-              label: Text(localeCode == 'ar' ? 'تفعيل كود هدية' : 'Redeem a gift'),
-            ),
-          ],
-        ),
-      ) : () => Navigator.pushNamed(
+      // Unavailable topics never route to a paywall or empty question list.
+      // One single membership page is offered below the topic sections.
+      onTap: (noPublishedProblems || locked) ? null : () => Navigator.pushNamed(
         context,
         AppRoutes.problems,
         arguments: {
@@ -340,7 +399,7 @@ class _CategoryCard extends StatelessWidget {
                 Text(
                   locked
                       ? (localeCode == 'ar' ? 'مقفلة' : 'Locked')
-                      : (localeCode == 'ar' ? 'متاحة' : 'Available'),
+                      : (localeCode == 'ar' ? 'مفتوحة' : 'Unlocked'),
                     style: TextStyle(
                       fontSize: 12,
                       color: accent,
