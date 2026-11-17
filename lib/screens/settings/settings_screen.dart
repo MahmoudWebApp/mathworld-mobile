@@ -156,8 +156,8 @@ class SettingsScreen extends ConsumerWidget {
                 child: ListTile(
                   leading: const Icon(Icons.bar_chart_rounded),
                   title: Text(context.locale.languageCode == 'ar'
-                      ? 'تقريري الشخصي (Premium)'
-                      : 'My progress report (Premium)'),
+                      ? 'تقريري الشخصي'
+                      : 'My progress report'),
                   subtitle: Text(context.locale.languageCode == 'ar'
                       ? 'إحصائيات المحاولات والنقاط والفئات'
                       : 'Attempts, points and category progress'),
@@ -173,8 +173,8 @@ class SettingsScreen extends ConsumerWidget {
                 child: ListTile(
                   leading: const Icon(Icons.workspace_premium_rounded),
                   title: Text(context.locale.languageCode == 'ar'
-                      ? 'Premium والخصومات'
-                      : 'Premium & discounts'),
+                      ? 'الاشتراك والخصومات'
+                      : 'Membership & discounts'),
                   subtitle: Text(context.locale.languageCode == 'ar'
                       ? 'معاينة السعر وسجل طلبات الاشتراك'
                       : 'Price preview and checkout order history'),
@@ -190,8 +190,8 @@ class SettingsScreen extends ConsumerWidget {
                 child: ListTile(
                   leading: const Icon(Icons.card_giftcard_rounded),
                   title: Text(context.locale.languageCode == 'ar'
-                      ? 'تفعيل كود هدية Premium'
-                      : 'Redeem Premium gift code'),
+                      ? 'تفعيل كود هدية'
+                      : 'Redeem a gift code'),
                   subtitle: Text(context.locale.languageCode == 'ar'
                       ? 'هدية استخدام واحد، بدون دفع إلكتروني'
                       : 'Single-use access gift, no checkout'),
