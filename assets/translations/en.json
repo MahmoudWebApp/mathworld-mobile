@@ -195,5 +195,6 @@
   "search_no_matches_hint": "No problems match this search. Clear it to see the available problems.",
   "problems_empty_hint": "No problems appeared in this list. Pull down to refresh or try again.",
   "clear_search": "Clear search",
-  "preview_solution_before_answer": "Preview solution before answering"
+  "preview_solution_before_answer": "Preview solution before answering",
+  "preview_solution_loading": "Loading solution..."
 }
