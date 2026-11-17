@@ -15,6 +15,10 @@ if (releaseKeystoreFile.exists()) {
 val hasReleaseSigning = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
     .all { !releaseKeystoreProperties.getProperty(it).isNullOrBlank() }
 
+// Only manual-test CI APKs opt in. The production appId, signing and label
+// remain unchanged for every ordinary Android build.
+val isolatedQaApk = System.getenv("MATHWORLD_ISOLATED_QA_APK") == "true"
+
 android {
     namespace = "com.mathworld.mathworld_mobile"
     compileSdk = flutter.compileSdkVersion
@@ -29,6 +33,7 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.mathworld.mathworld_mobile"
+        manifestPlaceholders["mathworldAppLabel"] = "MathWorld"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -50,6 +55,13 @@ android {
 
     buildTypes {
         release {
+            // Isolated QA builds coexist with the user's existing MathWorld
+            // installation, avoiding Android's signature-mismatch rejection.
+            if (isolatedQaApk) {
+                applicationIdSuffix = ".qa"
+                versionNameSuffix = "-qa"
+                manifestPlaceholders["mathworldAppLabel"] = "MathWorld QA"
+            }
             // Without a production keystore, CI builds are debug-signed QA only.
             signingConfig = if (hasReleaseSigning) {
                 signingConfigs.getByName("productionRelease")
