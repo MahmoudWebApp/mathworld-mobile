@@ -100,6 +100,32 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                     ),
                   ),
                   data: (leaderboard) {
+                    // A formerly valid page may become empty if the ranking
+                    // shrinks. Don't mistake it for zero students in the stage.
+                    if (leaderboard.entries.isEmpty &&
+                        leaderboard.totalLearners > 0 &&
+                        _page > 1) {
+                      return GlassCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isArabic
+                                  ? 'هذه الصفحة ما عاد فيها نتائج؛ ارجع لأول صفحة لترى المتفوقين.'
+                                  : 'This page no longer has results. Open the first page to view rankings.',
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            OutlinedButton.icon(
+                              onPressed: () => setState(() => _page = 1),
+                              icon: LayoutUtils.backIcon(context),
+                              label: Text(
+                                isArabic ? 'أول صفحة' : 'First page',
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
                     if (leaderboard.entries.isEmpty) {
                       return GlassCard(
                         child: Column(
