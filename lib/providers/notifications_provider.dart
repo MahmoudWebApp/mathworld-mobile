@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/student_notification.dart';
@@ -8,7 +10,10 @@ final notificationsRepositoryProvider = Provider<NotificationsRepository>((ref) 
   return NotificationsRepository(ref.watch(apiClientProvider));
 });
 
-final notificationsUnreadCountProvider = FutureProvider<int>((ref) {
+// Keep the visible bell reasonably fresh without requiring FCM or SignalR.
+final notificationsUnreadCountProvider = FutureProvider<int>((ref) async {
+  final timer = Timer(const Duration(seconds: 60), ref.invalidateSelf);
+  ref.onDispose(timer.cancel);
   return ref.watch(notificationsRepositoryProvider).unreadCount();
 });
 
