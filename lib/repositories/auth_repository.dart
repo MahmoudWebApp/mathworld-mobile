@@ -51,6 +51,7 @@ class AuthRepository {
     String fullName,
     String email,
     String password,
+    int stageId,
   ) async {
     await clearSession();
     final response = await _apiService.post(
@@ -59,6 +60,7 @@ class AuthRepository {
         'FullName': fullName,
         'Email': email,
         'Password': password,
+        'StageId': stageId,
       },
       handleUnauthorized: false,
     );
