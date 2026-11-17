@@ -35,6 +35,7 @@ class ApiConstants {
   static const String userJourney = '/users/journey';
   static const String userDailyQuota = '/users/daily-quota';
   static const String userLeaderboard = '/users/leaderboard';
+  static const String notifications = '/notifications';
   static const String userDashboard = '/users/dashboard';
   static const String userFavorites = '/users/favorites';
   static const String userSolved = '/users/solved';
