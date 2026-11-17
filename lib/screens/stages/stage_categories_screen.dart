@@ -218,9 +218,7 @@ class _CategoryCard extends StatelessWidget {
                 color: accent.withValues(alpha: isDark ? 0.34 : 0.23),
               ),
             ),
-            child: category.icon != null && category.icon!.trim().isNotEmpty
-                ? Text(category.icon!, style: const TextStyle(fontSize: 25))
-                : Icon(Icons.calculate_outlined, color: accent, size: 26),
+            child: _categoryIcon(accent),
           ),
           const Spacer(),
           Text(
@@ -289,6 +287,31 @@ class _CategoryCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget _categoryIcon(Color accent) {
+    final icon = category.icon?.trim() ?? '';
+    final uri = Uri.tryParse(icon);
+    if (uri != null &&
+        (uri.scheme == 'https' || uri.scheme == 'http') &&
+        uri.host.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: Image.network(
+          icon,
+          width: 36,
+          height: 36,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) =>
+              Icon(Icons.calculate_outlined, color: accent, size: 26),
+        ),
+      );
+    }
+    if (icon.isNotEmpty && !icon.contains('/')) {
+      // A literal emoji is valid; a relative path is not displayable text.
+      return Text(icon, style: const TextStyle(fontSize: 25));
+    }
+    return Icon(Icons.calculate_outlined, color: accent, size: 26);
   }
 
   Color _categoryColor(int value) {
