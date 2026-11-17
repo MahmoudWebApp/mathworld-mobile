@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/widgets.dart';
 
 import '../core/errors/app_exception.dart';
 import '../core/network/api_client.dart';
@@ -10,6 +11,7 @@ import '../services/google_identity_service.dart';
 import 'categories_provider.dart';
 import 'dashboard_provider.dart';
 import 'learning_provider.dart';
+import 'learning_journey_provider.dart';
 import 'problem_details_provider.dart';
 import 'problems_provider.dart';
 import 'repositories_provider.dart';
@@ -68,10 +70,12 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
 });
 
 /// Manages authentication and reacts to centralized 401 session events.
-class AuthNotifier extends StateNotifier<AuthState> {
+class AuthNotifier extends StateNotifier<AuthState>
+    with WidgetsBindingObserver {
   final Ref _ref;
   final AuthRepository _repository;
   late final StreamSubscription<void> _sessionSubscription;
+  bool _refreshingProfile = false;
 
   AuthNotifier(
     this._ref,
@@ -81,6 +85,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _sessionSubscription = apiClient.sessionExpiredStream.listen((_) {
       _handleExpiredSession();
     });
+    WidgetsBinding.instance.addObserver(this);
     initialize();
   }
 
@@ -207,6 +212,47 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Reflect admin-driven Premium changes without forcing the learner to
+  /// log out and back in. Offline errors leave the last valid session intact.
+  Future<void> refreshProfile() async {
+    if (_refreshingProfile || !state.isAuthenticated) return;
+    final prior = state.user;
+    if (prior == null) return;
+    _refreshingProfile = true;
+    try {
+      final latest = await _repository.restoreSession();
+      if (!mounted || !state.isAuthenticated ||
+          state.user?.id != prior.id) return;
+
+      if (latest == null) {
+        _resetAccountScopedState();
+        state = const AuthState(status: AuthStatus.unauthenticated);
+        return;
+      }
+
+      final planChanged = latest.subscriptionType != prior.subscriptionType;
+      final stageChanged = latest.currentStageId != prior.currentStageId;
+      state = state.copyWith(user: latest);
+      if (planChanged || stageChanged) {
+        _ref.invalidate(dashboardProvider);
+        _ref.invalidate(learningJourneyProvider);
+        _ref.invalidate(problemsProvider);
+        _ref.invalidate(problemDetailsProvider);
+      }
+    } catch (_) {
+      // Transient network errors must not destroy an authenticated session.
+    } finally {
+      _refreshingProfile = false;
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState lifecycle) {
+    if (lifecycle == AppLifecycleState.resumed) {
+      unawaited(refreshProfile());
+    }
+  }
+
   Future<void> chooseLearningStage(int stageId) async {
     final current = state.user;
     if (current == null) {
@@ -265,6 +311,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _sessionSubscription.cancel();
     super.dispose();
   }

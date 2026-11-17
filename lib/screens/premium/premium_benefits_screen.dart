@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,11 +11,28 @@ import '../../widgets/math_background.dart';
 
 /// Central, calm explanation of Free and Premium benefits.
 /// This screen does not pretend that payments or future features are active.
-class PremiumBenefitsScreen extends ConsumerWidget {
+class PremiumBenefitsScreen extends ConsumerStatefulWidget {
   const PremiumBenefitsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PremiumBenefitsScreen> createState() =>
+      _PremiumBenefitsScreenState();
+}
+
+class _PremiumBenefitsScreenState
+    extends ConsumerState<PremiumBenefitsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        unawaited(ref.read(authProvider.notifier).refreshProfile());
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isPremium = ref.watch(authProvider.select(
       (state) => state.user?.subscriptionType.toLowerCase() == 'premium',
     ));
