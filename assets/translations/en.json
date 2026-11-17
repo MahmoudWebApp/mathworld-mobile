@@ -187,5 +187,12 @@
   "active_stage_categories": "Categories",
   "change_stage_keeps_progress": "Changing stage keeps your previous progress",
   "category_premium_locked": "Available with Premium",
-  "category_no_problems": "No problems in this category yet"
+  "category_no_problems": "No problems in this category yet",
+  "category_free_access_explanation": "The first two categories in each stage are free. Other categories require Premium.",
+  "category_all_open": "Every category in this stage is available to your account.",
+  "category_open": "Open",
+  "category_locked": "Locked",
+  "search_no_matches_hint": "No problems match this search. Clear it to see the available problems.",
+  "problems_empty_hint": "No problems appeared in this list. Pull down to refresh or try again.",
+  "clear_search": "Clear search"
 }
