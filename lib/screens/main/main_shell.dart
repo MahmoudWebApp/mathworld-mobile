@@ -32,6 +32,7 @@ class MainShell extends ConsumerStatefulWidget {
 
 class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserver {
   int _selectedIndex = 0;
+  bool _initialTabApplied = false;
   Timer? _notificationRefresh;
   bool _isAppResumed = true;
   bool _presenceInFlight = false;
@@ -55,6 +56,18 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
       await _presence.close();
     } catch (_) {
       // Force-quit, offline use and revoked tokens expire on the server.
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialTabApplied) return;
+    _initialTabApplied = true;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map && args['initialTab'] == 1) {
+      // Stage onboarding returns directly to verified stage categories.
+      _selectedIndex = 1;
     }
   }
 
