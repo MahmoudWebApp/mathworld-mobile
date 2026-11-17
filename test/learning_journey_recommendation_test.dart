@@ -72,6 +72,7 @@ void main() {
       'IsLocked': true,
     });
     expect(parsed.isLocked, isTrue);
+    expect(parsed.accessVerified, isTrue);
     expect(parsed.attemptedProblems, 5);
     expect(parsed.firstTryCorrect, 1);
   });
@@ -87,6 +88,23 @@ void main() {
       // A deployed older endpoint may omit IsLocked entirely.
     });
     expect(legacy.isLocked, isTrue);
+    expect(legacy.accessVerified, isFalse,
+        reason: 'Unknown old-server access is not a verified Premium lock.');
     expect(journey([legacy]).recommendedCategory, isNull);
+  });
+
+  test('verified unlocked category is still recommendable alongside old metadata', () {
+    final legacy = LearningJourneyCategory.fromJson({
+      'CategoryId': 7,
+      'NameAr': 'قديم', 'NameEn': 'Legacy', 'TotalProblems': 10,
+      // No IsLocked key: never infer Premium or open practice.
+    });
+    final available = LearningJourneyCategory.fromJson({
+      'CategoryId': 2,
+      'NameAr': 'مفتوح', 'NameEn': 'Open', 'TotalProblems': 4,
+      'IsLocked': false,
+    });
+    expect(available.accessVerified, isTrue);
+    expect(journey([legacy, available]).recommendedCategory?.categoryId, 2);
   });
 }
