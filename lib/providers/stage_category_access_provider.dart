@@ -5,7 +5,7 @@ import 'repositories_provider.dart';
 
 /// Uses the same authenticated ApiService as the rest of the application.
 final stageCategoryAccessProvider =
-    FutureProvider.family<StageCategoryAccess, int>((ref, stageId) async {
+    FutureProvider.autoDispose.family<StageCategoryAccess, int>((ref, stageId) async {
   final response = await ref.watch(apiClientProvider).get(
     '/stages/$stageId/free-categories',
   );
@@ -20,7 +20,9 @@ final stageCategoryAccessProvider =
   return StageCategoryAccess.fromJson(data);
 });
 
-final studentPremiumProvider = FutureProvider<bool>((ref) async {
+// Fetch a fresh server entitlement when the category screen is revisited.
+// A manual admin Premium grant/expiry must not leave a long-lived locked UI.
+final studentPremiumProvider = FutureProvider.autoDispose<bool>((ref) async {
   final response = await ref.watch(apiClientProvider).get('/users/subscription');
   final raw = response.data;
   if (raw is! Map<String, dynamic>) {
