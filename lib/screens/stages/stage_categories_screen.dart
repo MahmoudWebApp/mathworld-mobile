@@ -116,12 +116,15 @@ class StageCategoriesScreen extends ConsumerWidget {
               );
             }
 
+            // Guests have the same Free access as students. Only a verified
+            // Admin or Premium account can see every category as unlocked.
+            final isAdmin = user?.role == 'Admin';
             final available = categories.where((category) =>
-                user?.role != 'Student' ||
+                isAdmin ||
                 isPremium ||
                 access.freeCategoryIds.contains(category.id)).toList();
             final unavailable = categories.where((category) =>
-                user?.role == 'Student' &&
+                !isAdmin &&
                 !isPremium &&
                 !access.freeCategoryIds.contains(category.id)).toList();
             final ready = available.where((c) => (c.problemsCount ?? 0) > 0).toList();
