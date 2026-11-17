@@ -7,7 +7,6 @@ import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
 import '../../models/category.dart';
 import '../../models/stage.dart';
-import '../../providers/categories_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/stages_provider.dart';
 import '../../providers/stage_category_access_provider.dart';
@@ -35,7 +34,6 @@ class StageCategoriesScreen extends ConsumerWidget {
     }
 
     final stage = arguments;
-    final categoriesState = ref.watch(stageCategoriesProvider(stage.id));
     final accessState = ref.watch(stageCategoryAccessProvider(stage.id));
     final user = ref.watch(authProvider.select((state) => state.user));
     final premiumState = user?.role == 'Student'
@@ -45,47 +43,43 @@ class StageCategoriesScreen extends ConsumerWidget {
 
     final content = MathBackground(
       showSymbols: true,
-        child: categoriesState.when(
+        child: accessState.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, __) => AppErrorView(
             message: localizedErrorMessage(error),
             onRetry: () => ref.invalidate(
-              stageCategoriesProvider(stage.id),
+              stageCategoryAccessProvider(stage.id),
             ),
           ),
-          data: (categories) {
-            if (accessState.isLoading || (premiumState?.isLoading ?? false)) {
+          data: (access) {
+            if (premiumState?.isLoading ?? false) {
               return const Center(child: CircularProgressIndicator());
             }
-            if (accessState.hasError || (premiumState?.hasError ?? false)) {
-              final failure = accessState.error ?? premiumState?.error;
-              // Do not silently lock everything or present an unavailable
-              // entitlement API as "you must buy Premium".
+            if (premiumState?.hasError ?? false) {
               return AppErrorView(
-                message: failure == null
-                    ? 'error_loading'.tr()
-                    : localizedErrorMessage(failure),
-                onRetry: () {
-                  ref.invalidate(stageCategoryAccessProvider(stage.id));
-                  if (user?.role == 'Student') {
-                    ref.invalidate(studentPremiumProvider);
-                  }
-                },
+                message: localizedErrorMessage(premiumState!.error!),
+                onRetry: () => ref.invalidate(studentPremiumProvider),
               );
             }
-            final access = accessState.valueOrNull;
-            if (access == null) {
-              return AppErrorView(
-                message: localeCode == 'ar'
-                    ? 'تعذّر التحقق من الفئات المفتوحة حاليًا. لا يمكن تحديد صلاحيات الحساب بأمان.'
-                    : 'Cannot verify unlocked categories from this server. Access is not assumed.',
-                onRetry: () => ref.invalidate(stageCategoryAccessProvider(stage.id)),
-              );
-            }
+            // One verified stage response drives titles, entitlements and
+            // published counts. Avoid a second, potentially stale /categories
+            // response making the entire stage appear empty or unavailable.
+            final categories = access.categories.map((item) => Category(
+              id: item.id,
+              nameAr: item.nameAr,
+              nameEn: item.nameEn,
+              icon: item.icon,
+              stageId: stage.id,
+              order: item.order,
+              problemsCount: item.problemsCount,
+            )).toList()..sort((a, b) {
+              final order = a.order.compareTo(b.order);
+              return order != 0 ? order : a.id.compareTo(b.id);
+            });
             final isPremium = premiumState?.valueOrNull ?? false;
             if (categories.isEmpty) {
               return RefreshIndicator(
-                onRefresh: () => ref.refresh(stageCategoriesProvider(stage.id).future),
+                onRefresh: () => ref.refresh(stageCategoryAccessProvider(stage.id).future).then((_) {}),
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.all(AppSpacing.lg),
@@ -101,7 +95,6 @@ class StageCategoriesScreen extends ConsumerWidget {
                         children: [
                           OutlinedButton.icon(
                             onPressed: () {
-                              ref.invalidate(stageCategoriesProvider(stage.id));
                               ref.invalidate(stageCategoryAccessProvider(stage.id));
                             },
                             icon: const Icon(Icons.refresh_rounded),
@@ -174,7 +167,6 @@ class StageCategoriesScreen extends ConsumerWidget {
                 return RefreshIndicator(
                   onRefresh: () async {
                     await Future.wait([
-                      ref.refresh(stageCategoriesProvider(stage.id).future),
                       ref.refresh(stageCategoryAccessProvider(stage.id).future),
                       if (user?.role == 'Student')
                         ref.refresh(studentPremiumProvider.future),
