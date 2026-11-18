@@ -85,7 +85,7 @@ class _PremiumGiftRedeemScreenState
   Widget build(BuildContext context) {
     final ar = context.locale.languageCode == 'ar';
     return Scaffold(
-      appBar: AppBar(title: Text(ar ? 'تفعيل هدية Premium' : 'Redeem Premium gift')),
+      appBar: AppBar(title: Text(ar ? 'تفعيل كود Premium المجاني' : 'Redeem free Premium code')),
       body: MathBackground(
         showSymbols: false,
         child: ListView(
@@ -110,8 +110,8 @@ class _PremiumGiftRedeemScreenState
                   const SizedBox(height: AppSpacing.md),
                   Text(
                     ar
-                        ? 'أدخل الكود المقدم من إدارة MathWorld لتفعيل اشتراك Premium.'
-                        : 'Enter the code supplied by MathWorld to activate Premium.',
+                        ? 'أدخل كود التفعيل المجاني من الإدارة للحصول على Premium دون دفع.'
+                        : 'Enter your complimentary activation code from MathWorld to unlock Premium without payment.',
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSpacing.lg),
