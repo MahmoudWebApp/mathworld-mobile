@@ -85,7 +85,7 @@ class _PremiumGiftRedeemScreenState
   Widget build(BuildContext context) {
     final ar = context.locale.languageCode == 'ar';
     return Scaffold(
-      appBar: AppBar(title: Text(ar ? 'تفعيل كود Premium المجاني' : 'Redeem free Premium code')),
+      appBar: AppBar(title: Text(ar ? 'تفعيل كود خصم Premium بنسبة 100%' : 'Redeem a 100% Premium code')),
       body: MathBackground(
         showSymbols: false,
         child: ListView(
@@ -102,7 +102,7 @@ class _PremiumGiftRedeemScreenState
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    ar ? 'عندك كود هدية؟' : 'Have a gift code?',
+                    ar ? 'عندك كود خصم 100%؟' : 'Have a 100% discount code?',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.headlineSmall
                         ?.copyWith(fontWeight: FontWeight.w800),
@@ -110,8 +110,8 @@ class _PremiumGiftRedeemScreenState
                   const SizedBox(height: AppSpacing.md),
                   Text(
                     ar
-                        ? 'أدخل كود التفعيل المجاني من الإدارة للحصول على Premium دون دفع.'
-                        : 'Enter your complimentary activation code from MathWorld to unlock Premium without payment.',
+                        ? 'أدخل كود الخصم 100% الصادر من الإدارة لتفعيل خطة Premium كاملة دون دفع.'
+                        : 'Enter your 100% Premium access code issued by MathWorld to activate the full plan without payment.',
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -125,7 +125,7 @@ class _PremiumGiftRedeemScreenState
                     enableSuggestions: false,
                     decoration: InputDecoration(
                       border: const OutlineInputBorder(),
-                      labelText: ar ? 'كود الهدية' : 'Gift code',
+                      labelText: ar ? 'كود خصم 100%' : '100% access code',
                       hintText: 'MW-XXXXXXXXXXXX-XXXXXXXXXXXX-XXXXXXXXXXXX',
                     ),
                   ),
@@ -176,8 +176,8 @@ class _PremiumGiftRedeemScreenState
             const SizedBox(height: AppSpacing.lg),
             Text(
               ar
-                  ? 'أكواد الهدايا للاستخدام مرة واحدة، ولا تتطلب وسيلة دفع.'
-                  : 'Gift codes work once and require no payment information.',
+                  ? 'أكواد خصم 100% تُستخدم مرة واحدة ولا تتطلب وسيلة دفع.'
+                  : '100% access codes are single-use and never require payment details.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall,
             ),
