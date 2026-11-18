@@ -97,14 +97,14 @@ class _PremiumBenefitsScreenState
                   ),
                   icon: const Icon(Icons.redeem_rounded),
                   label: Text(ar
-                      ? 'أدخل كود تفعيل Premium المجاني'
-                      : 'Redeem a free Premium activation code'),
+                      ? 'إدخال كود خصم 100% لتفعيل Premium'
+                      : 'Redeem a 100% Premium access code'),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   ar
-                      ? 'يمكن للإدارة تقديم رموز تفعيل تغطي قيمة الاشتراك بالكامل. لا يلزم دفع إلكتروني.'
-                      : 'MathWorld can issue access codes covering the full membership. No online payment is needed.',
+                      ? 'رمز خصم 100% من إدارة MathWorld يفعّل Premium مجاناً دون دفع. يُستخدم مرة واحدة.'
+                      : 'A 100% access code from MathWorld activates Premium free of charge. Each code is single-use.',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodySmall,
                 ),
