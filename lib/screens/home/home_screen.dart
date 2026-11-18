@@ -12,6 +12,7 @@ import '../../models/learning_journey.dart';
 import '../../models/daily_challenge.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/learning_journey_provider.dart';
+import '../../providers/notifications_provider.dart';
 import '../../providers/daily_challenge_provider.dart';
 import '../../providers/student_badges_provider.dart';
 import '../../utils/layout_utils.dart';
@@ -475,7 +476,7 @@ class _JourneyStatusCard extends StatelessWidget {
   }
 }
 
-class _HeroCard extends StatelessWidget {
+class _HeroCard extends ConsumerWidget {
   final DashboardStats dashboard;
   final LearningJourney? journey;
 
