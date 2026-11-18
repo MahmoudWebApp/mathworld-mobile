@@ -13,6 +13,8 @@ import '../screens/problems/problems_list_screen.dart';
 import '../screens/settings/privacy_screen.dart';
 import '../screens/settings/premium_gift_redeem_screen.dart';
 import '../screens/settings/premium_checkout_screen.dart';
+import '../screens/premium/premium_benefits_screen.dart';
+import '../screens/premium/premium_progress_report_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/stages/stage_categories_screen.dart';
 import '../screens/stages/learning_stage_screen.dart';
@@ -33,6 +35,8 @@ class AppRoutes {
   static const String privacy = '/privacy';
   static const String notifications = '/notifications';
   static const String premiumAnalytics = '/premium-analytics';
+  static const String premiumBenefits = '/premium-benefits';
+  static const String premiumReport = '/premium-report';
   static const String premiumGiftRedeem = '/premium-gift-redeem';
   static const String premiumCheckout = '/premium-checkout';
 
@@ -52,6 +56,8 @@ class AppRoutes {
       privacy: (_) => const PrivacyScreen(),
       notifications: (_) => const NotificationsScreen(),
       premiumAnalytics: (_) => const PremiumAnalyticsScreen(),
+      premiumBenefits: (_) => const PremiumBenefitsScreen(),
+      premiumReport: (_) => const PremiumProgressReportScreen(),
       premiumGiftRedeem: (_) => const PremiumGiftRedeemScreen(),
       premiumCheckout: (_) => const PremiumCheckoutScreen(),
     };
