@@ -24,7 +24,11 @@ jobs:
           git config user.name "MathWorld Integration"
           git config user.email "integration@users.noreply.github.com"
           git fetch origin main
-          git merge --no-ff --no-edit -s ort -X ours origin/main -m "chore: reconcile latest main [reconciled-main]"
+          git merge --no-commit --no-ff -s ort -X ours origin/main
+          # This Actions token cannot modify existing workflow files.
+          # Preserve that file for a connector-authorized follow-up.
+          git restore --source=HEAD --staged --worktree -- .github/workflows/stage-daily-quota-mobile-ci.yml
+          git commit -m "chore: reconcile latest main [reconciled-main]"
           test -f lib/providers/categories_provider.dart
           grep -q 'stageCategories.sort' lib/providers/categories_provider.dart
           test -f lib/screens/premium/premium_progress_report_screen.dart
