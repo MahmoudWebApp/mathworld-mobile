@@ -43,6 +43,9 @@ class StageCategoriesScreen extends ConsumerWidget {
 
     final content = MathBackground(
       showSymbols: true,
+      child: SafeArea(
+        top: embedded,
+        bottom: false,
         child: accessState.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, __) => AppErrorView(
@@ -180,7 +183,7 @@ class StageCategoriesScreen extends ConsumerWidget {
                       AppSpacing.lg,
                       AppSpacing.md,
                       AppSpacing.lg,
-                      AppSpacing.xxl,
+                      embedded ? 144 : AppSpacing.xxl,
                     ),
                     children: [
                       Text(
@@ -299,6 +302,7 @@ class StageCategoriesScreen extends ConsumerWidget {
             );
           },
         ),
+      ),
       );
     return embedded
         ? content
@@ -411,15 +415,23 @@ class _CategoryCard extends StatelessWidget {
       // category known to have zero questions and then show a dead-end page.
       // Unavailable topics never route to a paywall or empty question list.
       // One single membership page is offered below the topic sections.
-      onTap: (noPublishedProblems || locked) ? null : () => Navigator.pushNamed(
-        context,
-        guest ? AppRoutes.login : AppRoutes.problems,
-        arguments: guest ? null : {
-          'categoryId': category.id,
-          'stageId': stageId,
-          'title': title,
-        },
-      ),
+      onTap: locked
+          ? () => _explainLockedCategory(context)
+          : noPublishedProblems
+              ? () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(localeCode == 'ar'
+                      ? 'هذه الفئة لا تحتوي على مسائل منشورة بعد.'
+                      : 'This category has no published problems yet.'),
+                ))
+              : () => Navigator.pushNamed(
+                    context,
+                    guest ? AppRoutes.login : AppRoutes.problems,
+                    arguments: guest ? null : {
+                      'categoryId': category.id,
+                      'stageId': stageId,
+                      'title': title,
+                    },
+                  ),
       color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
       border: BorderSide(
         color: accent.withValues(alpha: isDark ? 0.27 : 0.18),
@@ -543,6 +555,41 @@ class _CategoryCard extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  void _explainLockedCategory(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(localeCode == 'ar' ? 'هذه الفئة ضمن Premium' : 'This topic requires Premium',
+                style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: AppSpacing.sm),
+              Text(localeCode == 'ar'
+                  ? 'الفئتان المحددتان من كل مرحلة مفتوحتان مجاناً، وحل المسائل فيهما غير محدود.'
+                  : 'Two categories per stage are free, with unlimited practice inside them.'),
+              const SizedBox(height: AppSpacing.md),
+              FilledButton(
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  Navigator.pushNamed(context,
+                    guest ? AppRoutes.login : AppRoutes.premiumBenefits);
+                },
+                child: Text(localeCode == 'ar'
+                    ? (guest ? 'تسجيل الدخول' : 'تغيير الخطة')
+                    : (guest ? 'Sign in' : 'Change plan')),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
