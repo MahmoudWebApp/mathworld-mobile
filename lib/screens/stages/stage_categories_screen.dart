@@ -263,7 +263,7 @@ class StageCategoriesScreen extends ConsumerWidget {
                       if (unavailable.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),
                         Text(
-                          ar ? '2. فئات إضافية مقفلة' : '2. Other locked topics',
+                          ar ? '2. فئات Premium' : '2. Premium topics',
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const SizedBox(height: AppSpacing.xs),
@@ -285,7 +285,7 @@ class StageCategoriesScreen extends ConsumerWidget {
                               : Icons.workspace_premium_outlined),
                           label: Text(user == null
                               ? (ar ? 'سجّل الدخول للمتابعة' : 'Sign in to continue')
-                              : (ar ? 'مزايا الاشتراك' : 'Membership benefits')),
+                              : (ar ? 'تغيير الخطة' : 'Change plan')),
                         ),
                       ],
                       const SizedBox(height: AppSpacing.lg),
@@ -465,7 +465,7 @@ class _CategoryCard extends StatelessWidget {
                 const SizedBox(width: AppSpacing.xs),
                 Text(
                   locked
-                      ? (localeCode == 'ar' ? 'مقفلة' : 'Locked')
+                      ? (localeCode == 'ar' ? 'Premium · مقفلة' : 'Premium · Locked')
                       : (localeCode == 'ar' ? 'مفتوحة' : 'Unlocked'),
                     style: TextStyle(
                       fontSize: 12,
