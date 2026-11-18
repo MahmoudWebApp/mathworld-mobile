@@ -78,10 +78,12 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
 });
 
 /// Manages authentication and reacts to centralized 401 session events.
-class AuthNotifier extends StateNotifier<AuthState> {
+class AuthNotifier extends StateNotifier<AuthState>
+    with WidgetsBindingObserver {
   final Ref _ref;
   final AuthRepository _repository;
   late final StreamSubscription<void> _sessionSubscription;
+  bool _refreshingProfile = false;
 
   AuthNotifier(
     this._ref,
@@ -91,6 +93,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _sessionSubscription = apiClient.sessionExpiredStream.listen((_) {
       _handleExpiredSession();
     });
+    WidgetsBinding.instance.addObserver(this);
     initialize();
   }
 
@@ -215,6 +218,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String fullName,
     String email,
     String password,
+    int stageId,
   ) async {
     _resetAccountScopedState();
     state = state.copyWith(
@@ -223,7 +227,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       sessionExpired: false,
     );
     try {
-      final user = await _repository.register(fullName, email, password);
+      final user = await _repository.register(fullName, email, password, stageId);
       _resetAccountScopedState();
       state = AuthState(status: AuthStatus.authenticated, user: user);
     } catch (error) {
@@ -358,6 +362,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _sessionSubscription.cancel();
     super.dispose();
   }

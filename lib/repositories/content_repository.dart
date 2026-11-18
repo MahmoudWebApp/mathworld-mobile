@@ -77,6 +77,9 @@ class ContentRepository {
           ),
         )
         .toList()
-      ..sort((a, b) => a.order.compareTo(b.order));
+      ..sort((a, b) {
+        final byOrder = a.order.compareTo(b.order);
+        return byOrder != 0 ? byOrder : a.id.compareTo(b.id);
+      });
   }
 }

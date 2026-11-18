@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/problem.dart';
+import '../models/solution_preview.dart';
 import '../repositories/problems_repository.dart';
 import 'dashboard_provider.dart';
 import 'daily_challenge_provider.dart';
@@ -19,6 +20,8 @@ class ProblemDetailsState {
   final AsyncValue<Problem> problem;
   final int? selectedOptionId;
   final AnswerResult? answerResult;
+  final SolutionPreview? solutionPreview;
+  final bool isPreviewLoading;
   final bool isSubmitting;
   final bool isFavoriteBusy;
   final bool isRetryMode;
@@ -27,6 +30,8 @@ class ProblemDetailsState {
     required this.problem,
     this.selectedOptionId,
     this.answerResult,
+    this.solutionPreview,
+    this.isPreviewLoading = false,
     this.isSubmitting = false,
     this.isFavoriteBusy = false,
     this.isRetryMode = false,
@@ -41,6 +46,9 @@ class ProblemDetailsState {
     bool clearSelectedOption = false,
     AnswerResult? answerResult,
     bool clearAnswerResult = false,
+    SolutionPreview? solutionPreview,
+    bool clearSolutionPreview = false,
+    bool? isPreviewLoading,
     bool? isSubmitting,
     bool? isFavoriteBusy,
     bool? isRetryMode,
@@ -52,6 +60,10 @@ class ProblemDetailsState {
           : (selectedOptionId ?? this.selectedOptionId),
       answerResult:
           clearAnswerResult ? null : (answerResult ?? this.answerResult),
+      solutionPreview: clearSolutionPreview
+          ? null
+          : (solutionPreview ?? this.solutionPreview),
+      isPreviewLoading: isPreviewLoading ?? this.isPreviewLoading,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       isFavoriteBusy: isFavoriteBusy ?? this.isFavoriteBusy,
       isRetryMode: isRetryMode ?? this.isRetryMode,
@@ -71,6 +83,8 @@ final problemDetailsProvider = StateNotifierProvider.autoDispose
       problemId: problemId,
       languageCode: languageCode,
       onAttemptCompleted: () {
+        // Update stage progress and category completion immediately after
+        // a successful submission, without a manual app restart.
         ref.invalidate(solvedProvider);
         ref.invalidate(dashboardProvider);
         // A successful API submission changes the stage rankings, journey,
@@ -119,7 +133,11 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
   }
 
   Future<void> load() async {
-    state = state.copyWith(problem: const AsyncValue.loading());
+    state = state.copyWith(
+      problem: const AsyncValue.loading(),
+      clearSolutionPreview: true,
+      isPreviewLoading: false,
+    );
     try {
       final problem = await _repository.getProblem(_problemId, _languageCode);
       final restoredResult = problem.hasAttempted
@@ -158,6 +176,25 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
       state = state.copyWith(
         problem: AsyncValue.error(error, stackTrace),
       );
+    }
+  }
+
+  /// Fetches an optional solution preview without submitting an answer.
+  Future<void> previewSolution() async {
+    if (state.isPreviewLoading || state.solutionPreview != null ||
+        state.problem.valueOrNull == null) {
+      return;
+    }
+    state = state.copyWith(isPreviewLoading: true);
+    try {
+      final preview = await _repository.previewSolution(_problemId);
+      state = state.copyWith(
+        solutionPreview: preview,
+        isPreviewLoading: false,
+      );
+    } catch (_) {
+      state = state.copyWith(isPreviewLoading: false);
+      rethrow;
     }
   }
 

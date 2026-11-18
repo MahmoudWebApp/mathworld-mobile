@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
+import '../../core/errors/app_exception.dart';
 import '../../core/utils/error_message.dart';
 import '../../providers/problems_provider.dart';
 import '../../utils/layout_utils.dart';
@@ -142,12 +143,35 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
             Expanded(
               child: problemsState.when(
                 loading: () => const _ProblemsSkeleton(),
-                error: (error, __) => AppErrorView(
-                  message: localizedErrorMessage(error),
-                  onRetry: () => ref.invalidate(
-                    problemsProvider(parameters),
-                  ),
-                ),
+                error: (error, __) {
+                  if (error is AppException &&
+                      error.type == AppExceptionType.forbidden &&
+                      _categoryId != null) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        child: AppEmptyView(
+                          icon: Icons.lock_outline_rounded,
+                          title: 'category_locked_explanation_title'.tr(),
+                          subtitle: 'category_locked_explanation_body'.tr(),
+                          action: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.maybePop(context);
+                            },
+                            icon: const Icon(Icons.arrow_back_rounded),
+                            label: Text('category_locked_continue_free'.tr()),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return AppErrorView(
+                    message: localizedErrorMessage(error),
+                    onRetry: () => ref.invalidate(
+                      problemsProvider(parameters),
+                    ),
+                  );
+                },
                 data: (result) {
                   if (result.problems.isEmpty) {
                     // An empty page must still support pull-to-refresh and

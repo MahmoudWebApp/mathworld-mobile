@@ -40,6 +40,11 @@ class StageCategoriesScreen extends ConsumerWidget {
         ? ref.watch(studentPremiumProvider)
         : null;
     final localeCode = context.locale.languageCode;
+    final currentUser = ref.watch(
+      authProvider.select((state) => state.user),
+    );
+    final isPremium = currentUser?.role == 'Admin' ||
+        currentUser?.subscriptionType.toLowerCase() == 'premium';
 
     final content = MathBackground(
       showSymbols: true,
@@ -320,10 +325,21 @@ class CurrentStageCategoriesScreen extends ConsumerWidget {
     final stageId = user?.currentStageId;
     if (stageId == null || user?.role != 'Student') {
       return Center(
-        child: TextButton.icon(
-          onPressed: () => Navigator.pushNamed(context, AppRoutes.learningStage),
-          icon: const Icon(Icons.school_outlined),
-          label: Text('choose_learning_stage_title'.tr()),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: AppEmptyView(
+            icon: Icons.school_outlined,
+            title: 'choose_learning_stage_title'.tr(),
+            subtitle: 'choose_learning_stage_desc'.tr(),
+            action: FilledButton.icon(
+              onPressed: () => Navigator.pushNamed(
+                context,
+                AppRoutes.learningStage,
+              ),
+              icon: const Icon(Icons.arrow_forward_rounded),
+              label: Text('learning_stage'.tr()),
+            ),
+          ),
         ),
       );
     }
@@ -344,8 +360,25 @@ class CurrentStageCategoriesScreen extends ConsumerWidget {
             );
           }
         }
-        return AppErrorView(
-          onRetry: () => ref.invalidate(stagesProvider),
+        // A deleted/renamed stage is not a network error. Give learners
+        // a direct route to choose a valid stage instead of retrying forever.
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: AppEmptyView(
+              icon: Icons.school_outlined,
+              title: 'choose_learning_stage_title'.tr(),
+              subtitle: 'choose_learning_stage_desc'.tr(),
+              action: FilledButton.icon(
+                onPressed: () => Navigator.pushNamed(
+                  context,
+                  AppRoutes.learningStage,
+                ),
+                icon: const Icon(Icons.school_outlined),
+                label: Text('learning_stage'.tr()),
+              ),
+            ),
+          ),
         );
       },
     );
@@ -378,6 +411,7 @@ class _CategoryCard extends StatelessWidget {
     final mutedColor = isDark ? AppColors.darkMuted : AppColors.lightMuted;
     final noPublishedProblems = category.problemsCount == 0;
 
+    final empty = category.problemsCount == 0;
     return GlassCard(
       // The API now returns a real per-stage count. Never navigate into a
       // category known to have zero questions and then show a dead-end page.

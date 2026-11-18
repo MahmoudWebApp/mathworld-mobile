@@ -135,6 +135,19 @@ class SettingsScreen extends ConsumerWidget {
               GlassCard(
                 padding: EdgeInsets.zero,
                 child: ListTile(
+                  leading: const Icon(Icons.workspace_premium_outlined),
+                  title: Text('premium_benefits_title'.tr()),
+                  subtitle: Text('premium_benefits_settings_hint'.tr()),
+                  trailing: LayoutUtils.forwardIcon(context),
+                  onTap: () => Navigator.pushNamed(
+                    context, AppRoutes.premiumBenefits,
+                  ),
+                ),
+              ),
+            if (currentUser?.role == 'Student')
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: ListTile(
                   leading: const Icon(Icons.school_outlined),
                   title: Text('learning_stage'.tr()),
                   subtitle: Text(

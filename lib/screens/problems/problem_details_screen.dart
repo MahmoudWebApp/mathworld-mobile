@@ -7,6 +7,7 @@ import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
 import '../../models/problem.dart';
 import '../../providers/learning_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/problem_details_provider.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
@@ -84,9 +85,20 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
       body: MathBackground(
         child: state.problem.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => AppErrorView(
-            message: localizedErrorMessage(error),
-            onRetry: notifier.load,
+          error: (error, _) => ListView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            children: [
+              AppErrorView(
+                message: localizedErrorMessage(error),
+                onRetry: notifier.load,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.maybePop(context),
+                icon: const Icon(Icons.arrow_back_rounded),
+                label: Text('category_locked_continue_free'.tr()),
+              ),
+            ],
           ),
           data: (problem) => _ProblemContent(
             problem: problem,
@@ -127,6 +139,7 @@ class _ProblemContent extends ConsumerWidget {
   final AsyncValue<ProblemAttemptHistory>? historyState;
   final ValueChanged<int?> onOptionChanged;
   final VoidCallback onSubmit;
+  final VoidCallback onPreview;
   final VoidCallback onStartRetry;
   final VoidCallback onCancelRetry;
   final VoidCallback onToggleFavorite;
@@ -137,6 +150,7 @@ class _ProblemContent extends ConsumerWidget {
     required this.historyState,
     required this.onOptionChanged,
     required this.onSubmit,
+    required this.onPreview,
     required this.onStartRetry,
     required this.onCancelRetry,
     required this.onToggleFavorite,
@@ -147,8 +161,12 @@ class _ProblemContent extends ConsumerWidget {
     final isArabic = context.locale.languageCode == 'ar';
     final canSelect = state.answerResult == null &&
         (!problem.hasAttempted || state.isRetryMode);
-    final solution = _solutionText(problem, state);
-    final videoUrl =
+    final preview = state.solutionPreview;
+    final previewSolution = preview?.detailedSolution.trim() ?? '';
+    final solution = previewSolution.isNotEmpty
+        ? previewSolution
+        : _solutionText(problem, state);
+    final videoUrl = preview?.youtubeSolutionUrl ??
         state.answerResult?.youtubeSolutionUrl ?? problem.youtubeSolutionUrl;
     final history = historyState?.valueOrNull;
 
@@ -223,6 +241,16 @@ class _ProblemContent extends ConsumerWidget {
             ],
           ),
         ),
+        if (isPremium && canSelect && preview == null) ...[
+          const SizedBox(height: AppSpacing.md),
+          OutlinedButton.icon(
+            onPressed: state.isPreviewLoading ? null : onPreview,
+            icon: const Icon(Icons.visibility_outlined),
+            label: Text(state.isPreviewLoading
+                ? 'preview_solution_loading'.tr()
+                : 'preview_solution_before_answer'.tr()),
+          ),
+        ],
         if (canSelect) ...[
           const SizedBox(height: AppSpacing.xl),
           PremiumButton(
@@ -241,6 +269,14 @@ class _ProblemContent extends ConsumerWidget {
         if (state.answerResult != null) ...[
           const SizedBox(height: AppSpacing.xl),
           _AnswerResultCard(result: state.answerResult!),
+          const SizedBox(height: AppSpacing.md),
+          // The next action belongs immediately after the answer result,
+          // not hidden below long explanations and attempt history.
+          FilledButton.icon(
+            onPressed: () => Navigator.maybePop(context),
+            icon: const Icon(Icons.list_alt_rounded),
+            label: Text('back_to_problems'.tr()),
+          ),
         ],
         if (problem.hasAttempted &&
             problem.canRetry &&
@@ -286,12 +322,14 @@ class _ProblemContent extends ConsumerWidget {
           const SizedBox(height: AppSpacing.xxl),
           _AttemptHistorySection(historyState: historyState!),
         ],
-        const SizedBox(height: AppSpacing.lg),
-        TextButton.icon(
-          onPressed: () => Navigator.maybePop(context),
-          icon: const Icon(Icons.list_alt_rounded),
-          label: Text('back_to_problems'.tr()),
-        ),
+        if (state.answerResult == null) ...[
+          const SizedBox(height: AppSpacing.lg),
+          TextButton.icon(
+            onPressed: () => Navigator.maybePop(context),
+            icon: const Icon(Icons.list_alt_rounded),
+            label: Text('back_to_problems'.tr()),
+          ),
+        ],
       ],
     );
   }

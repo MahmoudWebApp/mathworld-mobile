@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Circular legacy fallback; Android 8+ uses mipmap-anydpi-v26 adaptive. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/ic_launcher_background" />
+        </shape>
+    </item>
+    <item android:drawable="@drawable/mathworld_launcher_foreground_vector" />
+</layer-list>

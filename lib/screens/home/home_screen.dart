@@ -53,9 +53,22 @@ class HomeScreen extends ConsumerWidget {
         bottom: false,
         child: dashboardState.when(
           loading: () => const _HomeSkeleton(),
-          error: (error, _) => AppErrorView(
-            message: localizedErrorMessage(error),
-            onRetry: () => ref.invalidate(dashboardProvider),
+          // The statistics endpoint can fail independently from the
+          // learning journey. Keep the primary navigation usable.
+          error: (error, _) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            children: [
+              _ContinueLearningCard(onTap: onOpenStages),
+              const SizedBox(height: AppSpacing.lg),
+              AppErrorView(
+                message: localizedErrorMessage(error),
+                onRetry: () {
+                  ref.invalidate(dashboardProvider);
+                  ref.invalidate(learningJourneyProvider);
+                },
+              ),
+            ],
           ),
           data: (dashboard) => RefreshIndicator(
             onRefresh: () async {
@@ -469,7 +482,9 @@ class _HeroCard extends StatelessWidget {
   const _HeroCard({required this.dashboard, required this.journey});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unreadNotifications = ref.watch(notificationsUnreadCountProvider)
+        .valueOrNull ?? 0;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final initial = dashboard.fullName.trim().isEmpty
         ? 'M'
@@ -544,6 +559,17 @@ class _HeroCard extends StatelessWidget {
                       ),
                     ],
                   ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'notifications_title'.tr(),
+                onPressed: () => Navigator.pushNamed(
+                  context, AppRoutes.notifications,
+                ),
+                icon: Badge(
+                  isLabelVisible: unreadNotifications > 0,
+                  smallSize: 9,
+                  child: const Icon(Icons.notifications_none_rounded),
                 ),
               ),
             ],
