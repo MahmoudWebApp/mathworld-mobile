@@ -7,7 +7,6 @@ import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
 import '../../models/problem.dart';
 import '../../providers/learning_provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/problem_details_provider.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
