@@ -80,7 +80,9 @@ class _PremiumProgressReportScreenState
                             if (availableStages != null &&
                                 availableStages.length > 1) ...[
                               DropdownButtonFormField<int>(
-                                initialValue: stageId,
+                                initialValue: availableStages.any(
+                                  (stage) => stage.id == stageId,
+                                ) ? stageId : null,
                                 isExpanded: true,
                                 decoration: InputDecoration(
                                   labelText: 'premium_report_stage'.tr(),
