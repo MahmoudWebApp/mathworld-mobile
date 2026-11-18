@@ -54,15 +54,6 @@ class StageCategoriesScreen extends ConsumerWidget {
             ),
           ),
           data: (access) {
-            if (premiumState?.isLoading ?? false) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (premiumState?.hasError ?? false) {
-              return AppErrorView(
-                message: localizedErrorMessage(premiumState!.error!),
-                onRetry: () => ref.invalidate(studentPremiumProvider),
-              );
-            }
             // One verified stage response drives titles, entitlements and
             // published counts. Avoid a second, potentially stale /categories
             // response making the entire stage appear empty or unavailable.
@@ -193,6 +184,33 @@ class StageCategoriesScreen extends ConsumerWidget {
                       Text(stage.getName(localeCode),
                           style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: AppSpacing.md),
+                      if (user?.role == 'Student' && (premiumState?.isLoading ?? false)) ...[
+                        GlassCard(
+                          child: Text(localeCode == 'ar'
+                              ? 'عم نتحقق من اشتراكك، وبتقدر تتصفح الفئات المجانية أثناء التحقق.'
+                              : 'Checking your membership. Free topics stay available while we verify your plan.'),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
+                      if (user?.role == 'Student' && (premiumState?.hasError ?? false)) ...[
+                        GlassCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(ar
+                                  ? 'تعذر التأكد من اشتراكك. عم نعرض الفئات المجانية بأمان، وما عم نعتبر حسابك مجاني.'
+                                  : "We couldn't verify your plan. Free topics remain visible; your membership hasn't been changed."),
+                              const SizedBox(height: AppSpacing.sm),
+                              OutlinedButton.icon(
+                                onPressed: () => ref.invalidate(studentPremiumProvider),
+                                icon: const Icon(Icons.refresh_rounded),
+                                label: Text('retry'.tr()),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
                       GlassCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,10 +230,10 @@ class StageCategoriesScreen extends ConsumerWidget {
                                   : (ar
                                       ? (user == null
                                           ? 'بتقدر تتصفح الفئتين المجانيتين بكل مرحلة. سجّل الدخول حتى تبدأ الحل وتحفظ تقدمك.'
-                                          : 'حسابك المجاني بيسمحلك تحل بلا حد داخل الفئتين المفتوحتين في كل مرحلة. ابدأ من الفئات تحت.')
+                                          : 'بتقدر تحل بلا حد داخل الفئتين المفتوحتين في كل مرحلة. ابدأ من الفئات تحت.')
                                       : (user == null
                                           ? 'Browse the two Free topics in each stage. Sign in to solve and save progress.'
-                                          : 'Your Free account includes two unlocked topics per stage, with unlimited practice. Start below.')),
+                                          : 'Two topics per stage are open for Free practice without daily limits. Start below.')),
                             ),
                             const SizedBox(height: AppSpacing.sm),
                             Text(
@@ -268,8 +286,8 @@ class StageCategoriesScreen extends ConsumerWidget {
                         const SizedBox(height: AppSpacing.xs),
                         Text(
                           ar
-                              ? 'هاي الفئات مو ضمن حسابك المجاني. فيك تشوف مميزات الاشتراك من مكان واحد.'
-                              : 'These topics are not included with Free. View membership benefits in one place.',
+                              ? 'هاي الفئات تتطلب Premium. فيك تشوف مميزات الاشتراك من مكان واحد.'
+                              : 'These topics require Premium. View membership benefits in one place.',
                         ),
                         const SizedBox(height: AppSpacing.md),
                         cards(unavailable, locked: true),
@@ -414,14 +432,14 @@ class _CategoryCard extends StatelessWidget {
       // category known to have zero questions and then show a dead-end page.
       // Unavailable topics never route to a paywall or empty question list.
       // One single membership page is offered below the topic sections.
-      onTap: locked
-          ? () => _explainLockedCategory(context)
-          : noPublishedProblems
-              ? () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(localeCode == 'ar'
-                      ? 'هذه الفئة لا تحتوي على مسائل منشورة بعد.'
-                      : 'This category has no published problems yet.'),
-                ))
+      onTap: noPublishedProblems
+          ? () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(localeCode == 'ar'
+                  ? 'هذه الفئة لا تحتوي على مسائل منشورة بعد.'
+                  : 'This category has no published problems yet.'),
+            ))
+          : locked
+              ? () => _explainLockedCategory(context)
               : () => Navigator.pushNamed(
                     context,
                     guest ? AppRoutes.login : AppRoutes.problems,
@@ -473,7 +491,8 @@ class _CategoryCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      locked ? Icons.lock_outline_rounded
+                      noPublishedProblems ? Icons.info_outline_rounded
+                          : locked ? Icons.lock_outline_rounded
                           : Icons.lock_open_rounded,
                       size: 15,
                       color: accent,
@@ -481,10 +500,13 @@ class _CategoryCard extends StatelessWidget {
                     const SizedBox(width: AppSpacing.xs),
                     Flexible(
                       child: Text(
-                        locked
+                        noPublishedProblems
                             ? (localeCode == 'ar'
-                                ? 'Premium · مقفلة' : 'Premium · Locked')
-                            : (localeCode == 'ar' ? 'مفتوحة' : 'Unlocked'),
+                                ? 'لا توجد مسائل منشورة بعد' : 'No published problems yet')
+                            : locked
+                                ? (localeCode == 'ar'
+                                    ? 'Premium · مقفلة' : 'Premium · Locked')
+                                : (localeCode == 'ar' ? 'مفتوحة' : 'Unlocked'),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
