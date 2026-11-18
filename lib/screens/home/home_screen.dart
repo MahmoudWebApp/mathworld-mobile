@@ -37,9 +37,22 @@ class HomeScreen extends ConsumerWidget {
         bottom: false,
         child: dashboardState.when(
           loading: () => const _HomeSkeleton(),
-          error: (error, _) => AppErrorView(
-            message: localizedErrorMessage(error),
-            onRetry: () => ref.invalidate(dashboardProvider),
+          // The statistics endpoint can fail independently from the
+          // learning journey. Keep the primary navigation usable.
+          error: (error, _) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            children: [
+              _ContinueLearningCard(onTap: onOpenStages),
+              const SizedBox(height: AppSpacing.lg),
+              AppErrorView(
+                message: localizedErrorMessage(error),
+                onRetry: () {
+                  ref.invalidate(dashboardProvider);
+                  ref.invalidate(learningJourneyProvider);
+                },
+              ),
+            ],
           ),
           data: (dashboard) => RefreshIndicator(
             onRefresh: () async {
