@@ -251,6 +251,9 @@ class AuthNotifier extends StateNotifier<AuthState>
   void didChangeAppLifecycleState(AppLifecycleState lifecycle) {
     if (lifecycle == AppLifecycleState.resumed) {
       unawaited(refreshProfile());
+      // Announcements sent while the app was backgrounded appear on resume.
+      _ref.invalidate(notificationsUnreadCountProvider);
+      _ref.invalidate(notificationsPageProvider);
     }
   }
 
