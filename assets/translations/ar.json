@@ -241,5 +241,6 @@
   "premium_report_mastered": "مسائل متقنة",
   "premium_report_points": "نقاط مكتسبة",
   "premium_report_categories": "تقدمي حسب الفئة",
-  "premium_report_export_notice": "يمكن تصدير CSV من موقع MathWorld. تصدير PDF وExcel الأصلي سيُضاف لاحقاً."
+  "premium_report_export_notice": "يمكن تصدير CSV من موقع MathWorld. تصدير PDF وExcel الأصلي سيُضاف لاحقاً.",
+  "premium_report_stage": "مرحلة التقرير"
 }

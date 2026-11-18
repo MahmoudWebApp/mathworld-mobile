@@ -241,5 +241,6 @@
   "premium_report_mastered": "Mastered",
   "premium_report_points": "Awarded points",
   "premium_report_categories": "Progress by category",
-  "premium_report_export_notice": "CSV export is available on the MathWorld website. Native PDF and Excel exports are coming later."
+  "premium_report_export_notice": "CSV export is available on the MathWorld website. Native PDF and Excel exports are coming later.",
+  "premium_report_stage": "Report stage"
 }
