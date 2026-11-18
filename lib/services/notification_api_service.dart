@@ -80,7 +80,7 @@ class NotificationApiService {
     if (take < 1 || take > 50 || skip < 0 || skip > 10000) {
       throw ArgumentError('Invalid inbox pagination');
     }
-    final response = await _client.get('/notifications', queryParameters: {
+    final response = await _client.get('/notifications/v2', queryParameters: {
       'take': take,
       'skip': skip,
     });
@@ -92,10 +92,10 @@ class NotificationApiService {
 
   Future<void> markRead(int id) async {
     if (id <= 0) throw ArgumentError.value(id, 'id', 'Must be positive');
-    await _client.put('/notifications/$id/read');
+    await _client.put('/notifications/v2/$id/read');
   }
 
   Future<void> markAllRead() async {
-    await _client.put('/notifications/read-all');
+    await _client.put('/notifications/v2/read-all');
   }
 }
