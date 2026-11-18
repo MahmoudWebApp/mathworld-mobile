@@ -173,14 +173,19 @@ class SettingsScreen extends ConsumerWidget {
                 child: ListTile(
                   leading: const Icon(Icons.bar_chart_rounded),
                   title: Text(context.locale.languageCode == 'ar'
-                      ? 'تقريري الشخصي'
-                      : 'My progress report'),
+                      ? (currentUser?.subscriptionType.toLowerCase() == 'premium'
+                          ? 'تقريري الشخصي' : 'تقارير شخصية · Premium')
+                      : (currentUser?.subscriptionType.toLowerCase() == 'premium'
+                          ? 'My progress report' : 'My reports · Premium')),
                   subtitle: Text(context.locale.languageCode == 'ar'
                       ? 'إحصائيات المحاولات والنقاط والفئات'
                       : 'Attempts, points and category progress'),
                   trailing: LayoutUtils.forwardIcon(context),
                   onTap: () => Navigator.pushNamed(
-                    context, AppRoutes.premiumAnalytics,
+                    context,
+                    currentUser?.subscriptionType.toLowerCase() == 'premium'
+                        ? AppRoutes.premiumAnalytics
+                        : AppRoutes.premiumBenefits,
                   ),
                 ),
               ),
