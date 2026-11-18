@@ -432,14 +432,14 @@ class _CategoryCard extends StatelessWidget {
       // category known to have zero questions and then show a dead-end page.
       // Unavailable topics never route to a paywall or empty question list.
       // One single membership page is offered below the topic sections.
-      onTap: locked
-          ? () => _explainLockedCategory(context)
-          : noPublishedProblems
-              ? () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(localeCode == 'ar'
-                      ? 'هذه الفئة لا تحتوي على مسائل منشورة بعد.'
-                      : 'This category has no published problems yet.'),
-                ))
+      onTap: noPublishedProblems
+          ? () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(localeCode == 'ar'
+                  ? 'هذه الفئة لا تحتوي على مسائل منشورة بعد.'
+                  : 'This category has no published problems yet.'),
+            ))
+          : locked
+              ? () => _explainLockedCategory(context)
               : () => Navigator.pushNamed(
                     context,
                     guest ? AppRoutes.login : AppRoutes.problems,
@@ -491,7 +491,8 @@ class _CategoryCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      locked ? Icons.lock_outline_rounded
+                      noPublishedProblems ? Icons.info_outline_rounded
+                          : locked ? Icons.lock_outline_rounded
                           : Icons.lock_open_rounded,
                       size: 15,
                       color: accent,
@@ -499,10 +500,13 @@ class _CategoryCard extends StatelessWidget {
                     const SizedBox(width: AppSpacing.xs),
                     Flexible(
                       child: Text(
-                        locked
+                        noPublishedProblems
                             ? (localeCode == 'ar'
-                                ? 'Premium · مقفلة' : 'Premium · Locked')
-                            : (localeCode == 'ar' ? 'مفتوحة' : 'Unlocked'),
+                                ? 'لا توجد مسائل منشورة بعد' : 'No published problems yet')
+                            : locked
+                                ? (localeCode == 'ar'
+                                    ? 'Premium · مقفلة' : 'Premium · Locked')
+                                : (localeCode == 'ar' ? 'مفتوحة' : 'Unlocked'),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
