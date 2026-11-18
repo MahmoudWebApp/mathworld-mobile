@@ -179,7 +179,7 @@ class StageCategoriesScreen extends ConsumerWidget {
                   },
                   child: ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(
+                    padding: EdgeInsets.fromLTRB(
                       AppSpacing.lg,
                       AppSpacing.md,
                       AppSpacing.lg,
