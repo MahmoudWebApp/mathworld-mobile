@@ -11,7 +11,6 @@ import '../../providers/auth_provider.dart';
 import '../../providers/stages_provider.dart';
 import '../../providers/stage_category_access_provider.dart';
 import '../../utils/category_grid_layout.dart';
-import '../../utils/layout_utils.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
