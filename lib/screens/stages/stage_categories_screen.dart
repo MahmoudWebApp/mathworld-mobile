@@ -54,9 +54,6 @@ class StageCategoriesScreen extends ConsumerWidget {
             ),
           ),
           data: (access) {
-            if (premiumState?.isLoading ?? false) {
-              return const Center(child: CircularProgressIndicator());
-            }
             // One verified stage response drives titles, entitlements and
             // published counts. Avoid a second, potentially stale /categories
             // response making the entire stage appear empty or unavailable.
@@ -187,6 +184,14 @@ class StageCategoriesScreen extends ConsumerWidget {
                       Text(stage.getName(localeCode),
                           style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: AppSpacing.md),
+                      if (user?.role == 'Student' && (premiumState?.isLoading ?? false)) ...[
+                        GlassCard(
+                          child: Text(localeCode == 'ar'
+                              ? 'عم نتحقق من اشتراكك، وبتقدر تتصفح الفئات المجانية أثناء التحقق.'
+                              : 'Checking your membership. Free topics stay available while we verify your plan.'),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
                       if (user?.role == 'Student' && (premiumState?.hasError ?? false)) ...[
                         GlassCard(
                           child: Column(
