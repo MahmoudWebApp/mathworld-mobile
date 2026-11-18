@@ -12,7 +12,7 @@ import '../../models/learning_journey.dart';
 import '../../models/daily_challenge.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/learning_journey_provider.dart';
-import '../../providers/notifications_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../../providers/daily_challenge_provider.dart';
 import '../../providers/student_badges_provider.dart';
 import '../../utils/layout_utils.dart';
@@ -484,8 +484,8 @@ class _HeroCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final unreadNotifications = ref.watch(notificationsUnreadCountProvider)
-        .valueOrNull ?? 0;
+    final unreadNotifications = ref.watch(notificationInboxProvider)
+        .valueOrNull?.unreadCount ?? 0;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final initial = dashboard.fullName.trim().isEmpty
         ? 'M'
