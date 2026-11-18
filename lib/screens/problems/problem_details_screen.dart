@@ -139,7 +139,6 @@ class _ProblemContent extends ConsumerWidget {
   final AsyncValue<ProblemAttemptHistory>? historyState;
   final ValueChanged<int?> onOptionChanged;
   final VoidCallback onSubmit;
-  final VoidCallback onPreview;
   final VoidCallback onStartRetry;
   final VoidCallback onCancelRetry;
   final VoidCallback onToggleFavorite;
@@ -150,7 +149,6 @@ class _ProblemContent extends ConsumerWidget {
     required this.historyState,
     required this.onOptionChanged,
     required this.onSubmit,
-    required this.onPreview,
     required this.onStartRetry,
     required this.onCancelRetry,
     required this.onToggleFavorite,
@@ -241,16 +239,6 @@ class _ProblemContent extends ConsumerWidget {
             ],
           ),
         ),
-        if (isPremium && canSelect && preview == null) ...[
-          const SizedBox(height: AppSpacing.md),
-          OutlinedButton.icon(
-            onPressed: state.isPreviewLoading ? null : onPreview,
-            icon: const Icon(Icons.visibility_outlined),
-            label: Text(state.isPreviewLoading
-                ? 'preview_solution_loading'.tr()
-                : 'preview_solution_before_answer'.tr()),
-          ),
-        ],
         if (canSelect) ...[
           const SizedBox(height: AppSpacing.xl),
           PremiumButton(
