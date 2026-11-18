@@ -229,8 +229,25 @@ class CurrentStageCategoriesScreen extends ConsumerWidget {
             );
           }
         }
-        return AppErrorView(
-          onRetry: () => ref.invalidate(stagesProvider),
+        // A deleted/renamed stage is not a network error. Give learners
+        // a direct route to choose a valid stage instead of retrying forever.
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: AppEmptyView(
+              icon: Icons.school_outlined,
+              title: 'choose_learning_stage_title'.tr(),
+              subtitle: 'choose_learning_stage_desc'.tr(),
+              action: FilledButton.icon(
+                onPressed: () => Navigator.pushNamed(
+                  context,
+                  AppRoutes.learningStage,
+                ),
+                icon: const Icon(Icons.school_outlined),
+                label: Text('learning_stage'.tr()),
+              ),
+            ),
+          ),
         );
       },
     );
