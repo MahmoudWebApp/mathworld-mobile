@@ -136,8 +136,12 @@ class SettingsScreen extends ConsumerWidget {
                 padding: EdgeInsets.zero,
                 child: ListTile(
                   leading: const Icon(Icons.workspace_premium_outlined),
-                  title: Text('premium_benefits_title'.tr()),
-                  subtitle: Text('premium_benefits_settings_hint'.tr()),
+                  title: Text(context.locale.languageCode == 'ar'
+                      ? 'تغيير الخطة'
+                      : 'Change plan'),
+                  subtitle: Text(context.locale.languageCode == 'ar'
+                      ? 'قارن Free وPremium وأدخل رمز التفعيل'
+                      : 'Compare Free and Premium and redeem a code'),
                   trailing: LayoutUtils.forwardIcon(context),
                   onTap: () => Navigator.pushNamed(
                     context, AppRoutes.premiumBenefits,
