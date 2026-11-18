@@ -213,8 +213,8 @@
   "premium_preview_detail": "Request a solution before submitting your answer, without using an attempt.",
   "premium_no_ads_title": "No ads",
   "premium_no_ads_detail": "Premium accounts will be ad-free when advertising is introduced.",
-  "premium_reports_title": "Advanced reports and PDF/Excel export",
-  "premium_reports_detail": "Exportable in-depth progress reports are planned.",
+  "premium_reports_title": "Category progress reports",
+  "premium_reports_detail": "See solved problems, mastery and awarded points. CSV export is available on web; native PDF/Excel are coming later.",
   "premium_tutors_title": "Connect with math tutors",
   "premium_tutors_detail": "Coming when the tutor network is ready.",
   "premium_available_now": "Available now",
@@ -231,5 +231,15 @@
   "notifications_mark_all": "Mark all as read",
   "notifications_mark_read": "Mark as read",
   "notifications_view_details": "View details",
-  "notifications_unread_count": "Unread notifications: {count}"
+  "notifications_unread_count": "Unread notifications: {count}",
+  "premium_report_open": "View my progress report",
+  "premium_report_title": "My learning progress report",
+  "premium_reports_locked": "Detailed reports are for Premium learners",
+  "premium_report_completion": "completion",
+  "premium_report_solved": "Solved problems",
+  "premium_report_first_try": "Correct on first try",
+  "premium_report_mastered": "Mastered",
+  "premium_report_points": "Awarded points",
+  "premium_report_categories": "Progress by category",
+  "premium_report_export_notice": "CSV export is available on the MathWorld website. Native PDF and Excel exports are coming later."
 }

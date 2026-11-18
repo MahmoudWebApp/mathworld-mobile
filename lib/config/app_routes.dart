@@ -7,6 +7,7 @@ import '../screens/dashboard/solved_screen.dart';
 import '../screens/dashboard/leaderboard_screen.dart';
 import '../screens/main/main_shell.dart';
 import '../screens/premium/premium_benefits_screen.dart';
+import '../screens/premium/premium_progress_report_screen.dart';
 import '../screens/notifications/notifications_screen.dart';
 import '../screens/problems/problem_details_screen.dart';
 import '../screens/problems/problems_list_screen.dart';
@@ -30,6 +31,7 @@ class AppRoutes {
   static const String problemDetails = '/problem-details';
   static const String privacy = '/privacy';
   static const String premiumBenefits = '/premium-benefits';
+  static const String premiumReport = '/premium-report';
   static const String notifications = '/notifications';
 
   static Map<String, WidgetBuilder> getRoutes() {
@@ -47,6 +49,7 @@ class AppRoutes {
       problemDetails: (_) => const ProblemDetailsScreen(),
       privacy: (_) => const PrivacyScreen(),
       premiumBenefits: (_) => const PremiumBenefitsScreen(),
+      premiumReport: (_) => const PremiumProgressReportScreen(),
       notifications: (_) => const NotificationsScreen(),
     };
   }
