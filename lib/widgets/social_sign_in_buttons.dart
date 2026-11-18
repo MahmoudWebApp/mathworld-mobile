@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/app_routes.dart';
 import '../core/utils/error_message.dart';
+import '../core/errors/app_exception.dart';
 import '../providers/auth_provider.dart';
 import '../services/google_identity_service.dart';
 
@@ -34,6 +35,10 @@ class _SocialSignInButtonsState extends ConsumerState<SocialSignInButtons> {
       Navigator.pushNamedAndRemoveUntil(context, target, (_) => false);
     } catch (error) {
       if (!mounted) return;
+      if (error is AppException && error.type == AppExceptionType.cancelled) {
+        // Closing the Google account chooser is a normal user action.
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(localizedErrorMessage(error))),
       );

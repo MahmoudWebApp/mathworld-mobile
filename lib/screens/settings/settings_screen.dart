@@ -10,6 +10,7 @@ import '../../providers/settings_provider.dart';
 import '../../providers/stages_provider.dart';
 import '../../services/google_identity_service.dart';
 import '../../core/utils/error_message.dart';
+import '../../core/errors/app_exception.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
@@ -162,6 +163,57 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ),
               ),
+            if (currentUser?.role == 'Student')
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: ListTile(
+                  leading: const Icon(Icons.bar_chart_rounded),
+                  title: Text(context.locale.languageCode == 'ar'
+                      ? 'تقريري الشخصي'
+                      : 'My progress report'),
+                  subtitle: Text(context.locale.languageCode == 'ar'
+                      ? 'إحصائيات المحاولات والنقاط والفئات'
+                      : 'Attempts, points and category progress'),
+                  trailing: LayoutUtils.forwardIcon(context),
+                  onTap: () => Navigator.pushNamed(
+                    context, AppRoutes.premiumAnalytics,
+                  ),
+                ),
+              ),
+            if (currentUser?.role == 'Student')
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: ListTile(
+                  leading: const Icon(Icons.workspace_premium_rounded),
+                  title: Text(context.locale.languageCode == 'ar'
+                      ? 'الاشتراك والخصومات'
+                      : 'Membership & discounts'),
+                  subtitle: Text(context.locale.languageCode == 'ar'
+                      ? 'معاينة السعر وسجل طلبات الاشتراك'
+                      : 'Price preview and checkout order history'),
+                  trailing: LayoutUtils.forwardIcon(context),
+                  onTap: () => Navigator.pushNamed(
+                    context, AppRoutes.premiumCheckout,
+                  ),
+                ),
+              ),
+            if (currentUser?.role == 'Student')
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: ListTile(
+                  leading: const Icon(Icons.card_giftcard_rounded),
+                  title: Text(context.locale.languageCode == 'ar'
+                      ? 'تفعيل كود هدية'
+                      : 'Redeem a gift code'),
+                  subtitle: Text(context.locale.languageCode == 'ar'
+                      ? 'هدية استخدام واحد، بدون دفع إلكتروني'
+                      : 'Single-use access gift, no checkout'),
+                  trailing: LayoutUtils.forwardIcon(context),
+                  onTap: () => Navigator.pushNamed(
+                    context, AppRoutes.premiumGiftRedeem,
+                  ),
+                ),
+              ),
             const SizedBox(height: 24),
             if (GoogleIdentityService.available) ...[
               GlassCard(
@@ -180,6 +232,8 @@ class SettingsScreen extends ConsumerWidget {
                       );
                     } catch (error) {
                       if (!context.mounted) return;
+                      if (error is AppException &&
+                          error.type == AppExceptionType.cancelled) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(localizedErrorMessage(error))),
                       );

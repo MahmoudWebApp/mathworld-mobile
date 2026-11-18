@@ -1,0 +1,40 @@
+name: Flutter external launcher branding audit
+
+on:
+  push:
+    branches:
+      - feature/premium-entitlements-client
+    paths:
+      - "assets/branding/**"
+      - "android/app/src/main/res/**"
+      - "android/app/src/main/AndroidManifest.xml"
+      - "ios/Runner/Assets.xcassets/AppIcon.appiconset/**"
+      - "web/manifest.json"
+      - "web/icons/**"
+      - "tools/inspect_brand_assets.py"
+      - ".github/workflows/brand-launcher-audit.yml"
+  pull_request:
+    paths:
+      - "assets/branding/**"
+      - "android/app/src/main/res/**"
+      - "ios/Runner/Assets.xcassets/AppIcon.appiconset/**"
+      - "web/icons/**"
+      - "tools/inspect_brand_assets.py"
+      - ".github/workflows/brand-launcher-audit.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-native-icons:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install image inspection library
+        run: python -m pip install "Pillow>=11,<13"
+      - name: Inspect original in-app mark, adaptive icons and iOS icons
+        run: python tools/inspect_brand_assets.py

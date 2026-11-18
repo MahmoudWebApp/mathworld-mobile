@@ -30,15 +30,36 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
   int? _stageId;
   String? _query;
   String? _title;
+  bool _routeInitialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final arguments = ModalRoute.of(context)?.settings.arguments;
-    if (arguments is Map<String, dynamic>) {
-      _categoryId ??= arguments['categoryId'] as int?;
-      _stageId ??= arguments['stageId'] as int?;
-      _title ??= (arguments['title'] ?? arguments['categoryName']) as String?;
+    final categoryValue = arguments is Map ? arguments['categoryId'] : null;
+    final stageValue = arguments is Map ? arguments['stageId'] : null;
+    final titleValue = arguments is Map
+        ? arguments['title'] ?? arguments['categoryName']
+        : null;
+    final nextCategoryId = categoryValue is int && categoryValue > 0
+        ? categoryValue : null;
+    final nextStageId = stageValue is int && stageValue > 0
+        ? stageValue : null;
+    final nextTitle = titleValue is String && titleValue.trim().isNotEmpty
+        ? titleValue : null;
+
+    // Reused routes must never show a previous stage's or category's results.
+    // Do not reset the learner's search just because locale/theme rebuilt.
+    if (!_routeInitialized || _categoryId != nextCategoryId ||
+        _stageId != nextStageId || _title != nextTitle) {
+      _routeInitialized = true;
+      _debounce?.cancel();
+      _categoryId = nextCategoryId;
+      _stageId = nextStageId;
+      _title = nextTitle;
+      _page = 1;
+      _query = null;
+      _searchController.clear();
     }
   }
 
@@ -89,13 +110,19 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                 controller: _searchController,
                 hintText: 'search_placeholder'.tr(),
                 leading: const Icon(Icons.search_rounded),
+                elevation: const WidgetStatePropertyAll(0),
                 trailing: [
                   if (_searchController.text.isNotEmpty)
                     IconButton(
+                      tooltip: context.locale.languageCode == 'ar'
+                          ? 'مسح البحث' : 'Clear search',
                       onPressed: () {
+                        _debounce?.cancel();
                         _searchController.clear();
-                        _handleSearch('');
-                        setState(() {});
+                        setState(() {
+                          _query = null;
+                          _page = 1;
+                        });
                       },
                       icon: const Icon(Icons.close_rounded),
                     ),
@@ -103,6 +130,13 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                 onChanged: (value) {
                   _handleSearch(value);
                   setState(() {});
+                },
+                onSubmitted: (value) {
+                  _debounce?.cancel();
+                  setState(() {
+                    _query = value.trim().isEmpty ? null : value.trim();
+                    _page = 1;
+                  });
                 },
               ),
             ),
@@ -140,43 +174,56 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                 },
                 data: (result) {
                   if (result.problems.isEmpty) {
-                    final hasSearch = _query?.isNotEmpty == true;
+                    // An empty page must still support pull-to-refresh and
+                    // an accessible clear-search action on small devices.
                     return RefreshIndicator(
                       onRefresh: () => ref.refresh(
                         problemsProvider(parameters).future,
-                      ).then((_) {}),
+                      ),
                       child: ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.all(AppSpacing.lg),
                         children: [
-                          const SizedBox(height: AppSpacing.xxl),
-                          AppEmptyView(
-                            icon: hasSearch
-                                ? Icons.manage_search_rounded
-                                : Icons.search_off_rounded,
-                            title: 'no_results'.tr(),
-                            subtitle: hasSearch
-                                ? 'search_no_matches_hint'.tr()
-                                : 'problems_empty_hint'.tr(),
-                            action: OutlinedButton.icon(
-                              onPressed: () {
-                                if (hasSearch) {
-                                  _debounce?.cancel();
-                                  _searchController.clear();
-                                  setState(() {
-                                    _query = null;
-                                    _page = 1;
-                                  });
-                                } else {
-                                  ref.invalidate(problemsProvider(parameters));
-                                }
-                              },
-                              icon: Icon(hasSearch
-                                  ? Icons.close_rounded
-                                  : Icons.refresh_rounded),
-                              label: Text(hasSearch
-                                  ? 'clear_search'.tr()
-                                  : 'retry'.tr()),
+                          Padding(
+                            padding: const EdgeInsets.all(AppSpacing.lg),
+                            child: AppEmptyView(
+                              icon: Icons.search_off_rounded,
+                              title: _page > 1
+                                  ? (context.locale.languageCode == 'ar'
+                                      ? 'لا توجد مسائل في هذه الصفحة'
+                                      : 'No problems on this page')
+                                  : 'no_results'.tr(),
+                              subtitle: _page > 1
+                                  ? (context.locale.languageCode == 'ar'
+                                      ? 'يمكن أن يكون المحتوى تغيّر أثناء التصفح.'
+                                      : 'The question list may have changed.')
+                                  : _query == null
+                                      ? null
+                                      : context.locale.languageCode == 'ar'
+                                          ? 'جرّب كلمة بحث أخرى أو امسح البحث لعرض المسائل.'
+                                          : 'Try another term or clear search to browse problems.',
+                              action: _page > 1
+                                  ? FilledButton.icon(
+                                      onPressed: () => setState(() => _page = 1),
+                                      icon: const Icon(Icons.first_page_rounded),
+                                      label: Text(context.locale.languageCode == 'ar'
+                                          ? 'العودة لأول صفحة' : 'Back to first page'),
+                                    )
+                                  : _query == null
+                                      ? null
+                                      : OutlinedButton.icon(
+                                      onPressed: () {
+                                        _debounce?.cancel();
+                                        _searchController.clear();
+                                        setState(() {
+                                          _query = null;
+                                          _page = 1;
+                                        });
+                                      },
+                                      icon: const Icon(Icons.close_rounded),
+                                      label: Text(context.locale.languageCode == 'ar'
+                                          ? 'مسح البحث'
+                                          : 'Clear search'),
+                                    ),
                             ),
                           ),
                         ],

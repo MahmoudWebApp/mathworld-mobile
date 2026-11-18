@@ -79,3 +79,9 @@ ENABLE_HTTP_LOGS=false
 ```
 
 Never put JWT signing keys, database passwords, MeiliSearch administration keys, ImgBB keys, Google secrets, or Facebook secrets inside the Flutter application.
+
+## Android builds with GitHub Actions
+
+Development changes are pushed to the feature branch and validated by the existing GitHub Actions workflows, including Flutter analysis, bilingual navigation, and Android test APK builds. The standard debug-signed release-mode QA artifact is available under **Artifacts** in the [Flutter Free-access and Android build workflow](https://github.com/MahmoudWebApp/mathworld-mobile/actions/workflows/stage-daily-quota-mobile-ci.yml).
+
+That existing build uses the repository's example environment and the default live Render API. Treat it as a **layout and launcher-icon inspection artifact** only until a separate, explicitly approved test backend exists; avoid submitting answers or changing real accounts. It is not Google Play signed, and installing it can replace an existing MathWorld installation because it keeps the same application ID. Do not activate live payments, ads or social sign-in from CI.

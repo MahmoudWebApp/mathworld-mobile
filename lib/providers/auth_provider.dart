@@ -2,20 +2,27 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/widgets.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../core/errors/app_exception.dart';
 import '../core/network/api_client.dart';
 import '../models/user.dart';
 import '../repositories/auth_repository.dart';
 import '../services/google_identity_service.dart';
+import '../services/hive_service.dart';
 import 'categories_provider.dart';
+import 'daily_challenge_provider.dart';
+import 'leaderboard_provider.dart';
 import 'dashboard_provider.dart';
 import 'learning_provider.dart';
 import 'learning_journey_provider.dart';
-import 'notifications_provider.dart';
-import 'premium_reports_provider.dart';
+import 'learner_presence_provider.dart';
 import 'problem_details_provider.dart';
 import 'problems_provider.dart';
+import 'notification_provider.dart';
+import 'premium_analytics_provider.dart';
+import 'stage_category_access_provider.dart';
+import 'student_badges_provider.dart';
 import 'repositories_provider.dart';
 import 'stages_provider.dart';
 import 'user_lists_provider.dart';
@@ -157,11 +164,22 @@ class AuthNotifier extends StateNotifier<AuthState>
       _resetAccountScopedState();
       state = AuthState(status: AuthStatus.authenticated, user: user);
     } catch (error) {
+      final wasCancelled = error is GoogleSignInException &&
+          error.code == GoogleSignInExceptionCode.canceled;
+      // A rejected backend login must not pin the next attempt to the
+      // previous Google SDK account on a shared phone.
+      if (!wasCancelled) {
+        await GoogleIdentityService.signOutIfInitialized();
+      }
       final appError = error is AppException
           ? error
           : AppException(
-              type: AppExceptionType.unknown,
-              messageKey: 'social_login_failed',
+              type: wasCancelled
+                  ? AppExceptionType.cancelled
+                  : AppExceptionType.unknown,
+              messageKey: wasCancelled
+                  ? 'social_login_cancelled'
+                  : 'social_login_failed',
               cause: error,
             );
       state = AuthState(
@@ -177,8 +195,24 @@ class AuthNotifier extends StateNotifier<AuthState>
     if (!state.isAuthenticated) {
       throw StateError('Sign in to MathWorld before linking Google.');
     }
-    final token = await GoogleIdentityService.requestIdToken();
-    await _repository.linkGoogle(token);
+    try {
+      final token = await GoogleIdentityService.requestIdToken();
+      await _repository.linkGoogle(token);
+    } on GoogleSignInException catch (error) {
+      if (error.code == GoogleSignInExceptionCode.canceled) {
+        throw AppException(
+          type: AppExceptionType.cancelled,
+          messageKey: 'social_login_cancelled',
+          cause: error,
+        );
+      }
+      // A rejected identity must not silently remain selected for retries.
+      await GoogleIdentityService.signOutIfInitialized();
+      rethrow;
+    } catch (_) {
+      await GoogleIdentityService.signOutIfInitialized();
+      rethrow;
+    }
   }
 
   Future<void> register(
@@ -214,48 +248,51 @@ class AuthNotifier extends StateNotifier<AuthState>
     }
   }
 
-  /// Reflect admin-driven Premium changes without forcing the learner to
-  /// log out and back in. Offline errors leave the last valid session intact.
+  /// Update the cached subscription only after a confirmed server-side
+  /// Premium gift redemption. The backend remains the source of truth.
+  Future<void> confirmPremiumGiftRedeemed() async {
+    final current = state.user;
+    if (current == null || !state.isAuthenticated) return;
+    final updated = current.copyWith(subscriptionType: 'Premium');
+    state = state.copyWith(user: updated);
+    try {
+      await HiveService.saveUser(updated.toCacheJson());
+    } catch (_) {
+      // The authenticated backend grant already succeeded; a local cache
+      // write failure must not incorrectly report redemption as failed.
+    }
+  }
+
+  /// Refresh account entitlements and stage after an Admin change or gift.
+  /// Network failures keep the last known authenticated session.
   Future<void> refreshProfile() async {
     if (_refreshingProfile || !state.isAuthenticated) return;
-    final prior = state.user;
-    if (prior == null) return;
+    final previous = state.user;
+    if (previous == null) return;
     _refreshingProfile = true;
     try {
       final latest = await _repository.restoreSession();
-      if (!mounted || !state.isAuthenticated ||
-          state.user?.id != prior.id) return;
-
-      if (latest == null) {
-        _resetAccountScopedState();
-        state = const AuthState(status: AuthStatus.unauthenticated);
+      if (!mounted || !state.isAuthenticated || state.user?.id != previous.id) {
         return;
       }
-
-      final planChanged = latest.subscriptionType != prior.subscriptionType;
-      final stageChanged = latest.currentStageId != prior.currentStageId;
+      if (latest == null) return;
+      final changed = latest.subscriptionType != previous.subscriptionType ||
+          latest.currentStageId != previous.currentStageId;
       state = state.copyWith(user: latest);
-      if (planChanged || stageChanged) {
+      if (changed) {
+        _ref.invalidate(categoriesProvider);
+        _ref.invalidate(stageCategoriesProvider);
+        _ref.invalidate(stageCategoryAccessProvider);
         _ref.invalidate(dashboardProvider);
         _ref.invalidate(learningJourneyProvider);
         _ref.invalidate(problemsProvider);
         _ref.invalidate(problemDetailsProvider);
-        _ref.invalidate(premiumProgressReportProvider);
+        _ref.invalidate(premiumAnalyticsProvider);
       }
     } catch (_) {
-      // Transient network errors must not destroy an authenticated session.
+      // Do not end a valid session because a background refresh failed.
     } finally {
       _refreshingProfile = false;
-    }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState lifecycle) {
-    if (lifecycle == AppLifecycleState.resumed) {
-      unawaited(refreshProfile());
-      // Announcements sent while the app was backgrounded appear on resume.
-      _ref.invalidate(notificationsUnreadCountProvider);
-      _ref.invalidate(notificationsPageProvider);
     }
   }
 
@@ -268,8 +305,25 @@ class AuthNotifier extends StateNotifier<AuthState>
     try {
       final updated = await _repository.chooseLearningStage(current, stageId);
       state = state.copyWith(user: updated, isSubmitting: false);
+      // Stage changes affect far more than the summary dashboard. Clearing
+      // all stage-specific state prevents the old stage's free topics,
+      // challenge, statistics and problems showing up under the new stage.
+      _ref.invalidate(categoriesProvider);
+      _ref.invalidate(stageCategoriesProvider);
+      _ref.invalidate(stageCategoryAccessProvider);
       _ref.invalidate(dashboardProvider);
-      _ref.invalidate(premiumProgressReportProvider);
+      _ref.invalidate(learningJourneyProvider);
+      _ref.invalidate(dailyChallengeProvider);
+      _ref.invalidate(leaderboardProvider);
+      _ref.invalidate(studentBadgesProvider);
+      _ref.invalidate(problemsProvider);
+      _ref.invalidate(problemDetailsProvider);
+      _ref.invalidate(problemAttemptHistoryProvider);
+      _ref.invalidate(errorNotebookProvider);
+      _ref.invalidate(favoritesProvider);
+      _ref.invalidate(solvedProvider);
+      _ref.invalidate(premiumAnalyticsProvider);
+      _ref.invalidate(learnerPresenceServiceProvider);
     } catch (_) {
       state = state.copyWith(isSubmitting: false);
       rethrow;
@@ -277,8 +331,18 @@ class AuthNotifier extends StateNotifier<AuthState>
   }
 
   Future<void> logout() async {
+    // Only explicit logout is logged; session expiry/device termination
+    // must never be labelled as a confirmed sign-out.
+    await _repository.recordExplicitSignOut();
+    try {
+      await _ref.read(learnerPresenceServiceProvider)
+          .close().timeout(const Duration(milliseconds: 1000));
+    } catch (_) {
+      // A network failure cannot prevent account logout.
+    }
     _resetAccountScopedState();
     await _repository.clearSession();
+    await GoogleIdentityService.signOutIfInitialized();
     _resetAccountScopedState();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
@@ -286,6 +350,9 @@ class AuthNotifier extends StateNotifier<AuthState>
   Future<void> _handleExpiredSession() async {
     _resetAccountScopedState();
     await _repository.clearSession();
+    // Expired MathWorld JWTs also clear the optional Google SDK account.
+    // On shared devices, a fresh login must not inherit that SDK selection.
+    await GoogleIdentityService.signOutIfInitialized();
     _resetAccountScopedState();
     state = const AuthState(
       status: AuthStatus.unauthenticated,
@@ -302,15 +369,23 @@ class AuthNotifier extends StateNotifier<AuthState>
     _ref.invalidate(categoriesProvider);
     _ref.invalidate(stageCategoriesProvider);
     _ref.invalidate(dashboardProvider);
+    _ref.invalidate(learningJourneyProvider);
+    _ref.invalidate(dailyChallengeProvider);
+    _ref.invalidate(leaderboardProvider);
+    _ref.invalidate(learnerPresenceServiceProvider);
     _ref.invalidate(favoritesProvider);
     _ref.invalidate(solvedProvider);
     _ref.invalidate(problemsProvider);
     _ref.invalidate(problemDetailsProvider);
     _ref.invalidate(problemAttemptHistoryProvider);
     _ref.invalidate(errorNotebookProvider);
-    _ref.invalidate(notificationsPageProvider);
-    _ref.invalidate(notificationsUnreadCountProvider);
-    _ref.invalidate(premiumProgressReportProvider);
+    // Account-isolated API caches must not show the previous user's
+    // subscription, notifications, private reports or achievements.
+    _ref.invalidate(studentPremiumProvider);
+    _ref.invalidate(stageCategoryAccessProvider);
+    _ref.invalidate(notificationInboxProvider);
+    _ref.invalidate(premiumAnalyticsProvider);
+    _ref.invalidate(studentBadgesProvider);
   }
 
   void consumeSessionExpired() {

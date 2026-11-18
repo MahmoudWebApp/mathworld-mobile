@@ -26,9 +26,16 @@ class AppTheme {
     final muted = isDark ? AppColors.darkMuted : AppColors.lightMuted;
     final border = isDark ? AppColors.darkBorder : AppColors.lightBorder;
     final primary = isDark ? AppColors.primaryDark : AppColors.primary;
-    final baseTextTheme = languageCode == 'ar'
+    // GoogleFonts text themes inherit default black text for styles we do
+    // not explicitly override. In dark mode this made headlineMedium (the
+    // stage selection title) almost invisible. Apply on-surface color to
+    // every typography scale before fine-tuning the named variants.
+    final baseTextTheme = (languageCode == 'ar'
         ? GoogleFonts.alexandriaTextTheme()
-        : GoogleFonts.nunitoTextTheme();
+        : GoogleFonts.nunitoTextTheme()).apply(
+          bodyColor: text,
+          displayColor: text,
+        );
 
     return ThemeData(
       useMaterial3: true,

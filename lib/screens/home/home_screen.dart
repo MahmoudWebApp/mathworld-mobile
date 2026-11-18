@@ -5,21 +5,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
+import '../../core/errors/app_exception.dart';
 import '../../core/utils/relative_time.dart';
 import '../../models/dashboard_stats.dart';
 import '../../models/learning_journey.dart';
+import '../../models/daily_challenge.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/learning_journey_provider.dart';
 import '../../providers/notifications_provider.dart';
-import '../../providers/stage_daily_quota_provider.dart';
-import '../../widgets/daily_quota_card.dart';
+import '../../providers/daily_challenge_provider.dart';
+import '../../providers/student_badges_provider.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/animated_entry.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/premium_button.dart';
+import '../../widgets/student_badges_card.dart';
 import '../../widgets/rich_math_text.dart';
+import '../../widgets/stage_math_glyph.dart';
 
 /// Displays the user dashboard, progress summary, and learning shortcuts.
 class HomeScreen extends ConsumerWidget {
@@ -31,8 +35,21 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardState = ref.watch(dashboardProvider);
     final learningJourney = ref.watch(learningJourneyProvider);
+    final dailyPractice = ref.watch(dailyChallengeProvider);
+    final badges = ref.watch(studentBadgesProvider);
+    // An outdated backend often rejects several optional learning endpoints
+    // at once. Show one actionable explanation instead of many error cards.
+    bool isBackendMismatch(Object? error) =>
+        error is AppException &&
+        error.messageKey == 'server_feature_unavailable';
+    final backendMismatch = [
+      learningJourney.asError?.error,
+      dailyPractice.asError?.error,
+      badges.asError?.error,
+    ].any(isBackendMismatch);
 
     return MathBackground(
+      showSymbols: true,
       child: SafeArea(
         bottom: false,
         child: dashboardState.when(
@@ -56,12 +73,13 @@ class HomeScreen extends ConsumerWidget {
           ),
           data: (dashboard) => RefreshIndicator(
             onRefresh: () async {
-              final stageId = learningJourney.valueOrNull?.stageId;
-              if (stageId != null) {
-                ref.invalidate(stageDailyQuotaProvider(stageId));
-              }
-              ref.invalidate(learningJourneyProvider);
-              await ref.refresh(dashboardProvider.future).then((_) {});
+              // Refresh both datasets together: points and the recommended
+              // next topic must reflect the same latest saved practice.
+              await Future.wait([
+                ref.refresh(dashboardProvider.future),
+                ref.refresh(learningJourneyProvider.future),
+                ref.refresh(dailyChallengeProvider.future),
+              ]);
             },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -77,35 +95,135 @@ class HomeScreen extends ConsumerWidget {
                   journey: learningJourney.valueOrNull,
                 )),
                 const SizedBox(height: AppSpacing.md),
+                // The learner's next action must remain visible before stats,
+                // optional badges or a long activity history.
                 AnimatedEntry(
                   index: 1,
                   child: _ContinueLearningCard(onTap: onOpenStages),
                 ),
                 const SizedBox(height: AppSpacing.xl),
+                if (backendMismatch) ...[
+                  GlassCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          const Icon(Icons.sync_problem_rounded,
+                              color: AppColors.warning),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: Text(
+                              context.locale.languageCode == 'ar'
+                                  ? 'تحديث بيانات التعلّم'
+                                  : 'Learning services need an update',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                        ]),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text('server_feature_unavailable'.tr()),
+                        const SizedBox(height: AppSpacing.sm),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            ref.invalidate(learningJourneyProvider);
+                            ref.invalidate(dailyChallengeProvider);
+                            ref.invalidate(studentBadgesProvider);
+                          },
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: Text('retry'.tr()),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
                 learningJourney.when(
                   data: (journey) => journey == null
                       ? const SizedBox.shrink()
                       : Padding(
                           padding: const EdgeInsets.only(bottom: AppSpacing.xl),
                           child: AnimatedEntry(
-                            child: _LearningJourneyCard(journey: journey),
+                            child: _LearningJourneyCard(journey: journey, onOpenStages: onOpenStages),
                           ),
                         ),
-                  error: (_, __) => const SizedBox.shrink(),
-                  loading: () => const SizedBox.shrink(),
-                ),
-                if (learningJourney.valueOrNull != null) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child: DailyQuotaCard(
-                      stageId: learningJourney.valueOrNull!.stageId,
+                  error: (error, _) => isBackendMismatch(error)
+                      ? const SizedBox.shrink()
+                      : Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                    child: _JourneyStatusCard(
+                      isLoading: false,
+                      message: localizedErrorMessage(error),
+                      onRetry: () => ref.invalidate(learningJourneyProvider),
                     ),
                   ),
+                  loading: () => const Padding(
+                    padding: EdgeInsets.only(bottom: AppSpacing.lg),
+                    child: _JourneyStatusCard(isLoading: true),
+                  ),
+                ),
+                dailyPractice.when(
+                  data: (challenge) => challenge == null
+                      ? const SizedBox.shrink()
+                      : Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+                          child: AnimatedEntry(
+                            child: _DailyPracticeCard(
+                              challenge: challenge,
+                              onOpen: (problemId) async {
+                                await Navigator.pushNamed(
+                                  context,
+                                  AppRoutes.problemDetails,
+                                  arguments: problemId,
+                                );
+                                if (!context.mounted) return;
+                                ref.invalidate(dailyChallengeProvider);
+                                ref.invalidate(dashboardProvider);
+                                ref.invalidate(learningJourneyProvider);
+                              },
+                            ),
+                          ),
+                        ),
+                  loading: () => Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                    child: GlassCard(
+                      child: Row(children: [
+                        const SizedBox.square(dimension: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2)),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(child: Text(context.locale.languageCode == 'ar'
+                          ? 'جارٍ تحميل مسائل اليوم…'
+                          : 'Loading daily practice…')),
+                      ]),
+                    ),
+                  ),
+                  error: (error, _) => isBackendMismatch(error)
+                      ? const SizedBox.shrink()
+                      : Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                    child: GlassCard(child: Row(children: [
+                      const Icon(Icons.refresh_outlined,
+                        color: AppColors.warning),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(child: Text(localizedErrorMessage(error))),
+                      IconButton(
+                        tooltip: context.locale.languageCode == 'ar'
+                          ? 'إعادة المحاولة' : 'Retry',
+                        onPressed: () => ref.invalidate(dailyChallengeProvider),
+                        icon: const Icon(Icons.refresh_rounded),
+                      ),
+                    ])),
+                  ),
+                ),
+                if (learningJourney.valueOrNull != null) ...[
                   AnimatedEntry(
                     index: 1,
                     child: _StatsGrid(journey: learningJourney.valueOrNull!),
                   ),
                 ],
+                const SizedBox(height: AppSpacing.xl),
+                if (!isBackendMismatch(badges.asError?.error))
+                  const StudentBadgesCard(),
+                const SizedBox(height: AppSpacing.xl),
                 const SizedBox(height: AppSpacing.xxl),
                 AnimatedEntry(
                   index: 3,
@@ -199,6 +317,159 @@ class HomeScreen extends ConsumerWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DailyPracticeCard extends StatelessWidget {
+  const _DailyPracticeCard({
+    required this.challenge,
+    required this.onOpen,
+  });
+
+  final DailyChallenge challenge;
+  final ValueChanged<int> onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final ar = context.locale.languageCode == 'ar';
+    final color = Theme.of(context).colorScheme.primary;
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.today_outlined, color: color),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(child: Text(
+              ar ? 'تحدّي اليوم الاختياري' : 'Optional daily practice',
+              style: Theme.of(context).textTheme.titleLarge,
+            )),
+            Text('${challenge.completed}/${challenge.total}',
+              style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+          ]),
+          const SizedBox(height: AppSpacing.xs),
+          Text(ar
+            ? 'حتى خمس مسائل من فئاتك المفتوحة؛ هذا مو حد يومي للحل.'
+            : 'Up to five questions from unlocked topics, not a daily solving limit.',
+            style: Theme.of(context).textTheme.bodySmall),
+          if (challenge.dateUtc.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text('${challenge.dateUtc} UTC',
+              style: Theme.of(context).textTheme.labelSmall),
+          ],
+          const SizedBox(height: AppSpacing.md),
+          if (challenge.problems.isEmpty)
+            Text(ar
+              ? 'ما في مسائل منشورة ضمن فئاتك المفتوحة حالياً.'
+              : 'No published questions in your unlocked categories yet.')
+          else
+            ...challenge.problems.map((problem) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: ListTile(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                title: RichMathText(
+                  text: problem.getName(context.locale.languageCode),
+                  isArabic: ar,
+                  inline: true,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                subtitle: Text(problem.isSolved
+                  ? (ar ? 'تم حلّها' : 'Solved')
+                  : (ar ? 'اضغط للتدرّب' : 'Tap to practice')),
+                trailing: problem.isSolved
+                  ? const Icon(Icons.check_circle_outline_rounded,
+                      color: AppColors.success)
+                  : LayoutUtils.forwardIcon(context, color: color),
+                onTap: () => onOpen(problem.id),
+              ),
+            )),
+        ],
+      ),
+    );
+  }
+}
+
+/// Keep journey errors visible without replacing the rest of the dashboard.
+/// The learner can still practice while the optional journey API is down.
+class _JourneyStatusCard extends StatelessWidget {
+  const _JourneyStatusCard({
+    required this.isLoading,
+    this.message,
+    this.onRetry,
+  });
+
+  final bool isLoading;
+  final String? message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final ar = context.locale.languageCode == 'ar';
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: scheme.outlineVariant),
+        ),
+        child: Row(
+          children: [
+            if (isLoading)
+              const SizedBox.square(
+                dimension: 36,
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              )
+            else
+              const StageMathGlyph(
+                stageOrder: 2, color: AppColors.stageOrange, size: 36,
+              ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isLoading
+                        ? (ar ? 'جارٍ تحميل رحلتك التعليمية…'
+                            : 'Loading your learning journey…')
+                        : (ar ? 'تعذّر تحميل تقدّم المرحلة'
+                            : 'Stage progress is unavailable'),
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  if (!isLoading) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      message ??
+                          (ar ? 'باقي ميزات المنصة متاحة.'
+                              : 'You can still use the rest of the platform.'),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (!isLoading && onRetry != null)
+              IconButton(
+                onPressed: onRetry,
+                tooltip: ar ? 'إعادة تحميل التقدّم' : 'Retry stage progress',
+                icon: const Icon(Icons.refresh_rounded),
+              ),
+          ],
         ),
       ),
     );
@@ -353,7 +624,12 @@ class _StatsGrid extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 720 ? 4 : 2;
+        // Small phones and large accessibility text need room for Arabic labels.
+        final columns = constraints.maxWidth >= 720
+            ? 4
+            : constraints.maxWidth < 350
+                ? 1
+                : 2;
         final width =
             (constraints.maxWidth - AppSpacing.md * (columns - 1)) / columns;
         return Wrap(
@@ -443,7 +719,9 @@ class _ContinueLearningCard extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      'continue_learning_desc'.tr(),
+                      context.locale.languageCode == 'ar'
+                          ? 'شوف الفئتين المفتوحتين إلك ضمن مرحلتك وابدأ حل المسائل خطوة بخطوة.'
+                          : 'See your two unlocked stage topics and start practising step by step.',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -454,8 +732,10 @@ class _ContinueLearningCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           PremiumButton(
             onPressed: onTap,
-            label: 'explore'.tr(),
-            trailingIcon: LayoutUtils.forwardChevron(context),
+            label: context.locale.languageCode == 'ar'
+                ? 'ابدأ من فئاتي المفتوحة'
+                : 'Start with my unlocked topics',
+            trailingIcon: Icons.arrow_forward_rounded,
             expand: true,
           ),
         ],
@@ -466,13 +746,28 @@ class _ContinueLearningCard extends StatelessWidget {
 
 class _LearningJourneyCard extends StatelessWidget {
   final LearningJourney journey;
+  final VoidCallback onOpenStages;
 
-  const _LearningJourneyCard({required this.journey});
+  const _LearningJourneyCard({
+    required this.journey,
+    required this.onOpenStages,
+  });
 
   @override
   Widget build(BuildContext context) {
     final language = context.locale.languageCode;
     final color = Theme.of(context).colorScheme.primary;
+    final reviewCount = journey.categories.where((category) =>
+        !category.isLocked &&
+        category.attemptedProblems > category.solvedProblems).length;
+    // An old backend can omit IsLocked. That's unknown, not Premium.
+    final accessUnknown = journey.categories.any((c) => !c.accessVerified);
+    // The home screen highlights available lessons instead of a paywall list.
+    final visibleCategories = journey.categories
+        .where((c) => c.accessVerified && !c.isLocked)
+        .take(4).toList();
+    final lockedCount = journey.categories
+        .where((c) => c.accessVerified && c.isLocked).length;
 
     return GlassCard(
       child: Column(
@@ -485,15 +780,23 @@ class _LearningJourneyCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: AppSpacing.lg),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('stage_completion'.tr()),
+              Expanded(
+                child: Text(
+                  'stage_completion'.tr(),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
               Text('${journey.completionPercent}%',
                   style: TextStyle(fontWeight: FontWeight.bold, color: color)),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
           LinearProgressIndicator(
+            semanticsLabel: 'stage_completion'.tr(),
+            semanticsValue: '${journey.completionPercent}%',
             value: journey.completionPercent.clamp(0, 100) / 100,
             minHeight: 8,
             borderRadius: BorderRadius.circular(20),
@@ -518,35 +821,139 @@ class _LearningJourneyCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
+          if (journey.recommendedCategory case final suggested?) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.32),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.20),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(language == 'ar' ? 'الخطوة المقترحة لك' : 'Suggested next step',
+                    style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(suggested.getName(language),
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(suggested.attemptedProblems > 0
+                      ? (language == 'ar'
+                          ? 'كمّل فئتك الحالية حتى تحسّن تقدّمك.'
+                          : 'Continue this unfinished topic to improve your progress.')
+                      : (language == 'ar'
+                          ? 'بلّش بفئة جديدة ومفتوحة لحسابك.'
+                          : 'Explore a new topic already unlocked for you.')),
+                  const SizedBox(height: AppSpacing.sm),
+                  OutlinedButton.icon(
+                    onPressed: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.problems,
+                      arguments: <String, dynamic>{
+                        'categoryId': suggested.categoryId,
+                        'stageId': journey.stageId,
+                        'title': suggested.getName(language),
+                      },
+                    ),
+                    icon: const Icon(Icons.play_arrow_rounded),
+                    label: Text(language == 'ar' ? 'تابع حل المسائل' : 'Practice this category'),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+          if (reviewCount > 0) ...[
+            OutlinedButton.icon(
+              onPressed: () => Navigator.pushNamed(
+                context, AppRoutes.errorNotebook,
+              ),
+              icon: const Icon(Icons.auto_stories_outlined),
+              label: Text(language == 'ar'
+                  ? 'راجع أخطاءك في دفتر المراجعة'
+                  : 'Review your attempts in the error notebook'),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           Text('stage_topics'.tr(),
               style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: AppSpacing.sm),
-          OutlinedButton.icon(
+          if (const bool.fromEnvironment(
+            'MATHWORLD_LEADERBOARD_ENABLED',
+            defaultValue: true,
+          ))
+            OutlinedButton.icon(
             onPressed: () => Navigator.pushNamed(context, AppRoutes.leaderboard),
             icon: const Icon(Icons.emoji_events_outlined),
             label: Text('leaderboard_title'.tr()),
           ),
           const SizedBox(height: AppSpacing.sm),
-          ...journey.categories.map(
-            (category) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      category.getName(language),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Text(
-                    '${category.solvedProblems}/${category.totalProblems}',
-                  ),
-                ],
-              ),
+          if (journey.categories.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+              child: Text(language == 'ar'
+                  ? 'ما في فئات منشورة لهالمرحلة بعد. جرّب مرحلة ثانية أو ارجع لاحقاً.'
+                  : 'This stage has no published topics yet. Try another stage or check again later.'),
             ),
-          ),
+          if (accessUnknown)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+              child: Text(language == 'ar'
+                  ? 'ما قدرنا نتحقق من الفئات المفتوحة: الخادم الحالي ما أرسل صلاحيات الوصول. ما رح نعتبرها Premium بدون تأكيد.'
+                  : 'The connected server did not send category-access permissions. We cannot safely identify free topics or label them Premium.',
+                style: Theme.of(context).textTheme.bodyMedium),
+            ),
+          if (visibleCategories.isEmpty && journey.categories.isNotEmpty && !accessUnknown)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+              child: Text(language == 'ar'
+                  ? 'ما في فئات متاحة للحل ضمن مرحلتك الحالية. افتح قسم الفئات لتعرف المتاح.'
+                  : 'No topics are currently available to practise in this stage. Open Categories to check availability.'),
+            ),
+          ...visibleCategories.map((category) {
+            final canPractice = !category.isLocked && category.totalProblems > 0;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                title: Text(category.getName(language),
+                    maxLines: 2, overflow: TextOverflow.ellipsis),
+                subtitle: Text(category.totalProblems == 0
+                    ? (language == 'ar' ? 'لا توجد مسائل منشورة بعد' : 'No published questions yet')
+                    : '${category.solvedProblems} / ${category.totalProblems}'),
+                trailing: canPractice
+                    ? LayoutUtils.forwardIcon(context, color: color)
+                    : const Icon(Icons.hourglass_empty_rounded, size: 20),
+                onTap: canPractice
+                    ? () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.problems,
+                          arguments: <String, dynamic>{
+                            'categoryId': category.categoryId,
+                            'stageId': journey.stageId,
+                            'title': category.getName(language),
+                          },
+                        )
+                    : null,
+              ),
+            );
+          }),
+          if (!accessUnknown &&
+              (lockedCount > 0 || journey.categories.length > visibleCategories.length)) ...[
+            const SizedBox(height: AppSpacing.sm),
+            OutlinedButton.icon(
+              onPressed: onOpenStages,
+              icon: LayoutUtils.forwardIcon(context),
+              label: Text(language == 'ar'
+                  ? 'استعراض فئات مرحلتي'
+                  : 'Browse stage topics'),
+            ),
+          ],
         ],
       ),
     );

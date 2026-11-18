@@ -1,18 +1,14 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
-import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
-import '../../models/student_notification.dart';
-import '../../providers/notifications_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../../widgets/app_states.dart';
-import '../../widgets/glass_card.dart';
-import '../../widgets/math_background.dart';
 
-/// Full-screen private inbox with distinct loading/error/empty states.
+/// Complete thirty-day inbox with server-side pages. The home/bell provider
+/// remains separate and is invalidated after every read so its dot stays fresh.
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
@@ -22,217 +18,200 @@ class NotificationsScreen extends ConsumerStatefulWidget {
 }
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
-  int _page = 1;
-  bool _saving = false;
+  int _page = 0;
+  bool _markingAll = false;
+  bool _markingNotice = false;
 
-  Future<void> _markRead(StudentNotification item) async {
-    if (_saving || item.isRead) return;
-    setState(() => _saving = true);
-    try {
-      await ref.read(notificationsRepositoryProvider).markRead(item.id);
-      ref.invalidate(notificationsPageProvider(_page));
-      ref.invalidate(notificationsUnreadCountProvider);
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(localizedErrorMessage(error))),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
+  void _refreshAfterRead() {
+    ref.invalidate(notificationPageProvider(_page));
+    ref.invalidate(notificationInboxProvider);
   }
 
   Future<void> _markAllRead() async {
-    if (_saving) return;
-    setState(() => _saving = true);
+    if (_markingAll) return;
+    setState(() => _markingAll = true);
     try {
-      await ref.read(notificationsRepositoryProvider).markAllRead();
-      ref.invalidate(notificationsPageProvider);
-      ref.invalidate(notificationsUnreadCountProvider);
+      await ref.read(notificationApiServiceProvider).markAllRead();
+      if (!mounted) return;
+      _refreshAfterRead();
     } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(localizedErrorMessage(error))),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(localizedErrorMessage(error))),
+      );
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (mounted) setState(() => _markingAll = false);
     }
   }
 
-  void _openAction(StudentNotification notification) {
-    final action = notification.actionPath;
-    if (action == null || !action.startsWith('/') ||
-        action.startsWith('//')) return;
-    // Only known internal actions are mapped to native Flutter routes.
-    final problem = RegExp(r'^/problems/([0-9]+)$').firstMatch(action);
-    if (problem != null) {
-      Navigator.pushNamed(
-        context, AppRoutes.problemDetails,
-        arguments: int.parse(problem.group(1)!),
+  Future<void> _readNotice(int id, bool isUnread, String? targetPath) async {
+    if (_markingNotice) return;
+    setState(() => _markingNotice = true);
+    try {
+      if (isUnread) {
+        await ref.read(notificationApiServiceProvider).markRead(id);
+        if (!mounted) return;
+        _refreshAfterRead();
+      }
+      // Only this existing in-app destination is supported by the mobile
+      // navigation tree; all other URL strings are ignored, never launched.
+      if (targetPath == '/dashboard' && mounted) {
+        Navigator.maybePop(context);
+      }
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(localizedErrorMessage(error))),
       );
-    } else if (action.startsWith('/stages')) {
-      Navigator.pushNamed(context, AppRoutes.learningStage);
+    } finally {
+      if (mounted) setState(() => _markingNotice = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final pageState = ref.watch(notificationsPageProvider(_page));
+    final ar = context.locale.languageCode == 'ar';
+    final inboxState = ref.watch(notificationPageProvider(_page));
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('notifications_title'.tr()),
+        title: Text(ar ? 'كل الإشعارات' : 'All notifications'),
         actions: [
-          pageState.maybeWhen(
-            data: (data) => IconButton(
-              tooltip: 'notifications_mark_all'.tr(),
-              onPressed: _saving || data.unreadCount == 0 ? null : _markAllRead,
-              icon: const Icon(Icons.done_all_rounded),
-            ),
+          inboxState.maybeWhen(
+            data: (data) => data.unreadCount > 0
+                ? TextButton.icon(
+                    onPressed: _markingAll ? null : _markAllRead,
+                    icon: const Icon(Icons.done_all_rounded),
+                    label: Text(_markingAll
+                        ? (ar ? 'جارٍ التحديث…' : 'Updating…')
+                        : (ar ? 'قراءة الكل' : 'Read all')),
+                  )
+                : const SizedBox.shrink(),
             orElse: () => const SizedBox.shrink(),
           ),
         ],
       ),
-      body: MathBackground(
-        child: SafeArea(
-          child: pageState.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => AppErrorView(
-              message: localizedErrorMessage(error),
-              onRetry: () => ref.invalidate(notificationsPageProvider(_page)),
+      body: inboxState.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => AppErrorView(
+          message: localizedErrorMessage(error),
+          onRetry: () => ref.invalidate(notificationPageProvider(_page)),
+        ),
+        data: (inbox) => RefreshIndicator(
+          onRefresh: () async {
+            await ref.refresh(notificationPageProvider(_page).future).then((_) {});
+            ref.invalidate(notificationInboxProvider);
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
             ),
-            data: (data) {
-              if (data.notifications.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: AppEmptyView(
-                      icon: Icons.notifications_none_rounded,
-                      title: 'notifications_empty_title'.tr(),
-                      subtitle: 'notifications_empty_body'.tr(),
-                      action: OutlinedButton.icon(
-                        onPressed: () =>
-                            ref.invalidate(notificationsPageProvider(_page)),
-                        icon: const Icon(Icons.refresh_rounded),
-                        label: Text('retry'.tr()),
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                child: Text(
+                  ar
+                      ? 'إشعارات آخر 30 يوماً — من الأحدث إلى الأقدم'
+                      : 'Last 30 days — newest first',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+              if (inbox.items.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 64),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        const Icon(Icons.notifications_none_rounded, size: 48),
+                        const SizedBox(height: 16),
+                        Text(ar ? 'لا توجد إشعارات بهذه الصفحة' : 'No notifications on this page'),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                for (final item in inbox.items)
+                  Card(
+                    color: item.isUnread
+                        ? Theme.of(context).colorScheme.primaryContainer
+                            .withValues(alpha: 0.35)
+                        : null,
+                    margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: ListTile(
+                      enabled: !_markingNotice,
+                      leading: Icon(
+                        item.isUnread
+                            ? Icons.notifications_active_outlined
+                            : Icons.notifications_none_outlined,
+                        color: item.isUnread ? AppColors.primary : null,
+                      ),
+                      title: Text(
+                        ar ? item.titleAr : item.titleEn,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(ar ? item.bodyAr : item.bodyEn),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            MaterialLocalizations.of(context).formatMediumDate(
+                              item.createdAtUtc.toLocal(),
+                            ),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                      onTap: () => _readNotice(
+                        item.id, item.isUnread, item.targetPath,
                       ),
                     ),
                   ),
-                );
-              }
-              return RefreshIndicator(
-                onRefresh: () async {
-                  await ref.refresh(
-                    notificationsPageProvider(_page).future,
-                  ).then((_) {});
-                  ref.invalidate(notificationsUnreadCountProvider);
-                },
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  children: [
-                    Text(
-                      'notifications_unread_count'.tr(
-                        namedArgs: {'count': '${data.unreadCount}'},
-                      ),
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    ...data.notifications.map((notification) =>
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                        child: GlassCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    notification.isRead
-                                        ? Icons.notifications_none_rounded
-                                        : Icons.notifications_active_rounded,
-                                    color: Theme.of(context).colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: AppSpacing.sm),
-                                  Expanded(
-                                    child: Text(
-                                      notification.title,
-                                      style: Theme.of(context)
-                                          .textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ),
-                                  if (!notification.isRead)
-                                    const Icon(Icons.circle, size: 9),
-                                ],
-                              ),
-                              const SizedBox(height: AppSpacing.sm),
-                              Text(notification.body),
-                              const SizedBox(height: AppSpacing.sm),
-                              Text(
-                                DateFormat.yMMMd(
-                                  context.locale.languageCode,
-                                ).add_jm().format(notification.createdAt.toLocal()),
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                              const SizedBox(height: AppSpacing.md),
-                              Wrap(
-                                spacing: AppSpacing.md,
-                                children: [
-                                  if (!notification.isRead)
-                                    TextButton.icon(
-                                      onPressed: _saving
-                                          ? null
-                                          : () => _markRead(notification),
-                                      icon: const Icon(Icons.done_rounded),
-                                      label: Text('notifications_mark_read'.tr()),
-                                    ),
-                                  if (notification.actionPath != null &&
-                                      (notification.actionPath!.startsWith('/stages') ||
-                                       RegExp(r'^/problems/[0-9]+$').hasMatch(
-                                         notification.actionPath!)))
-                                    TextButton.icon(
-                                      onPressed: () {
-                                        _markRead(notification);
-                                        _openAction(notification);
-                                      },
-                                      icon: const Icon(Icons.open_in_new_rounded),
-                                      label: Text('notifications_view_details'.tr()),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      )),
-                    const SizedBox(height: AppSpacing.md),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconButton(
-                          tooltip: 'previous'.tr(),
-                          onPressed: _page > 1
-                              ? () => setState(() => _page--)
-                              : null,
-                          icon: const Icon(Icons.chevron_left_rounded),
-                        ),
-                        Text('$_page'),
-                        IconButton(
-                          tooltip: 'next'.tr(),
-                          onPressed: data.hasMore
-                              ? () => setState(() => _page++)
-                              : null,
-                          icon: const Icon(Icons.chevron_right_rounded),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                  ],
+              const SizedBox(height: AppSpacing.sm),
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  ar
+                      ? 'عرض ${inbox.items.isEmpty ? 0 : inbox.skip + 1}–${inbox.skip + inbox.items.length} من ${inbox.totalCount} إشعاراً · غير مقروء: ${inbox.unreadCount}'
+                      : 'Showing ${inbox.items.isEmpty ? 0 : inbox.skip + 1}–${inbox.skip + inbox.items.length} of ${inbox.totalCount} · Unread: ${inbox.unreadCount}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                  textAlign: TextAlign.center,
                 ),
-              );
-            },
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  OutlinedButton(
+                    onPressed: _page > 0 && !_markingNotice
+                        ? () => setState(() => _page--)
+                        : null,
+                    child: Text(ar ? 'السابق' : 'Previous'),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  OutlinedButton(
+                    onPressed: inbox.hasMore &&
+                            !_markingNotice &&
+                            (_page + 1) * notificationPageSize <= 10000
+                        ? () => setState(() => _page++)
+                        : null,
+                    child: Text(ar ? 'التالي' : 'Next'),
+                  ),
+                ],
+              ),
+              if (!inbox.hasMore)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                  child: Text(
+                    ar ? 'نهاية إشعارات آخر 30 يوماً' : 'End of 30-day notifications',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+            ],
           ),
         ),
       ),

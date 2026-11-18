@@ -137,6 +137,18 @@ class AuthRepository {
     return updated;
   }
 
+  /// Record a sign-out explicitly initiated by the learner, while the JWT
+  /// is still present. A timeout or offline device must not prevent logout.
+  /// This is not a guarantee that every app exit reaches the server.
+  Future<void> recordExplicitSignOut() async {
+    try {
+      await _apiService.post('/users/session/sign-out')
+          .timeout(const Duration(seconds: 2));
+    } catch (_) {
+      // Local token removal remains authoritative for UI logout.
+    }
+  }
+
   Future<void> clearSession() async {
     await _apiService.deleteToken();
     await HiveService.clearAuth();

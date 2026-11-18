@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../config/design_tokens.dart';
+import 'stage_math_glyph.dart';
 
 /// Paints a subtle MathWorld-branded ambient background.
 class MathBackground extends StatelessWidget {
@@ -77,6 +78,24 @@ class _AmbientSymbolLayer extends StatelessWidget {
     return IgnorePointer(
       child: Stack(
         children: [
+          Positioned(
+            top: 32,
+            right: 18,
+            child: StageMathGlyph(
+              stageOrder: 2,
+              color: AppColors.stageOrange.withValues(alpha: isDark ? .13 : .08),
+              size: 84,
+            ),
+          ),
+          Positioned(
+            bottom: 50,
+            left: 20,
+            child: StageMathGlyph(
+              stageOrder: 3,
+              color: AppColors.stageGreen.withValues(alpha: isDark ? .12 : .07),
+              size: 98,
+            ),
+          ),
           Positioned(
             top: 90,
             left: 24,

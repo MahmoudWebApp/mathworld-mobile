@@ -48,13 +48,13 @@ class User {
       if (currentStageId != null) 'CurrentStageId': currentStageId,
     };
   }
-  User copyWith({int? currentStageId}) {
+  User copyWith({int? currentStageId, String? subscriptionType}) {
     return User(
       id: id,
       fullName: fullName,
       email: email,
       role: role,
-      subscriptionType: subscriptionType,
+      subscriptionType: subscriptionType ?? this.subscriptionType,
       profilePicture: profilePicture,
       currentStageId: currentStageId ?? this.currentStageId,
     );

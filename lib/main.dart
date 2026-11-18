@@ -73,6 +73,16 @@ class MyApp extends ConsumerWidget {
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       locale: context.locale,
+      // An unmistakable in-app marker for dedicated staging APKs.
+      // Standard Android, iOS and release builds remain unchanged.
+      builder: const bool.fromEnvironment('MATHWORLD_QA_BUILD', defaultValue: false)
+          ? (context, child) => Banner(
+                message: 'QA',
+                location: BannerLocation.topEnd,
+                color: Colors.deepOrange,
+                child: child ?? const SizedBox.shrink(),
+              )
+          : null,
       debugShowCheckedModeBanner: false,
     );
   }

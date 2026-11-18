@@ -115,6 +115,36 @@ class ApiService implements ApiClient {
   }
 
   @override
+  Future<List<int>> getBinary(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    // Preserve the same auth/locale interceptors and 401 handling used by
+    // JSON requests, but do NOT decode the workbook as text or JSON.
+    final result = await _execute(
+      () => _dio.get<List<int>>(
+        path,
+        queryParameters: queryParameters,
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: const {
+            'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          },
+        ),
+      ),
+      handleUnauthorized: true,
+    );
+    final bytes = result.data;
+    if (bytes is! List<int> || bytes.length < 100 || bytes.length > 20000000) {
+      throw const AppException(
+        type: AppExceptionType.invalidResponse,
+        messageKey: 'invalid_response',
+      );
+    }
+    return bytes;
+  }
+
+  @override
   Future<Response<dynamic>> post(
     String path, {
     Map<String, dynamic>? data,
@@ -180,6 +210,25 @@ class ApiService implements ApiClient {
   }) {
     final statusCode = error.response?.statusCode;
     final responseMessage = _extractResponseMessage(error.response?.data);
+
+    // A route-level 404 for a newer feature is different from a missing
+    // question/category. Many older deployed APIs don't expose the feature
+    // endpoints yet; don't tell the learner that their data disappeared.
+    // Preserve normal 404 errors when the server supplied a domain message
+    // such as StageNotFound or CategoryNotFound.
+    final generic404 = responseMessage == null ||
+        responseMessage.toLowerCase() == 'not found' ||
+        responseMessage.toLowerCase() == '404 not found';
+    if (statusCode == 404 &&
+        generic404 &&
+        _isNewFeatureEndpoint(error.requestOptions.uri.path)) {
+      return AppException(
+        type: AppExceptionType.notFound,
+        messageKey: 'server_feature_unavailable',
+        statusCode: statusCode,
+        cause: error,
+      );
+    }
 
     switch (statusCode) {
       case 400:
@@ -277,10 +326,42 @@ class ApiService implements ApiClient {
     }
   }
 
+  /// Only feature-level paths: never turn missing individual resources into
+  /// an upgrade notice. Does not grant access or retry against legacy routes.
+  bool _isNewFeatureEndpoint(String path) {
+    final segments = Uri(path: path).pathSegments.where((s) => s.isNotEmpty).toList();
+    if (segments.isNotEmpty && segments.first == 'api') {
+      segments.removeAt(0);
+    }
+    if (segments.length == 3 &&
+        segments[0] == 'stages' &&
+        int.tryParse(segments[1]) != null &&
+        segments[2] == 'free-categories') {
+      return true;
+    }
+    if (segments.isEmpty) return false;
+    final route = segments.join('/');
+    return const {
+      'users/leaderboard',
+      'users/daily-challenge',
+      'users/journey',
+      'users/subscription',
+      'users/achievements',
+      'users/error-notebook',
+      'notifications',
+    }.contains(route);
+  }
+
   String? _extractResponseMessage(dynamic body) {
     if (body is String) {
       final value = body.trim();
-      return value.isEmpty ? null : value;
+      // Reverse proxies often return HTML for missing API paths. Never
+      // render HTML/error documents inside the learner's error card.
+      if (value.isEmpty || value.length > 300 ||
+          value.startsWith('<') || value.contains('<html')) {
+        return null;
+      }
+      return value;
     }
 
     if (body is! Map) {

@@ -1,4 +1,4 @@
-name: MathWorld Android release build and compatibility checks
+name: Flutter Free-access tests and debug-signed Android QA APK
 
 on:
   pull_request:
@@ -7,18 +7,20 @@ on:
       - 'assets/branding/**'
       - 'android/**'
       - 'test/models/stage_daily_quota_test.dart'
+      - 'test/daily_challenge_model_test.dart'
       - 'pubspec.yaml'
       - '.github/workflows/stage-daily-quota-mobile-ci.yml'
   push:
     branches:
-      - main
+      - feature/stage-daily-quota-mobile-brand-fixes-v1
 
 permissions:
   contents: read
 
 jobs:
-  android-release:
+  stage-quota:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -34,14 +36,69 @@ jobs:
         run: cp .env.example .env
       - name: Resolve Flutter packages
         run: flutter pub get
-      - name: Test legacy usage-count response compatibility
-        run: flutter test test/models/stage_daily_quota_test.dart
-      - name: Build release Android APK
+      - name: Verify Free unlimited access and optional daily practice model
+        run: flutter test test/models/stage_daily_quota_test.dart test/daily_challenge_model_test.dart
+      - name: Build Android release-mode QA APK (debug-signed)
         run: flutter build apk --release
-      - name: Upload release APK for manual device validation
+      - name: Explain artifact signing and release limitation
+        run: |
+          echo '### Android QA APK — not production signed' >> "$GITHUB_STEP_SUMMARY"
+          echo 'This release-mode APK uses the Android debug signing configuration. It is intended for manual UI and launcher-icon validation only, not Google Play publishing.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Production keystore configuration and final application ID are tracked in mobile issue #13.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload debug-signed release-mode QA APK for device validation
         uses: actions/upload-artifact@v4
         with:
-          name: mathworld-android-release-main
+          name: mathworld-android-qa-release-mode-debug-signed
           path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 30
+          retention-days: 14
           if-no-files-found: error
+      # Distinct, permanently signed QA app, installable beside MathWorld.
+      # GitHub's per-run debug key is not stable. No QA release artifact is
+      # published until the four repository secrets are configured.
+      - name: Check persistent QA-signing secrets
+        id: qa-signing
+        shell: bash
+        env:
+          QA_KEYSTORE_BASE64: ${{ secrets.MATHWORLD_QA_KEYSTORE_BASE64 }}
+          QA_STORE_PASSWORD: ${{ secrets.MATHWORLD_QA_STORE_PASSWORD }}
+          QA_KEY_ALIAS: ${{ secrets.MATHWORLD_QA_KEY_ALIAS }}
+          QA_KEY_PASSWORD: ${{ secrets.MATHWORLD_QA_KEY_PASSWORD }}
+        run: |
+          if [[ -z "${QA_KEYSTORE_BASE64}" || -z "${QA_STORE_PASSWORD}" || -z "${QA_KEY_ALIAS}" || -z "${QA_KEY_PASSWORD}" ]]; then
+            echo 'configured=false' >> "$GITHUB_OUTPUT"
+            echo 'Stable MathWorld QA APK skipped: configure four repository signing secrets.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '%s' "$QA_KEYSTORE_BASE64" | base64 --decode > android/app/mathworld-qa.jks
+            test -s android/app/mathworld-qa.jks
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Build independently installable and updateable MathWorld QA
+        if: steps.qa-signing.outputs.configured == 'true'
+        env:
+          MATHWORLD_ISOLATED_QA_APK: 'true'
+          MATHWORLD_QA_KEYSTORE_FILE: 'mathworld-qa.jks'
+          MATHWORLD_QA_STORE_PASSWORD: ${{ secrets.MATHWORLD_QA_STORE_PASSWORD }}
+          MATHWORLD_QA_KEY_ALIAS: ${{ secrets.MATHWORLD_QA_KEY_ALIAS }}
+          MATHWORLD_QA_KEY_PASSWORD: ${{ secrets.MATHWORLD_QA_KEY_PASSWORD }}
+        run: |
+          # Force a fresh Gradle manifest/package/signing configuration after
+          # the earlier legacy APK build in this same CI workspace.
+          flutter clean
+          flutter pub get
+          flutter build apk --release --build-number=${{ github.run_number }}
+      - name: Upload updateable standalone QA APK
+        if: steps.qa-signing.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mathworld-qa-updateable-stable-signing
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
+          if-no-files-found: error
+      - name: Explain APK update compatibility
+        run: |
+          echo '### APK installation and future updates' >> "$GITHUB_STEP_SUMMARY"
+          echo 'The legacy debug-signed artifact can conflict with previous installs because CI creates a new debug keystore.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'The independently installed MathWorld QA artifact has applicationId com.mathworld.mathworld_mobile.qa, a fixed signing key supplied via GitHub Secrets and a monotonically increasing GitHub run-number versionCode.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'The persistent QA build is skipped unless signing secrets are configured; skipped never means updateable APK produced.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Both builds currently bundle the example Render API; avoid any writes to live data.' >> "$GITHUB_STEP_SUMMARY"
+

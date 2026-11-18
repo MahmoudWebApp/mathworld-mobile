@@ -16,6 +16,13 @@ abstract interface class ApiClient {
     bool handleUnauthorized = true,
   });
 
+  /// Returns raw bytes using the authenticated client (JWT and 401 handling).
+  /// Must not attempt UTF-8/JSON decoding of XLSX/PDF ZIP or binary files.
+  Future<List<int>> getBinary(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  });
+
   Future<Response<dynamic>> post(
     String path, {
     Map<String, dynamic>? data,

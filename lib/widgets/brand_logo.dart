@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 
 import '../config/design_tokens.dart';
@@ -27,7 +29,9 @@ class BrandLogo extends StatelessWidget {
         child: SizedBox(
           width: width,
           height: height,
-          child: Row(
+          child: Directionality(
+            textDirection: ui.TextDirection.ltr,
+            child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               BrandMark(size: markSize),
@@ -48,6 +52,7 @@ class BrandLogo extends StatelessWidget {
                 ),
               ),
             ],
+            ),
           ),
         ),
       ),
@@ -63,16 +68,16 @@ class BrandMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(size * 0.22),
-      child: Image.asset(
-        'assets/branding/mathworld-mark.png',
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-        filterQuality: FilterQuality.high,
-        semanticLabel: 'MathWorld',
-      ),
+    // Preserve the approved logo's full geometry and transparent margins.
+    // BoxFit.cover and rounded clipping cropped the mark on narrow devices.
+    return Image.asset(
+      'assets/branding/mathworld-mark.png',
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      alignment: Alignment.center,
+      filterQuality: FilterQuality.high,
+      semanticLabel: 'MathWorld',
     );
   }
 }

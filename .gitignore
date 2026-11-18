@@ -45,3 +45,7 @@ app.*.map.json
 /android/app/release
 # Environment variables
 .env
+# Android private signing material (GitHub Actions secrets, never commit keys)
+/android/key.properties
+/android/app/*.jks
+/android/app/*.keystore

@@ -28,9 +28,7 @@ class GlassCard extends StatelessWidget {
     final radius = BorderRadius.circular(AppRadius.lg);
     final effectiveBorder =
         border ?? BorderSide(color: scheme.outline.withValues(alpha: 0.88));
-    Widget content = Container(
-      padding: padding,
-      decoration: BoxDecoration(
+    final decoration = BoxDecoration(
         color: gradient == null
             ? (color ?? scheme.surface).withValues(
                 alpha: blur > 0 ? (isDark ? 0.84 : 0.90) : 1,
@@ -46,9 +44,26 @@ class GlassCard extends StatelessWidget {
             offset: const Offset(0, 5),
           ),
         ],
-      ),
-      child: child,
-    );
+      );
+    // Ink is painted on its Material ancestor, so taps, keyboard focus
+    // and ripples stay visible ABOVE the opaque/gradient card background.
+    Widget content = onTap == null
+        ? Container(
+            padding: padding,
+            decoration: decoration,
+            child: child,
+          )
+        : Material(
+            color: Colors.transparent,
+            child: Ink(
+              decoration: decoration,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: radius,
+                child: Padding(padding: padding, child: child),
+              ),
+            ),
+          );
     if (blur > 0) {
       content = ClipRRect(
         borderRadius: radius,
@@ -58,16 +73,6 @@ class GlassCard extends StatelessWidget {
         ),
       );
     }
-    if (onTap == null) {
-      return content;
-    }
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: radius,
-        child: content,
-      ),
-    );
+    return content;
   }
 }

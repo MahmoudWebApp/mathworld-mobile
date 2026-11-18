@@ -13,11 +13,24 @@ import '../../widgets/math_background.dart';
 import '../../widgets/rich_math_text.dart';
 
 /// Displays active and archived problems from the student's error notebook.
-class ErrorNotebookScreen extends ConsumerWidget {
+class ErrorNotebookScreen extends ConsumerStatefulWidget {
   const ErrorNotebookScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ErrorNotebookScreen> createState() =>
+      _ErrorNotebookScreenState();
+}
+
+class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
+  int _selectedStageId = 0;
+  bool _dueOnly = false;
+
+  bool _isDue(ErrorNotebookProblem problem, DateTime now) =>
+      problem.nextReviewAt != null &&
+      !problem.nextReviewAt!.isAfter(now);
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(errorNotebookProvider);
     final notifier = ref.read(errorNotebookProvider.notifier);
 
@@ -60,16 +73,139 @@ class ErrorNotebookScreen extends ConsumerWidget {
                     onRetry: notifier.load,
                   ),
                   data: (problems) {
-                    if (problems.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        child: AppEmptyView(
-                          icon: Icons.auto_stories_outlined,
-                          title: 'error_notebook_empty'.tr(),
-                          subtitle: 'error_notebook_empty_desc'.tr(),
+                    final now = DateTime.now();
+                    final stages = <int, String>{
+                      for (final problem in problems)
+                        problem.stageId: problem.stageName,
+                    }.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+                    final stageId = stages.any((stage) => stage.key == _selectedStageId)
+                        ? _selectedStageId
+                        : 0;
+                    final dueCount = problems.where((problem) =>
+                        !problem.isArchived &&
+                        (stageId == 0 || problem.stageId == stageId) &&
+                        _isDue(problem, now)).length;
+                    final visible = problems.where((problem) =>
+                        (stageId == 0 || problem.stageId == stageId) &&
+                        (!_dueOnly || _isDue(problem, now))).toList()
+                      ..sort((a, b) {
+                        final first = a.nextReviewAt?.millisecondsSinceEpoch ??
+                            9223372036854775807;
+                        final second = b.nextReviewAt?.millisecondsSinceEpoch ??
+                            9223372036854775807;
+                        final dateOrder = first.compareTo(second);
+                        if (dateOrder != 0) return dateOrder;
+                        return a.id.compareTo(b.id);
+                      });
+                    final hasFilter = stageId != 0 || _dueOnly;
+
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md,
+                          ),
+                          child: GlassCard(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                              vertical: AppSpacing.sm,
+                            ),
+                            child: Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: AppSpacing.sm,
+                              runSpacing: AppSpacing.sm,
+                              children: [
+                                DropdownButton<int>(
+                                  value: stageId,
+                                  underline: const SizedBox.shrink(),
+                                  items: [
+                                    DropdownMenuItem<int>(
+                                      value: 0,
+                                      child: Text(context.locale.languageCode == 'ar'
+                                          ? 'جميع المراحل' : 'All stages'),
+                                    ),
+                                    ...stages.map((stage) => DropdownMenuItem<int>(
+                                      value: stage.key,
+                                      child: Text(stage.value,
+                                          overflow: TextOverflow.ellipsis),
+                                    )),
+                                  ],
+                                  onChanged: (value) => setState(() {
+                                    _selectedStageId = value ?? 0;
+                                  }),
+                                ),
+                                FilterChip(
+                                  selected: _dueOnly,
+                                  onSelected: (value) => setState(() {
+                                    _dueOnly = value;
+                                  }),
+                                  label: Text(context.locale.languageCode == 'ar'
+                                      ? 'المراجعة المستحقة ($dueCount)'
+                                      : 'Due for review ($dueCount)'),
+                                  avatar: const Icon(Icons.event_repeat_rounded,
+                                      size: 17),
+                                ),
+                                if (hasFilter)
+                                  TextButton(
+                                    onPressed: () => setState(() {
+                                      _selectedStageId = 0;
+                                      _dueOnly = false;
+                                    }),
+                                    child: Text(context.locale.languageCode == 'ar'
+                                        ? 'إلغاء التصفية' : 'Clear filters'),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Expanded(child: _buildNotebookList(
+                          context, visible, hasFilter, notifier,
+                          state.busyProblemIds,
+                        )),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotebookList(
+    BuildContext context,
+    List<ErrorNotebookProblem> problems,
+    bool hasFilter,
+    ErrorNotebookNotifier notifier,
+    Set<int> busyProblemIds,
+  ) {
+    if (problems.isEmpty) {
+      return RefreshIndicator(
+                        onRefresh: notifier.load,
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          children: [
+                            AppEmptyView(
+                              icon: Icons.auto_stories_outlined,
+                              title: 'error_notebook_empty'.tr(),
+                              subtitle: hasFilter
+                                  ? (context.locale.languageCode == 'ar'
+                                      ? 'لا توجد مسائل مطابقة لهذه التصفية.'
+                                      : 'No problems match these filters.')
+                                  : ('error_notebook_empty_desc'.tr()),
+                              action: OutlinedButton.icon(
+                                onPressed: notifier.load,
+                                icon: const Icon(Icons.refresh_rounded),
+                                label: Text('retry'.tr()),
+                              ),
+                            ),
+                          ],
                         ),
                       );
-                    }
+    }
 
                     return RefreshIndicator(
                       onRefresh: notifier.load,
@@ -88,7 +224,7 @@ class ErrorNotebookScreen extends ConsumerWidget {
                           final problem = problems[index];
                           return _ErrorNotebookCard(
                             problem: problem,
-                            isBusy: state.busyProblemIds.contains(problem.id),
+                            isBusy: busyProblemIds.contains(problem.id),
                             onOpen: () {
                               Navigator.pushNamed(
                                 context,
@@ -122,14 +258,6 @@ class ErrorNotebookScreen extends ConsumerWidget {
                         },
                       ),
                     );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
 

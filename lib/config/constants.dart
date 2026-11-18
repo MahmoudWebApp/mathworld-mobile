@@ -1,4 +1,5 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart';
 
 /// Central API endpoint and environment configuration.
 class ApiConstants {
@@ -33,6 +34,7 @@ class ApiConstants {
   static const String userProfile = '/users/profile';
   static const String userLearningStage = '/users/learning-stage';
   static const String userJourney = '/users/journey';
+  static const String userDailyChallenge = '/users/daily-challenge';
   static const String userDailyQuota = '/users/daily-quota';
   static const String userLeaderboard = '/users/leaderboard';
   static const String notifications = '/notifications';
@@ -71,8 +73,32 @@ class SocialAuthConfig {
     'MATHWORLD_GOOGLE_IOS_CLIENT_ID',
   );
 
-  static bool get googleAvailable =>
-      enabled && googleServerClientId.trim().isNotEmpty;
+  // iOS also requires its reversed client ID registered as a native URL
+  // scheme in Info.plist. Never show a broken sign-in button without it.
+  static const bool googleIosUrlSchemeConfigured = bool.fromEnvironment(
+    'MATHWORLD_GOOGLE_IOS_URL_SCHEME_CONFIGURED',
+    defaultValue: false,
+  );
+
+  /// Guard against placeholder IDs, unsupported platforms, and iOS builds
+  /// without a configured native OAuth application. OAuth client IDs are not
+  /// secrets; backend validation still checks the actual ID token audience.
+  static bool isValidGoogleClientId(String value) => RegExp(
+    r'^\d+-[a-z0-9_-]+\.apps\.googleusercontent\.com$',
+    caseSensitive: false,
+  ).hasMatch(value.trim());
+
+  static bool get googleAvailable {
+    if (!enabled || kIsWeb || !isValidGoogleClientId(googleServerClientId)) {
+      return false;
+    }
+    if (defaultTargetPlatform == TargetPlatform.android) return true;
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return googleIosUrlSchemeConfigured &&
+          isValidGoogleClientId(googleIosClientId);
+    }
+    return false;
+  }
 }
 
 /// Application-wide configuration values.

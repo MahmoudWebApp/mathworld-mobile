@@ -4,8 +4,11 @@ import '../models/problem.dart';
 import '../models/solution_preview.dart';
 import '../repositories/problems_repository.dart';
 import 'dashboard_provider.dart';
-import 'categories_provider.dart';
+import 'daily_challenge_provider.dart';
+import 'leaderboard_provider.dart';
 import 'learning_journey_provider.dart';
+import 'premium_analytics_provider.dart';
+import 'student_badges_provider.dart';
 import 'learning_provider.dart';
 import 'problems_provider.dart';
 import 'repositories_provider.dart';
@@ -84,8 +87,14 @@ final problemDetailsProvider = StateNotifierProvider.autoDispose
         // a successful submission, without a manual app restart.
         ref.invalidate(solvedProvider);
         ref.invalidate(dashboardProvider);
+        // A successful API submission changes the stage rankings, journey,
+        // achievements and today's solved state. Refresh these even when the
+        // learner keeps the app open and never revisits the home tab.
+        ref.invalidate(leaderboardProvider);
         ref.invalidate(learningJourneyProvider);
-        ref.invalidate(categoriesProvider);
+        ref.invalidate(dailyChallengeProvider);
+        ref.invalidate(studentBadgesProvider);
+        ref.invalidate(premiumAnalyticsProvider);
         ref.invalidate(problemsProvider);
         ref.invalidate(problemAttemptHistoryProvider(problemId));
         ref.invalidate(errorNotebookProvider);

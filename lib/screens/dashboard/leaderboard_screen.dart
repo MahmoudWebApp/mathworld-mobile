@@ -52,7 +52,16 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     final result = ref.watch(leaderboardProvider(filter));
 
     return Scaffold(
-      appBar: AppBar(title: Text('leaderboard_title'.tr())),
+      appBar: AppBar(
+        title: Text('leaderboard_title'.tr()),
+        actions: [
+          IconButton(
+            onPressed: () => ref.invalidate(leaderboardProvider(filter)),
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'retry'.tr(),
+          ),
+        ],
+      ),
       body: MathBackground(
         child: SafeArea(
           child: RefreshIndicator(
@@ -64,8 +73,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                 AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 32,
               ),
               children: [
-                Text('leaderboard_description'.tr(),
-                    style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  isArabic
+                      ? 'الترتيب حسب المسائل التي تم حلّها فعليًا في مرحلتك. وجود حساب وحده لا يمنح ترتيبًا.'
+                      : 'Rankings count questions actually solved in your current stage. Simply having an account does not grant a rank.',
+                  style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: AppSpacing.md),
                 Wrap(
                   spacing: 8,
@@ -97,8 +109,69 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                     ),
                   ),
                   data: (leaderboard) {
+                    // Recover from an out-of-range page automatically. A
+                    // changing leaderboard should never show a false empty
+                    // result while valid rankings remain on the first page.
+                    if (leaderboard.entries.isEmpty &&
+                        leaderboard.totalLearners > 0 &&
+                        _page > 1) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted && _page > 1) {
+                          setState(() => _page = 1);
+                        }
+                      });
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(AppSpacing.xxl),
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
                     if (leaderboard.entries.isEmpty) {
-                      return GlassCard(child: Text('leaderboard_empty'.tr()));
+                      return GlassCard(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.emoji_events_outlined, size: 36),
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(
+                              isArabic
+                                  ? 'ما في نتائج ترتيب لهالفترة ضمن مرحلتك.'
+                                  : 'No ranked solves in your stage for this period.',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(
+                              leaderboard.stageParticipants != null &&
+                                      leaderboard.stageParticipants! > 0
+                                  ? (isArabic
+                                      ? 'يوجد ${leaderboard.stageParticipants} طالب في مرحلتك، لكن ما في حلول مسجلة خلال هالفترة. حلّ مسألة لتظهر بالترتيب.'
+                                      : '${leaderboard.stageParticipants} learners selected this stage, but nobody has recorded a solve this period. Solve a problem to join the ranking.')
+                                  : (isArabic
+                                      ? 'حتى يظهر طالب بالمتفوقين، لازم يحل مسألة ويكسب نقاط ضمن المرحلة المحددة.'
+                                      : 'A learner appears after earning points by solving a problem in this stage.'),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            if (_period != 'all')
+                              OutlinedButton(
+                                onPressed: () => setState(() {
+                                  _period = 'all';
+                                  _page = 1;
+                                }),
+                                child: Text('leaderboard_all'.tr()),
+                              )
+                            else
+                              OutlinedButton.icon(
+                                onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                                  context, AppRoutes.home, (route) => false),
+                                icon: LayoutUtils.backIcon(context),
+                                label: Text(isArabic
+                                    ? 'العودة لمتابعة التعلّم'
+                                    : 'Return to learning'),
+                              ),
+                          ],
+                        ),
+                      );
                     }
                     final maxPage = (leaderboard.totalLearners /
                             (leaderboard.pageSize <= 0 ? 20 : leaderboard.pageSize))
@@ -111,6 +184,15 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                           leaderboard.stageName(language),
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
+                        if (leaderboard.stageParticipants != null) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            isArabic
+                                ? 'طلاب المرحلة: ${leaderboard.stageParticipants} · الطلاب المتفوقون: ${leaderboard.totalLearners}'
+                                : 'Stage learners: ${leaderboard.stageParticipants} · Ranked solvers: ${leaderboard.totalLearners}',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
                         if (leaderboard.myRank != null)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
@@ -133,7 +215,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        entry.displayName,
+                                        entry.isCurrentUser
+                                            ? (isArabic ? 'أنت' : 'You')
+                                            : (isArabic
+                                                ? 'طالب #${entry.rank}'
+                                                : 'Learner #${entry.rank}'),
                                         style: TextStyle(
                                           fontWeight: entry.isCurrentUser
                                               ? FontWeight.w800
