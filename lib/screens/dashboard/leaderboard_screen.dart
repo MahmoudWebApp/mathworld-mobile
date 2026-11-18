@@ -295,20 +295,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
   }
 
   // Older API versions returned numbered aliases such as "Learner #1".
-  // Explain their anonymity rather than making them look like fake accounts.
+  // Explain anonymity rather than making real students look like fake accounts.
   String _peerDisplayName(String name, bool isArabic) {
-    final alias = RegExp(r'^(Learner|متعلم)\\s*#\\d+
-    return ChoiceChip(
-      label: Text(translationKey.tr()),
-      selected: _period == value,
-      onSelected: (_) => setState(() {
-        _period = value;
-        _page = 1;
-      }),
-    );
-  }
-}
-, caseSensitive: false);
+    final alias = RegExp(r'^(Learner|متعلم)\s*#\d+$', caseSensitive: false);
     if (alias.hasMatch(name.trim())) {
       return isArabic
           ? 'طالب مشارك · الاسم مخفي'
