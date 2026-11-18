@@ -82,9 +82,20 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
       body: MathBackground(
         child: state.problem.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => AppErrorView(
-            message: localizedErrorMessage(error),
-            onRetry: notifier.load,
+          error: (error, _) => ListView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            children: [
+              AppErrorView(
+                message: localizedErrorMessage(error),
+                onRetry: notifier.load,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.maybePop(context),
+                icon: const Icon(Icons.arrow_back_rounded),
+                label: Text('category_locked_continue_free'.tr()),
+              ),
+            ],
           ),
           data: (problem) => _ProblemContent(
             problem: problem,
