@@ -437,8 +437,8 @@ class _CategoryCard extends StatelessWidget {
         color: accent.withValues(alpha: isDark ? 0.27 : 0.18),
       ),
       padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             width: 52,
@@ -453,107 +453,87 @@ class _CategoryCard extends StatelessWidget {
             ),
             child: _categoryIcon(accent),
           ),
-          const Spacer(),
-            Row(
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  locked ? Icons.lock_outline : Icons.lock_open_rounded,
-                  size: 15,
-                  color: accent,
-                ),
-                const SizedBox(width: AppSpacing.xs),
                 Text(
-                  locked
-                      ? (localeCode == 'ar' ? 'Premium · مقفلة' : 'Premium · Locked')
-                      : (localeCode == 'ar' ? 'مفتوحة' : 'Unlocked'),
-                    style: TextStyle(
-                      fontSize: 12,
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: titleColor,
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      locked ? Icons.lock_outline_rounded
+                          : Icons.lock_open_rounded,
+                      size: 15,
                       color: accent,
-                      fontWeight: FontWeight.w800,
-                    )),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xs),
-          Text(
-            title,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: titleColor,
-                  fontWeight: FontWeight.w900,
-                ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          if (noPublishedProblems)
-            Text(
-              localeCode == 'ar'
-                  ? 'لا توجد مسائل منشورة بعد'
-                  : 'No published problems yet',
-              maxLines: 2,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: mutedColor,
-                    fontWeight: FontWeight.w700,
-                  ),
-            )
-          else if (category.problemsCount != null)
-            Text(
-              category.solvedCount != null
-                  ? 'category_progress'.tr(
-                      namedArgs: {
-                        'solved': '${category.solvedCount}',
-                        'total': '${category.problemsCount}',
-                      },
-                    )
-                  : 'problems_count_value'.tr(
-                      namedArgs: {'count': '${category.problemsCount}'},
                     ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: mutedColor,
-                    fontWeight: FontWeight.w700,
-                  ),
-            )
-          else
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'browse_all'.tr(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: mutedColor,
-                          fontWeight: FontWeight.w700,
+                    const SizedBox(width: AppSpacing.xs),
+                    Flexible(
+                      child: Text(
+                        locked
+                            ? (localeCode == 'ar'
+                                ? 'Premium · مقفلة' : 'Premium · Locked')
+                            : (localeCode == 'ar' ? 'مفتوحة' : 'Unlocked'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: accent,
+                          fontWeight: FontWeight.w800,
                         ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  noPublishedProblems
+                      ? (localeCode == 'ar'
+                          ? 'لا توجد مسائل منشورة بعد'
+                          : 'No published problems yet')
+                      : category.problemsCount != null
+                          ? 'problems_count_value'.tr(namedArgs: {
+                              'count': '${category.problemsCount}',
+                            })
+                          : 'browse_all'.tr(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: mutedColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                if (category.progress != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(99),
+                    child: LinearProgressIndicator(
+                      semanticsLabel: localeCode == 'ar'
+                          ? 'تقدم $title' : '$title progress',
+                      semanticsValue:
+                          '${(category.progress! * 100).round()}%',
+                      value: category.progress,
+                      minHeight: 5,
+                      backgroundColor: accent.withValues(alpha: 0.10),
+                      valueColor: AlwaysStoppedAnimation(accent),
+                    ),
                   ),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                LayoutUtils.forwardIcon(
-                  context,
-                  size: 19,
-                  color: accent,
-                ),
+                ],
               ],
             ),
-          if (category.progress != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(99),
-              child: LinearProgressIndicator(
-                semanticsLabel: localeCode == 'ar'
-                    ? 'تقدم $title'
-                    : '$title progress',
-                semanticsValue:
-                    '${(category.progress! * 100).round()}%',
-                value: category.progress,
-                minHeight: 6,
-                backgroundColor: accent.withValues(alpha: 0.10),
-                valueColor: AlwaysStoppedAnimation(accent),
-              ),
-            ),
-          ],
+          ),
         ],
       ),
     );
@@ -619,10 +599,10 @@ class _CategoryCard extends StatelessWidget {
 
   Color _categoryColor(int value) {
     const colors = [
-      AppColors.stageCyan,
-      AppColors.stageOrange,
-      AppColors.stageGreen,
-      AppColors.stageViolet,
+      AppColors.brandPurple,
+      AppColors.brandViolet,
+      AppColors.brandPink,
+      AppColors.brandLavender,
     ];
 
     final index = (value <= 0 ? 0 : value - 1) % colors.length;
