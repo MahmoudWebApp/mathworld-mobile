@@ -4,6 +4,8 @@ import '../models/problem.dart';
 import '../models/solution_preview.dart';
 import '../repositories/problems_repository.dart';
 import 'dashboard_provider.dart';
+import 'categories_provider.dart';
+import 'learning_journey_provider.dart';
 import 'learning_provider.dart';
 import 'problems_provider.dart';
 import 'repositories_provider.dart';
@@ -78,8 +80,12 @@ final problemDetailsProvider = StateNotifierProvider.autoDispose
       problemId: problemId,
       languageCode: languageCode,
       onAttemptCompleted: () {
+        // Update stage progress and category completion immediately after
+        // a successful submission, without a manual app restart.
         ref.invalidate(solvedProvider);
         ref.invalidate(dashboardProvider);
+        ref.invalidate(learningJourneyProvider);
+        ref.invalidate(categoriesProvider);
         ref.invalidate(problemsProvider);
         ref.invalidate(problemAttemptHistoryProvider(problemId));
         ref.invalidate(errorNotebookProvider);
