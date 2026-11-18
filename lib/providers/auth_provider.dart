@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/widgets.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../core/errors/app_exception.dart';
@@ -259,6 +260,39 @@ class AuthNotifier extends StateNotifier<AuthState>
     } catch (_) {
       // The authenticated backend grant already succeeded; a local cache
       // write failure must not incorrectly report redemption as failed.
+    }
+  }
+
+  /// Refresh account entitlements and stage after an Admin change or gift.
+  /// Network failures keep the last known authenticated session.
+  Future<void> refreshProfile() async {
+    if (_refreshingProfile || !state.isAuthenticated) return;
+    final previous = state.user;
+    if (previous == null) return;
+    _refreshingProfile = true;
+    try {
+      final latest = await _repository.restoreSession();
+      if (!mounted || !state.isAuthenticated || state.user?.id != previous.id) {
+        return;
+      }
+      if (latest == null) return;
+      final changed = latest.subscriptionType != previous.subscriptionType ||
+          latest.currentStageId != previous.currentStageId;
+      state = state.copyWith(user: latest);
+      if (changed) {
+        _ref.invalidate(categoriesProvider);
+        _ref.invalidate(stageCategoriesProvider);
+        _ref.invalidate(stageCategoryAccessProvider);
+        _ref.invalidate(dashboardProvider);
+        _ref.invalidate(learningJourneyProvider);
+        _ref.invalidate(problemsProvider);
+        _ref.invalidate(problemDetailsProvider);
+        _ref.invalidate(premiumAnalyticsProvider);
+      }
+    } catch (_) {
+      // Do not end a valid session because a background refresh failed.
+    } finally {
+      _refreshingProfile = false;
     }
   }
 
