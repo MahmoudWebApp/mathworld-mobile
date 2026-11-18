@@ -57,12 +57,6 @@ class StageCategoriesScreen extends ConsumerWidget {
             if (premiumState?.isLoading ?? false) {
               return const Center(child: CircularProgressIndicator());
             }
-            if (premiumState?.hasError ?? false) {
-              return AppErrorView(
-                message: localizedErrorMessage(premiumState!.error!),
-                onRetry: () => ref.invalidate(studentPremiumProvider),
-              );
-            }
             // One verified stage response drives titles, entitlements and
             // published counts. Avoid a second, potentially stale /categories
             // response making the entire stage appear empty or unavailable.
@@ -193,6 +187,25 @@ class StageCategoriesScreen extends ConsumerWidget {
                       Text(stage.getName(localeCode),
                           style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: AppSpacing.md),
+                      if (user?.role == 'Student' && (premiumState?.hasError ?? false)) ...[
+                        GlassCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(ar
+                                  ? 'تعذر التأكد من اشتراكك. عم نعرض الفئات المجانية بأمان، وما عم نعتبر حسابك مجاني.'
+                                  : "We couldn't verify your plan. Free topics remain visible; your membership hasn't been changed."),
+                              const SizedBox(height: AppSpacing.sm),
+                              OutlinedButton.icon(
+                                onPressed: () => ref.invalidate(studentPremiumProvider),
+                                icon: const Icon(Icons.refresh_rounded),
+                                label: Text('retry'.tr()),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
                       GlassCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,10 +225,10 @@ class StageCategoriesScreen extends ConsumerWidget {
                                   : (ar
                                       ? (user == null
                                           ? 'بتقدر تتصفح الفئتين المجانيتين بكل مرحلة. سجّل الدخول حتى تبدأ الحل وتحفظ تقدمك.'
-                                          : 'حسابك المجاني بيسمحلك تحل بلا حد داخل الفئتين المفتوحتين في كل مرحلة. ابدأ من الفئات تحت.')
+                                          : 'بتقدر تحل بلا حد داخل الفئتين المفتوحتين في كل مرحلة. ابدأ من الفئات تحت.')
                                       : (user == null
                                           ? 'Browse the two Free topics in each stage. Sign in to solve and save progress.'
-                                          : 'Your Free account includes two unlocked topics per stage, with unlimited practice. Start below.')),
+                                          : 'Two topics per stage are open for Free practice without daily limits. Start below.')),
                             ),
                             const SizedBox(height: AppSpacing.sm),
                             Text(
@@ -268,8 +281,8 @@ class StageCategoriesScreen extends ConsumerWidget {
                         const SizedBox(height: AppSpacing.xs),
                         Text(
                           ar
-                              ? 'هاي الفئات مو ضمن حسابك المجاني. فيك تشوف مميزات الاشتراك من مكان واحد.'
-                              : 'These topics are not included with Free. View membership benefits in one place.',
+                              ? 'هاي الفئات تتطلب Premium. فيك تشوف مميزات الاشتراك من مكان واحد.'
+                              : 'These topics require Premium. View membership benefits in one place.',
                         ),
                         const SizedBox(height: AppSpacing.md),
                         cards(unavailable, locked: true),
