@@ -80,7 +80,7 @@ class AppConstants {
   const AppConstants._();
 
   static const String appName = 'MathWorld';
-  static const String appVersion = '1.2.0';
+  static const String appVersion = '1.3.0';
   static const String defaultLanguage = 'ar';
   static const String tokenKey = 'auth_token';
   static const int pageSize = 10;
