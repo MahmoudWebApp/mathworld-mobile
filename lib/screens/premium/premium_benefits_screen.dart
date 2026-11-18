@@ -39,7 +39,6 @@ class _PremiumBenefitsScreenState
       (state) => state.user?.subscriptionType.toLowerCase() == 'premium',
     ));
     final theme = Theme.of(context);
-    final accent = theme.colorScheme.primary;
 
     return Scaffold(
       appBar: AppBar(title: Text(ar ? 'تغيير الخطة' : 'Change plan')),
