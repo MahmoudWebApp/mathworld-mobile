@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Foreground mark redrawn from the MathWorld web favicon geometry.
+  The previous PNG contained a separate rectangular logo canvas inside the
+  adaptive icon. A vector foreground leaves the system mask in control,
+  enlarges the symbol and removes the black inner square.
+  Android applies the launcher shape; do not draw a second rounded tile.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="128"
+    android:viewportHeight="128">
+    <!-- Oversized MathWorld hexagonal/cube outline with no tile background. -->
+    <path
+        android:pathData="M64,9 L116,38 L116,91 L64,119 L12,91 L12,38 Z"
+        android:fillColor="#F23BCE"
+        android:fillAlpha="0.22"
+        android:strokeColor="#F8C8FF"
+        android:strokeWidth="5"
+        android:strokeLineJoin="round" />
+    <!-- Graduation cap and tassel: source visual language from web favicon. -->
+    <path
+        android:pathData="M33,43 L64,29 L95,43 L64,57 Z"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineJoin="round" />
+    <path
+        android:pathData="M37,48 L37,65"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M41,69 a4,4 0,1 1,-8 0 a4,4 0,1 1,8 0"
+        android:fillColor="#FFFFFF" />
+    <!-- Mathematics Sigma symbol. -->
+    <path
+        android:pathData="M44,70 L70,70 L53,86 L70,102 L44,102"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <!-- Small x-squared mark as vector geometry; avoid font-dependent glyphs. -->
+    <path
+        android:pathData="M80,67 L92,83 M92,67 L80,83"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M94,52 Q98,46 102,52 Q105,56 95,61 L104,61"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>
