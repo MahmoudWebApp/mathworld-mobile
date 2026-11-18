@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/design_tokens.dart';
+import '../../config/app_routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
@@ -62,7 +63,7 @@ class _PremiumBenefitsScreenState
         icon: Icons.analytics_outlined,
         titleKey: 'premium_reports_title',
         detailKey: 'premium_reports_detail',
-        upcoming: true,
+        upcoming: false,
       ),
       (
         icon: Icons.school_outlined,
@@ -114,6 +115,14 @@ class _PremiumBenefitsScreenState
                   ],
                 ),
               ),
+              if (isPremium) ...[
+                const SizedBox(height: AppSpacing.md),
+                FilledButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, AppRoutes.premiumReport),
+                  icon: const Icon(Icons.analytics_outlined),
+                  label: Text('premium_report_open'.tr()),
+                ),
+              ],
               const SizedBox(height: AppSpacing.lg),
               Text('premium_benefits_list_title'.tr(),
                   style: theme.textTheme.titleLarge),
