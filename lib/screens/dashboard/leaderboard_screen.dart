@@ -217,9 +217,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                                       Text(
                                         entry.isCurrentUser
                                             ? (isArabic ? 'أنت' : 'You')
-                                            : (isArabic
-                                                ? 'طالب #${entry.rank}'
-                                                : 'Learner #${entry.rank}'),
+                                            : entry.displayName,
                                         style: TextStyle(
                                           fontWeight: entry.isCurrentUser
                                               ? FontWeight.w800
