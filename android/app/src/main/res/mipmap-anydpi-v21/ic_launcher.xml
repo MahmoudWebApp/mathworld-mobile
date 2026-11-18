@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Legacy launchers (Android 5-7) use the same square-free MathWorld mark
+     as Android 8+ adaptive icons, not the old embedded dark raster tile. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/ic_launcher_background" />
+    <item android:drawable="@drawable/mathworld_launcher_foreground_vector" />
+</layer-list>
