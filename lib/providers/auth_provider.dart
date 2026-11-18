@@ -13,6 +13,7 @@ import 'dashboard_provider.dart';
 import 'learning_provider.dart';
 import 'learning_journey_provider.dart';
 import 'notifications_provider.dart';
+import 'premium_reports_provider.dart';
 import 'problem_details_provider.dart';
 import 'problems_provider.dart';
 import 'repositories_provider.dart';
@@ -239,6 +240,7 @@ class AuthNotifier extends StateNotifier<AuthState>
         _ref.invalidate(learningJourneyProvider);
         _ref.invalidate(problemsProvider);
         _ref.invalidate(problemDetailsProvider);
+        _ref.invalidate(premiumProgressReportProvider);
       }
     } catch (_) {
       // Transient network errors must not destroy an authenticated session.
@@ -267,6 +269,7 @@ class AuthNotifier extends StateNotifier<AuthState>
       final updated = await _repository.chooseLearningStage(current, stageId);
       state = state.copyWith(user: updated, isSubmitting: false);
       _ref.invalidate(dashboardProvider);
+      _ref.invalidate(premiumProgressReportProvider);
     } catch (_) {
       state = state.copyWith(isSubmitting: false);
       rethrow;
@@ -307,6 +310,7 @@ class AuthNotifier extends StateNotifier<AuthState>
     _ref.invalidate(errorNotebookProvider);
     _ref.invalidate(notificationsPageProvider);
     _ref.invalidate(notificationsUnreadCountProvider);
+    _ref.invalidate(premiumProgressReportProvider);
   }
 
   void consumeSessionExpired() {
