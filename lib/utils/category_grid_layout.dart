@@ -13,6 +13,10 @@ class StageCategoryGridLayout {
   }
 
   static double cardExtent(int columns, {double textScale = 1}) {
-    return textScale > 1.2 ? 288 : columns == 1 ? 220 : 248;
+    // The category card uses an icon + details row. Avoid the old tall
+    // 220-248dp cards with large unused space on ordinary phones.
+    if (textScale > 1.35) return 206;
+    if (textScale > 1.2) return 188;
+    return columns == 1 ? 152 : 166;
   }
 }

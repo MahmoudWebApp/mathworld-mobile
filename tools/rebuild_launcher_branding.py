@@ -108,7 +108,9 @@ def main():
     adaptive=transparent_square(mark,0.52)
     save(adaptive,ANDROID/"drawable-nodpi/mathworld_adaptive_foreground.png",432)
     save(adaptive,ANDROID/"drawable-nodpi/ic_launcher_foreground.png",432)
-    legacy=transparent_square(mark,0.74)
+    # Preserve the original saturated purple mark, not the later shrunken
+    # launcher variant that left wide empty margins.
+    legacy=transparent_square(mark,0.88)
     for folder,px in (
         ("mipmap-mdpi",48),("mipmap-hdpi",72),
         ("mipmap-xhdpi",96),("mipmap-xxhdpi",144),

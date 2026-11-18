@@ -6,19 +6,20 @@ void main() {
     expect(StageCategoryGridLayout.columns(320), 1);
     expect(StageCategoryGridLayout.columns(390), 1);
     expect(StageCategoryGridLayout.columns(430), 1);
-    expect(StageCategoryGridLayout.cardExtent(1), 220);
+    expect(StageCategoryGridLayout.cardExtent(1), 152);
   });
 
   test('larger layouts increase columns without overcrowding', () {
     expect(StageCategoryGridLayout.columns(440), 2);
     expect(StageCategoryGridLayout.columns(740), 3);
     expect(StageCategoryGridLayout.columns(1000), 4);
-    expect(StageCategoryGridLayout.cardExtent(3), 248);
+    expect(StageCategoryGridLayout.cardExtent(3), 166);
   });
 
   test('accessibility text size prevents multi-column clipping', () {
     expect(StageCategoryGridLayout.columns(1180, textScale: 1.4), 1);
-    expect(StageCategoryGridLayout.cardExtent(1, textScale: 1.4), 288);
+    expect(StageCategoryGridLayout.cardExtent(1, textScale: 1.4), 206);
+    expect(StageCategoryGridLayout.cardExtent(1, textScale: 1.3), 188);
     expect(StageCategoryGridLayout.columns(-10), 1);
   });
 }

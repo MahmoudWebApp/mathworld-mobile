@@ -75,8 +75,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
               children: [
                 Text(
                   isArabic
-                      ? 'الترتيب حسب المسائل التي تم حلّها فعليًا في مرحلتك. وجود حساب وحده لا يمنح ترتيبًا.'
-                      : 'Rankings count questions actually solved in your current stage. Simply having an account does not grant a rank.',
+                      ? 'الترتيب يعرض طلاباً حلّوا مسائل فعلياً في مرحلتك. أسماء الآخرين مختصرة أو مخفية للخصوصية، وليست أسماء حسابات أُنشئت للترتيب.'
+                      : 'Rankings reflect real solved problems in your stage. Other learners have abbreviated or hidden names for privacy; ranks do not create accounts.',
                   style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: AppSpacing.md),
                 Wrap(
@@ -217,7 +217,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                                       Text(
                                         entry.isCurrentUser
                                             ? (isArabic ? 'أنت' : 'You')
-                                            : entry.displayName,
+                                            : _peerDisplayName(entry.displayName, isArabic),
                                         style: TextStyle(
                                           fontWeight: entry.isCurrentUser
                                               ? FontWeight.w800
@@ -292,6 +292,18 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
         ),
       ),
     );
+  }
+
+  // Older API versions returned numbered aliases such as "Learner #1".
+  // Explain anonymity rather than making real students look like fake accounts.
+  String _peerDisplayName(String name, bool isArabic) {
+    final alias = RegExp(r'^(Learner|متعلم)\s*#\d+$', caseSensitive: false);
+    if (alias.hasMatch(name.trim())) {
+      return isArabic
+          ? 'طالب مشارك · الاسم مخفي'
+          : 'Participating learner · name hidden';
+    }
+    return name;
   }
 
   Widget _periodChip(String value, String translationKey) {
