@@ -272,6 +272,14 @@ class _ProblemContent extends ConsumerWidget {
         if (state.answerResult != null) ...[
           const SizedBox(height: AppSpacing.xl),
           _AnswerResultCard(result: state.answerResult!),
+          const SizedBox(height: AppSpacing.md),
+          // The next action belongs immediately after the answer result,
+          // not hidden below long explanations and attempt history.
+          FilledButton.icon(
+            onPressed: () => Navigator.maybePop(context),
+            icon: const Icon(Icons.list_alt_rounded),
+            label: Text('back_to_problems'.tr()),
+          ),
         ],
         if (problem.hasAttempted &&
             problem.canRetry &&
@@ -317,12 +325,14 @@ class _ProblemContent extends ConsumerWidget {
           const SizedBox(height: AppSpacing.xxl),
           _AttemptHistorySection(historyState: historyState!),
         ],
-        const SizedBox(height: AppSpacing.lg),
-        TextButton.icon(
-          onPressed: () => Navigator.maybePop(context),
-          icon: const Icon(Icons.list_alt_rounded),
-          label: Text('back_to_problems'.tr()),
-        ),
+        if (state.answerResult == null) ...[
+          const SizedBox(height: AppSpacing.lg),
+          TextButton.icon(
+            onPressed: () => Navigator.maybePop(context),
+            icon: const Icon(Icons.list_alt_rounded),
+            label: Text('back_to_problems'.tr()),
+          ),
+        ],
       ],
     );
   }
