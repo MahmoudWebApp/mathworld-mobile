@@ -40,11 +40,6 @@ class StageCategoriesScreen extends ConsumerWidget {
         ? ref.watch(studentPremiumProvider)
         : null;
     final localeCode = context.locale.languageCode;
-    final currentUser = ref.watch(
-      authProvider.select((state) => state.user),
-    );
-    final isPremium = currentUser?.role == 'Admin' ||
-        currentUser?.subscriptionType.toLowerCase() == 'premium';
 
     final content = MathBackground(
       showSymbols: true,
@@ -411,7 +406,6 @@ class _CategoryCard extends StatelessWidget {
     final mutedColor = isDark ? AppColors.darkMuted : AppColors.lightMuted;
     final noPublishedProblems = category.problemsCount == 0;
 
-    final empty = category.problemsCount == 0;
     return GlassCard(
       // The API now returns a real per-stage count. Never navigate into a
       // category known to have zero questions and then show a dead-end page.
