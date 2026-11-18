@@ -20,7 +20,6 @@ class PremiumProgressReportScreen extends ConsumerWidget {
     final isPremium = user?.subscriptionType.toLowerCase() == 'premium';
     final stageId = user?.currentStageId;
     final theme = Theme.of(context);
-    final ar = context.locale.languageCode == 'ar';
 
     return Scaffold(
       appBar: AppBar(title: Text('premium_report_title'.tr())),
