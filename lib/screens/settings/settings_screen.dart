@@ -136,8 +136,12 @@ class SettingsScreen extends ConsumerWidget {
                 padding: EdgeInsets.zero,
                 child: ListTile(
                   leading: const Icon(Icons.workspace_premium_outlined),
-                  title: Text('premium_benefits_title'.tr()),
-                  subtitle: Text('premium_benefits_settings_hint'.tr()),
+                  title: Text(context.locale.languageCode == 'ar'
+                      ? 'تغيير الخطة'
+                      : 'Change plan'),
+                  subtitle: Text(context.locale.languageCode == 'ar'
+                      ? 'قارن Free وPremium وأدخل رمز التفعيل'
+                      : 'Compare Free and Premium and redeem a code'),
                   trailing: LayoutUtils.forwardIcon(context),
                   onTap: () => Navigator.pushNamed(
                     context, AppRoutes.premiumBenefits,
@@ -169,48 +173,19 @@ class SettingsScreen extends ConsumerWidget {
                 child: ListTile(
                   leading: const Icon(Icons.bar_chart_rounded),
                   title: Text(context.locale.languageCode == 'ar'
-                      ? 'تقريري الشخصي'
-                      : 'My progress report'),
+                      ? (currentUser?.subscriptionType.toLowerCase() == 'premium'
+                          ? 'تقريري الشخصي' : 'تقارير شخصية · Premium')
+                      : (currentUser?.subscriptionType.toLowerCase() == 'premium'
+                          ? 'My progress report' : 'My reports · Premium')),
                   subtitle: Text(context.locale.languageCode == 'ar'
                       ? 'إحصائيات المحاولات والنقاط والفئات'
                       : 'Attempts, points and category progress'),
                   trailing: LayoutUtils.forwardIcon(context),
                   onTap: () => Navigator.pushNamed(
-                    context, AppRoutes.premiumAnalytics,
-                  ),
-                ),
-              ),
-            if (currentUser?.role == 'Student')
-              GlassCard(
-                padding: EdgeInsets.zero,
-                child: ListTile(
-                  leading: const Icon(Icons.workspace_premium_rounded),
-                  title: Text(context.locale.languageCode == 'ar'
-                      ? 'الاشتراك والخصومات'
-                      : 'Membership & discounts'),
-                  subtitle: Text(context.locale.languageCode == 'ar'
-                      ? 'معاينة السعر وسجل طلبات الاشتراك'
-                      : 'Price preview and checkout order history'),
-                  trailing: LayoutUtils.forwardIcon(context),
-                  onTap: () => Navigator.pushNamed(
-                    context, AppRoutes.premiumCheckout,
-                  ),
-                ),
-              ),
-            if (currentUser?.role == 'Student')
-              GlassCard(
-                padding: EdgeInsets.zero,
-                child: ListTile(
-                  leading: const Icon(Icons.card_giftcard_rounded),
-                  title: Text(context.locale.languageCode == 'ar'
-                      ? 'تفعيل كود هدية'
-                      : 'Redeem a gift code'),
-                  subtitle: Text(context.locale.languageCode == 'ar'
-                      ? 'هدية استخدام واحد، بدون دفع إلكتروني'
-                      : 'Single-use access gift, no checkout'),
-                  trailing: LayoutUtils.forwardIcon(context),
-                  onTap: () => Navigator.pushNamed(
-                    context, AppRoutes.premiumGiftRedeem,
+                    context,
+                    currentUser?.subscriptionType.toLowerCase() == 'premium'
+                        ? AppRoutes.premiumAnalytics
+                        : AppRoutes.premiumBenefits,
                   ),
                 ),
               ),

@@ -12,7 +12,6 @@ import '../screens/problems/problem_details_screen.dart';
 import '../screens/problems/problems_list_screen.dart';
 import '../screens/settings/privacy_screen.dart';
 import '../screens/settings/premium_gift_redeem_screen.dart';
-import '../screens/settings/premium_checkout_screen.dart';
 import '../screens/premium/premium_benefits_screen.dart';
 import '../screens/premium/premium_progress_report_screen.dart';
 import '../screens/splash/splash_screen.dart';
@@ -59,7 +58,8 @@ class AppRoutes {
       premiumBenefits: (_) => const PremiumBenefitsScreen(),
       premiumReport: (_) => const PremiumProgressReportScreen(),
       premiumGiftRedeem: (_) => const PremiumGiftRedeemScreen(),
-      premiumCheckout: (_) => const PremiumCheckoutScreen(),
+      // Preserve old deep links but never expose unavailable checkout pricing.
+      premiumCheckout: (_) => const PremiumBenefitsScreen(),
     };
   }
 }
