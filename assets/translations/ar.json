@@ -213,8 +213,8 @@
   "premium_preview_detail": "اطلب الحل عندما تحتاجه قبل إرسال إجابتك، بدون احتساب محاولة.",
   "premium_no_ads_title": "بدون إعلانات",
   "premium_no_ads_detail": "عند إطلاق نظام الإعلانات لاحقاً، لن تظهر لمشتركي Premium.",
-  "premium_reports_title": "إحصائيات متقدمة وتصدير PDF وExcel",
-  "premium_reports_detail": "تقارير شاملة لتقدمك قابلة للتصدير، ضمن خطة التطوير.",
+  "premium_reports_title": "تقارير تقدم حسب الفئة",
+  "premium_reports_detail": "شاهد المسائل المحلولة والإتقان والنقاط المكتسبة. تصدير CSV متاح بالويب حالياً، وPDF وExcel الأصلي قادمان.",
   "premium_tutors_title": "التواصل مع مدرسي رياضيات",
   "premium_tutors_detail": "خدمة قادمة بعد تجهيز شبكة المدرسين.",
   "premium_available_now": "متاحة الآن",
@@ -231,5 +231,15 @@
   "notifications_mark_all": "تحديد الكل كمقروء",
   "notifications_mark_read": "تحديد كمقروء",
   "notifications_view_details": "عرض التفاصيل",
-  "notifications_unread_count": "إشعارات غير مقروءة: {count}"
+  "notifications_unread_count": "إشعارات غير مقروءة: {count}",
+  "premium_report_open": "عرض تقرير تقدمي",
+  "premium_report_title": "تقرير تقدمي التعليمي",
+  "premium_reports_locked": "التقارير التفصيلية لمشتركي Premium",
+  "premium_report_completion": "نسبة الإنجاز",
+  "premium_report_solved": "مسائل محلولة",
+  "premium_report_first_try": "صحيحة من أول محاولة",
+  "premium_report_mastered": "مسائل متقنة",
+  "premium_report_points": "نقاط مكتسبة",
+  "premium_report_categories": "تقدمي حسب الفئة",
+  "premium_report_export_notice": "يمكن تصدير CSV من موقع MathWorld. تصدير PDF وExcel الأصلي سيُضاف لاحقاً."
 }
