@@ -7,18 +7,29 @@ import '../../core/utils/error_message.dart';
 import '../../models/premium_progress_report.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/premium_reports_provider.dart';
+import '../../providers/stages_provider.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 
-class PremiumProgressReportScreen extends ConsumerWidget {
+class PremiumProgressReportScreen extends ConsumerStatefulWidget {
   const PremiumProgressReportScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PremiumProgressReportScreen> createState() =>
+      _PremiumProgressReportScreenState();
+}
+
+class _PremiumProgressReportScreenState
+    extends ConsumerState<PremiumProgressReportScreen> {
+  int? _selectedStageId;
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(authProvider.select((auth) => auth.user));
     final isPremium = user?.subscriptionType.toLowerCase() == 'premium';
-    final stageId = user?.currentStageId;
+    final stageId = _selectedStageId ?? user?.currentStageId;
+    final availableStages = ref.watch(stagesProvider).valueOrNull;
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -66,6 +77,27 @@ class PremiumProgressReportScreen extends ConsumerWidget {
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.all(AppSpacing.lg),
                           children: [
+                            if (availableStages != null &&
+                                availableStages.length > 1) ...[
+                              DropdownButtonFormField<int>(
+                                initialValue: stageId,
+                                isExpanded: true,
+                                decoration: InputDecoration(
+                                  labelText: 'premium_report_stage'.tr(),
+                                  prefixIcon: const Icon(Icons.school_outlined),
+                                ),
+                                items: availableStages.map((stage) =>
+                                  DropdownMenuItem<int>(
+                                    value: stage.id,
+                                    child: Text(stage.getName(
+                                      context.locale.languageCode,
+                                    )),
+                                  )).toList(),
+                                onChanged: (next) =>
+                                  setState(() => _selectedStageId = next),
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                            ],
                             GlassCard(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
