@@ -41,7 +41,11 @@ class _PremiumBenefitsScreenState
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(ar ? 'تغيير الخطة' : 'Change plan')),
+      appBar: AppBar(title: Text(
+        premium
+            ? (ar ? 'مميزات حسابي' : 'My account benefits')
+            : (ar ? 'ترقية الحساب' : 'Upgrade account'),
+      )),
       body: MathBackground(
         showSymbols: false,
         child: SafeArea(
