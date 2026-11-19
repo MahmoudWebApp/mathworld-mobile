@@ -141,11 +141,13 @@ class SettingsScreen extends ConsumerWidget {
                 child: ListTile(
                   leading: const Icon(Icons.workspace_premium_outlined),
                   title: Text(context.locale.languageCode == 'ar'
-                      ? 'تغيير الخطة'
-                      : 'Change plan'),
+                      ? (currentUser?.subscriptionType.toLowerCase() == 'premium'
+                          ? 'مميزات حسابي' : 'ترقية الحساب')
+                      : (currentUser?.subscriptionType.toLowerCase() == 'premium'
+                          ? 'My account benefits' : 'Upgrade account')),
                   subtitle: Text(context.locale.languageCode == 'ar'
-                      ? 'قارن Free وPremium وأدخل رمز التفعيل'
-                      : 'Compare Free and Premium and redeem a code'),
+                      ? 'اكتشف المميزات وأدخل رمز التفعيل'
+                      : 'Explore benefits and redeem your code'),
                   trailing: LayoutUtils.forwardIcon(context),
                   onTap: () => Navigator.pushNamed(
                     context, AppRoutes.premiumBenefits,
@@ -178,9 +180,9 @@ class SettingsScreen extends ConsumerWidget {
                   leading: const Icon(Icons.bar_chart_rounded),
                   title: Text(context.locale.languageCode == 'ar'
                       ? (currentUser?.subscriptionType.toLowerCase() == 'premium'
-                          ? 'تقريري الشخصي' : 'تقارير شخصية · Premium')
+                          ? 'تقريري الشخصي' : 'تقارير متقدمة بعد الترقية')
                       : (currentUser?.subscriptionType.toLowerCase() == 'premium'
-                          ? 'My progress report' : 'My reports · Premium')),
+                          ? 'My progress report' : 'Advanced reports after upgrading')),
                   subtitle: Text(context.locale.languageCode == 'ar'
                       ? 'إحصائيات المحاولات والنقاط والفئات'
                       : 'Attempts, points and category progress'),
@@ -194,8 +196,11 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
             const SizedBox(height: 24),
+            // The linking tile disappears after the API confirms Google.
+            // Verification errors still allow retry.
             if (GoogleIdentityService.available &&
-                currentUser?.role == 'Student') ...[
+                currentUser?.role == 'Student' &&
+                googleLinkState?.valueOrNull != true) ...[
               _SectionTitle(
                 title: context.locale.languageCode == 'ar'
                     ? 'الحسابات المرتبطة'
