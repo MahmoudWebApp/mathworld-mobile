@@ -138,7 +138,7 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
               const SizedBox(height: AppSpacing.sm),
               OutlinedButton.icon(
                 onPressed: () => Navigator.maybePop(context),
-                icon: Icon(LayoutUtils.backArrow(context), textDirection: TextDirection.ltr),
+                icon: Icon(LayoutUtils.backArrow(context), textDirection: ui.TextDirection.ltr),
                 label: Text('category_locked_continue_free'.tr()),
               ),
             ],
