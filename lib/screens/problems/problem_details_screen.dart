@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
+import '../../utils/layout_utils.dart';
 import '../../core/utils/error_message.dart';
 import '../../models/problem.dart';
 import '../../providers/auth_provider.dart';
@@ -136,7 +138,7 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
               const SizedBox(height: AppSpacing.sm),
               OutlinedButton.icon(
                 onPressed: () => Navigator.maybePop(context),
-                icon: const Icon(Icons.arrow_back_rounded),
+                icon: Icon(LayoutUtils.backArrow(context), textDirection: ui.TextDirection.ltr),
                 label: Text('category_locked_continue_free'.tr()),
               ),
             ],
@@ -646,9 +648,19 @@ class _AttemptTile extends StatelessWidget {
           style: Theme.of(context).textTheme.bodyMedium,
         ),
       ),
-      trailing: Text(
-        _formatDuration(attempt.timeSpentSeconds),
-        style: Theme.of(context).textTheme.bodySmall,
+      trailing: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 54, maxWidth: 76),
+        child: Text(
+          _formatDuration(attempt.timeSpentSeconds),
+          textDirection: ui.TextDirection.ltr,
+          maxLines: 1,
+          softWrap: false,
+          textAlign: TextAlign.end,
+          overflow: TextOverflow.visible,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            fontFeatures: const [ui.FontFeature.tabularFigures()],
+          ),
+        ),
       ),
     );
   }

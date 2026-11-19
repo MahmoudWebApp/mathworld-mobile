@@ -15,7 +15,10 @@ import '../../widgets/premium_button.dart';
 /// First-login stage onboarding and later stage switching.
 /// All progress stays assigned to the original question stage in the API.
 class LearningStageScreen extends ConsumerStatefulWidget {
-  const LearningStageScreen({super.key});
+  const LearningStageScreen({super.key, this.onCreateAccount});
+
+  /// Only initial registration provides this; stage changes use the account API.
+  final Future<void> Function(int stageId)? onCreateAccount;
 
   @override
   ConsumerState<LearningStageScreen> createState() =>
@@ -28,6 +31,26 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
 
   Future<void> _save(int id) async {
     if (_saving) return;
+    if (widget.onCreateAccount != null) {
+      setState(() => _saving = true);
+      try {
+        await widget.onCreateAccount!(id);
+        if (!mounted) return;
+        Navigator.pushNamedAndRemoveUntil(
+          context, AppRoutes.home, (_) => false,
+          arguments: const {'initialTab': 1},
+        );
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(localizedErrorMessage(error))),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _saving = false);
+      }
+      return;
+    }
     // Keeping the already-selected stage is navigation, not a new server
     // mutation. Avoid a needless PUT or invalidating student progress caches.
     if (ref.read(authProvider).user?.currentStageId == id) {
@@ -66,7 +89,9 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
     final language = context.locale.languageCode;
 
     return Scaffold(
-      appBar: AppBar(title: Text('learning_stage'.tr())),
+      appBar: AppBar(title: Text(widget.onCreateAccount != null
+          ? (context.locale.languageCode == 'ar' ? 'اختيار المرحلة' : 'Choose a stage')
+          : 'learning_stage'.tr())),
       body: MathBackground(
         showSymbols: true,
         child: SafeArea(
@@ -117,13 +142,17 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
               children: [
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'choose_learning_stage_title'.tr(),
+                  widget.onCreateAccount == null ? 'choose_learning_stage_title'.tr()
+                    : (language == 'ar' ? 'اختار مرحلتك التعليمية' : 'Choose your learning stage'),
                   style: Theme.of(context).textTheme.headlineMedium,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'choose_learning_stage_desc'.tr(),
+                  widget.onCreateAccount == null ? 'choose_learning_stage_desc'.tr()
+                    : (language == 'ar'
+                        ? 'اختار المرحلة اللي بتناسبك حتى نعرض فئاتها ومسائلها بعد إنشاء حسابك.'
+                        : 'Choose your stage to see its topics and problems once your account is created.'),
                   style: Theme.of(context).textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -179,7 +208,7 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
                               ),
                               const Spacer(),
                               if (user?.currentStageId == stage.id)
-                                Text(language == 'ar' ? 'مرحلتي الحالية' : 'My stage',
+                                Text(language == 'ar' ? 'المرحلة الحالية' : 'Current stage',
                                   maxLines: 1, overflow: TextOverflow.ellipsis,
                                   style: Theme.of(context).textTheme.labelSmall),
                             ],
@@ -191,10 +220,12 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 PremiumButton(
-                  label: effective != null && effective == user?.currentStageId
-                      ? (language == 'ar' ? 'عرض فئاتي المفتوحة' : 'See my unlocked topics')
-                      : (language == 'ar' ? 'حفظ المرحلة وعرض الفئات' : 'Save stage and show topics'),
-                  leadingIcon: Icons.arrow_forward_rounded,
+                  label: widget.onCreateAccount != null
+                      ? (language == 'ar' ? 'إكمال إنشاء الحساب' : 'Finish registration')
+                      : effective != null && effective == user?.currentStageId
+                      ? (language == 'ar' ? 'استكشف الفئات' : 'Explore topics')
+                      : (language == 'ar' ? 'حفظ المرحلة والمتابعة' : 'Save stage and continue'),
+                  trailingIcon: Icons.arrow_forward_rounded,
                   onPressed: effective == null || _saving
                       ? null
                       : () => _save(effective),

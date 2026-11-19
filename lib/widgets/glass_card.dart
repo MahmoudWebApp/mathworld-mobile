@@ -29,10 +29,12 @@ class GlassCard extends StatelessWidget {
     final effectiveBorder =
         border ?? BorderSide(color: scheme.outline.withValues(alpha: 0.88));
     final decoration = BoxDecoration(
+        // Preserve caller-provided translucent tints. Overriding their
+        // alpha to 1 made the green/red answer-result cards opaque in dark mode.
         color: gradient == null
-            ? (color ?? scheme.surface).withValues(
+            ? (color ?? scheme.surface.withValues(
                 alpha: blur > 0 ? (isDark ? 0.84 : 0.90) : 1,
-              )
+              ))
             : null,
         gradient: gradient,
         borderRadius: radius,
