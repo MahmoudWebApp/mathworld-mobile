@@ -11,9 +11,8 @@ import '../../models/dashboard_stats.dart';
 import '../../models/learning_journey.dart';
 import '../../models/daily_challenge.dart';
 import '../../providers/dashboard_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/learning_journey_provider.dart';
-import '../../providers/notifications_provider.dart';
-import '../notifications/notifications_screen.dart';
 import '../../providers/daily_challenge_provider.dart';
 import '../../providers/student_badges_provider.dart';
 import '../../utils/layout_utils.dart';
@@ -94,14 +93,8 @@ class HomeScreen extends ConsumerWidget {
                 AnimatedEntry(child: _HeroCard(
                   dashboard: dashboard,
                   journey: learningJourney.valueOrNull,
+                  onContinue: onOpenStages,
                 )),
-                const SizedBox(height: AppSpacing.md),
-                // The learner's next action must remain visible before stats,
-                // optional badges or a long activity history.
-                AnimatedEntry(
-                  index: 1,
-                  child: _ContinueLearningCard(onTap: onOpenStages),
-                ),
                 const SizedBox(height: AppSpacing.xl),
                 if (backendMismatch) ...[
                   GlassCard(
@@ -478,117 +471,81 @@ class _JourneyStatusCard extends StatelessWidget {
 class _HeroCard extends ConsumerWidget {
   final DashboardStats dashboard;
   final LearningJourney? journey;
+  final VoidCallback onContinue;
 
-  const _HeroCard({required this.dashboard, required this.journey});
+  const _HeroCard({
+    required this.dashboard,
+    required this.journey,
+    required this.onContinue,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final unreadNotifications = ref.watch(notificationsUnreadCountProvider)
-        .valueOrNull ?? 0;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final ar = context.locale.languageCode == 'ar';
+    final user = ref.watch(authProvider.select((state) => state.user));
+    final premium = user?.subscriptionType.toLowerCase() == 'premium';
     final initial = dashboard.fullName.trim().isEmpty
         ? 'M'
         : dashboard.fullName.trim().characters.first.toUpperCase();
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.xl),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         gradient: isDark ? AppGradients.darkHero : AppGradients.lightHero,
         borderRadius: BorderRadius.circular(AppRadius.xl),
         border: Border.all(color: Theme.of(context).colorScheme.outline),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: isDark ? 0.12 : 0.08),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
+            color: AppColors.primary.withValues(alpha: isDark ? .10 : .06),
+            blurRadius: 20,
+            offset: const Offset(0, 7),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 54,
-                height: 54,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  gradient: AppGradients.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  initial,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
+          Row(children: [
+            Container(
+              width: 48, height: 48,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                gradient: AppGradients.primary,
+                shape: BoxShape.circle,
               ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'hello_user_name'.tr(
-                        namedArgs: {'name': dashboard.fullName},
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'home_progress_message'.tr(),
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    if (dashboard.memberSince != null) ...[
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        'member_since_value'.tr(
-                          namedArgs: {
-                            'date': formatLocalizedDateTime(
-                              context,
-                              dashboard.memberSince,
-                            ),
-                          },
-                        ),
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              IconButton(
-                tooltip: 'notifications_title'.tr(),
-                onPressed: () => showModalBottomSheet<void>(
-                  context: context,
-                  isScrollControlled: true,
-                  useSafeArea: true,
-                  showDragHandle: true,
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  builder: (sheetContext) => const FractionallySizedBox(
-                    heightFactor: .86,
-                    child: NotificationsScreen(),
-                  ),
-                ),
-                icon: Badge(
-                  isLabelVisible: unreadNotifications > 0,
-                  smallSize: 9,
-                  child: const Icon(Icons.notifications_none_rounded),
-                ),
-              ),
-            ],
-          ),
-          if (journey != null) ...[
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              '${'learning_stage'.tr()}: ${journey!.getName(context.locale.languageCode)}',
-              style: Theme.of(context).textTheme.bodyMedium,
+              child: Text(initial,
+                style: const TextStyle(color: Colors.white,
+                    fontSize: 19, fontWeight: FontWeight.w800)),
             ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(dashboard.fullName,
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800)),
+                const SizedBox(height: AppSpacing.xs),
+                Text(premium ? (ar ? 'حساب Premium' : 'Premium account')
+                  : (ar ? 'حساب Free' : 'Free account'),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
+              ],
+            )),
+          ]),
+          if (journey != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            Text(journey!.getName(context.locale.languageCode),
+              style: Theme.of(context).textTheme.bodyMedium),
           ],
+          const SizedBox(height: AppSpacing.lg),
+          PremiumButton(
+            onPressed: onContinue,
+            label: ar ? 'تابع التعلم' : 'Continue learning',
+            trailingIcon: Icons.arrow_forward_rounded,
+            expand: true,
+          ),
         ],
       ),
     );
