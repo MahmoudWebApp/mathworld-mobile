@@ -43,6 +43,26 @@ class AppColors {
   static const Color darkText = Color(0xFFFBF8FF);
   static const Color darkMuted = Color(0xFFB9ADBF);
   static const Color darkBorder = Color(0xFF40344D);
+
+  /// Identical stage accents to the web's StagePremiumCard identity.
+  static Color stageForOrder(int order) {
+    const colors = [stageCyan, stageOrange, stageGreen, stageViolet];
+    return colors[((order <= 0 ? 1 : order) - 1) % colors.length];
+  }
+
+  /// Problem previews may contain a stage name but not its editorial order.
+  /// Prefer the bilingual stage identity before falling back to the legacy ID.
+  static Color stageForIdentity(int stageId, String? stageName) {
+    final name = (stageName ?? '').trim().toLowerCase();
+    if (name.contains('ابتد') || name.contains('elementary') ||
+        name.contains('primary')) return stageCyan;
+    if (name.contains('إعداد') || name.contains('اعداد') ||
+        name.contains('middle') || name.contains('intermediate')) return stageOrange;
+    if (name.contains('ثانو') || name.contains('secondary') ||
+        name.contains('high school')) return stageGreen;
+    if (name.contains('جامع') || name.contains('univers')) return stageViolet;
+    return stageForOrder(stageId);
+  }
 }
 
 class AppSpacing {
