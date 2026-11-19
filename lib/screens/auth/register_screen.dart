@@ -6,12 +6,12 @@ import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
 import '../../core/utils/validators.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/stages_provider.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/brand_logo.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/premium_button.dart';
 import '../../widgets/social_sign_in_buttons.dart';
+import '../stages/learning_stage_screen.dart';
 
 /// Displays the account registration form.
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -26,7 +26,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  int? _selectedStageId;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   @override
@@ -38,40 +37,27 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-    if (_selectedStageId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('registration_stage_required'.tr())),
+  Future<void> _registerWithStage(int stageId) =>
+      ref.read(authProvider.notifier).register(
+        _nameController.text.trim(),
+        _emailController.text.trim(),
+        _passwordController.text,
+        stageId,
       );
-      return;
-    }
-    try {
-      await ref.read(authProvider.notifier).register(
-            _nameController.text.trim(),
-            _emailController.text.trim(),
-            _passwordController.text,
-            _selectedStageId!,
-          );
-      if (!mounted) {
-        return;
-      }
-      final user = ref.read(authProvider).user;
-      final destination = user?.role == 'Student' &&
-              user?.currentStageId == null
-          ? AppRoutes.learningStage
-          : AppRoutes.home;
-      Navigator.pushNamedAndRemoveUntil(context, destination, (_) => false);
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizedErrorMessage(error))),
-      );
-    }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+    // Keep registration details in memory. The existing backend requires
+    // StageId, so account creation happens after explicit stage confirmation.
+    // Nothing is registered or preselected while browsing this first screen.
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => LearningStageScreen(
+          onCreateAccount: _registerWithStage,
+        ),
+      ),
+    );
   }
 
   @override
@@ -79,7 +65,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final isLoading = ref.watch(
       authProvider.select((state) => state.isSubmitting),
     );
-    final stages = ref.watch(stagesProvider);
     return Scaffold(
       appBar: AppBar(),
       body: MathBackground(
@@ -122,45 +107,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           validator: (value) => (value?.trim().length ?? 0) >= 2
                               ? null
                               : 'full_name_required'.tr(),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        Text(
-                          'registration_stage_label'.tr(),
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        stages.when(
-                          loading: () => const Padding(
-                            padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-                            child: LinearProgressIndicator(),
-                          ),
-                          error: (error, _) => OutlinedButton.icon(
-                            onPressed: () => ref.invalidate(stagesProvider),
-                            icon: const Icon(Icons.refresh_rounded),
-                            label: Text('retry'.tr()),
-                          ),
-                          data: (items) => DropdownButtonFormField<int>(
-                            value: _selectedStageId,
-                            isExpanded: true,
-                            decoration: InputDecoration(
-                              labelText: 'registration_stage_select'.tr(),
-                              prefixIcon: const Icon(Icons.school_outlined),
-                            ),
-                            items: items.map((stage) => DropdownMenuItem<int>(
-                              value: stage.id,
-                              child: Text(stage.getName(context.locale.languageCode)),
-                            )).toList(),
-                            onChanged: isLoading ? null : (value) =>
-                                setState(() => _selectedStageId = value),
-                            validator: (value) => value == null
-                                ? 'registration_stage_required'.tr()
-                                : null,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          'registration_stage_hint'.tr(),
-                          style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const SizedBox(height: AppSpacing.md),
                         TextFormField(
@@ -237,7 +183,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         const SizedBox(height: AppSpacing.xl),
                         PremiumButton(
                           onPressed: isLoading ? null : _submit,
-                          label: 'create_account'.tr(),
+                          label: context.locale.languageCode == 'ar' ? 'متابعة' : 'Continue',
                           leadingIcon: Icons.person_add_alt_1_rounded,
                           isLoading: isLoading,
                           expand: true,
