@@ -612,7 +612,7 @@ class _StatsGrid extends StatelessWidget {
         Icons.trending_up_rounded,
         '${journey.completionPercent}%',
         'stage_completion'.tr(),
-        AppColors.cyan,
+        AppColors.brandViolet,
       ),
       _StatData(
         Icons.favorite_border_rounded,
@@ -653,9 +653,14 @@ class _StatsGrid extends StatelessWidget {
                       child: Icon(item.icon, color: item.color),
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    Text(
-                      item.value,
-                      style: Theme.of(context).textTheme.headlineSmall,
+                    ShaderMask(
+                      shaderCallback: AppGradients.primary.createShader,
+                      blendMode: BlendMode.srcIn,
+                      child: Text(
+                        item.value,
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w800, color: Colors.white),
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
@@ -773,8 +778,13 @@ class _LearningJourneyCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('learning_journey'.tr(),
-              style: Theme.of(context).textTheme.titleLarge),
+          ShaderMask(
+            shaderCallback: AppGradients.primary.createShader,
+            blendMode: BlendMode.srcIn,
+            child: Text('learning_journey'.tr(),
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w800, color: Colors.white)),
+          ),
           const SizedBox(height: AppSpacing.xs),
           Text(journey.getName(language),
               style: Theme.of(context).textTheme.bodyMedium),
