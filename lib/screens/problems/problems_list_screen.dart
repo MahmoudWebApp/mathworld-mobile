@@ -95,7 +95,13 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
     final problemsState = ref.watch(problemsProvider(parameters));
 
     return Scaffold(
-      appBar: AppBar(title: Text(_title ?? 'problems'.tr())),
+      appBar: AppBar(title: Text(
+        _title ?? 'problems'.tr(),
+        style: _stageId == null ? null : TextStyle(
+          color: AppColors.stageForOrder(_stageId!),
+          fontWeight: FontWeight.w800,
+        ),
+      )),
       body: MathBackground(
         child: Column(
           children: [
