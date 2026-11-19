@@ -136,18 +136,20 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             if (currentUser?.role == 'Student')
+              const SizedBox(height: AppSpacing.md),
+            if (currentUser?.role == 'Student')
               GlassCard(
                 padding: EdgeInsets.zero,
                 child: ListTile(
                   leading: const Icon(Icons.workspace_premium_outlined),
                   title: Text(context.locale.languageCode == 'ar'
                       ? (currentUser?.subscriptionType.toLowerCase() == 'premium'
-                          ? 'مميزات حسابي' : 'ترقية الحساب')
+                          ? 'مميزات حسابي' : 'مميزات الحساب')
                       : (currentUser?.subscriptionType.toLowerCase() == 'premium'
-                          ? 'My account benefits' : 'Upgrade account')),
+                          ? 'My account benefits' : 'Account benefits')),
                   subtitle: Text(context.locale.languageCode == 'ar'
-                      ? 'اكتشف المميزات وأدخل رمز التفعيل'
-                      : 'Explore benefits and redeem your code'),
+                      ? 'المميزات ورمز التفعيل'
+                      : 'Benefits and activation code'),
                   trailing: LayoutUtils.forwardIcon(context),
                   onTap: () => Navigator.pushNamed(
                     context, AppRoutes.premiumBenefits,
@@ -155,16 +157,16 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
             if (currentUser?.role == 'Student')
+              const SizedBox(height: AppSpacing.md),
+            if (currentUser?.role == 'Student')
               GlassCard(
                 padding: EdgeInsets.zero,
                 child: ListTile(
                   leading: const Icon(Icons.school_outlined),
                   title: Text('learning_stage'.tr()),
                   subtitle: Text(
-                    [
-                      if (selectedStage != null) selectedStage,
-                      'change_stage_keeps_progress'.tr(),
-                    ].join(' · '),
+                    selectedStage ?? (context.locale.languageCode == 'ar'
+                        ? 'اختيار المرحلة' : 'Choose a stage'),
                   ),
                   trailing: LayoutUtils.forwardIcon(context),
                   onTap: () => Navigator.pushNamed(
@@ -174,25 +176,31 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
             if (currentUser?.role == 'Student')
+              const SizedBox(height: AppSpacing.md),
+            if (currentUser?.role == 'Student')
               GlassCard(
                 padding: EdgeInsets.zero,
                 child: ListTile(
                   leading: const Icon(Icons.bar_chart_rounded),
                   title: Text(context.locale.languageCode == 'ar'
                       ? (currentUser?.subscriptionType.toLowerCase() == 'premium'
-                          ? 'تقريري الشخصي' : 'تقارير متقدمة بعد الترقية')
+                          ? 'تقريري الشخصي' : 'تقارير متقدمة')
                       : (currentUser?.subscriptionType.toLowerCase() == 'premium'
-                          ? 'My progress report' : 'Advanced reports after upgrading')),
+                          ? 'My progress report' : 'Advanced reports')),
                   subtitle: Text(context.locale.languageCode == 'ar'
                       ? 'إحصائيات المحاولات والنقاط والفئات'
                       : 'Attempts, points and category progress'),
-                  trailing: LayoutUtils.forwardIcon(context),
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    currentUser?.subscriptionType.toLowerCase() == 'premium'
-                        ? AppRoutes.premiumAnalytics
-                        : AppRoutes.premiumBenefits,
-                  ),
+                  trailing: currentUser?.subscriptionType.toLowerCase() == 'premium'
+                      ? LayoutUtils.forwardIcon(context)
+                      : Tooltip(
+                          message: context.locale.languageCode == 'ar'
+                              ? 'خاص بحساب Premium' : 'Premium account',
+                          child: Icon(Icons.lock_outline_rounded,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        ),
+                  onTap: currentUser?.subscriptionType.toLowerCase() == 'premium'
+                      ? () => Navigator.pushNamed(context, AppRoutes.premiumAnalytics)
+                      : null,
                 ),
               ),
             const SizedBox(height: 24),
