@@ -114,7 +114,15 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('problem_details'.tr())),
+      appBar: AppBar(title: Text(
+        loadedProblem?.stageName.isNotEmpty == true
+            ? loadedProblem!.stageName : 'problem_details'.tr(),
+        style: loadedProblem == null ? null : TextStyle(
+          color: AppColors.stageForIdentity(
+            loadedProblem.stageId, loadedProblem.stageName),
+          fontWeight: FontWeight.w800,
+        ),
+      )),
       body: MathBackground(
         child: state.problem.when(
           loading: () => const Center(child: CircularProgressIndicator()),
