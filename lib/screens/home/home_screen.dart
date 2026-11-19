@@ -794,12 +794,30 @@ class _LearningJourneyCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          LinearProgressIndicator(
-            semanticsLabel: 'stage_completion'.tr(),
-            semanticsValue: '${journey.completionPercent}%',
-            value: journey.completionPercent.clamp(0, 100) / 100,
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(20),
+          Semantics(
+            label: 'stage_completion'.tr(),
+            value: '${journey.completionPercent}%',
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: SizedBox(
+                height: 8,
+                child: LayoutBuilder(
+                  builder: (context, limits) => Stack(children: [
+                    Container(color: AppColors.primary.withValues(alpha: 0.12)),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Container(
+                        width: limits.maxWidth *
+                            (journey.completionPercent.clamp(0, 100) / 100),
+                        decoration: const BoxDecoration(
+                          gradient: AppGradients.primary,
+                        ),
+                      ),
+                    ),
+                  ]),
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
           Wrap(
