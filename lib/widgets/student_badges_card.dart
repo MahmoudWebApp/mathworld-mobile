@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -67,7 +68,7 @@ class StudentBadgesCard extends ConsumerWidget {
                     Text(ar ? 'الشارات المكتسبة' : 'Earned badges',
                       style: Theme.of(context).textTheme.bodyMedium),
                     Directionality(
-                      textDirection: TextDirection.ltr,
+                      textDirection: ui.TextDirection.ltr,
                       child: Text('${result.earnedCount} / ${result.totalBadges}',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w800,
@@ -130,7 +131,7 @@ class StudentBadgesCard extends ConsumerWidget {
                               style: Theme.of(context).textTheme.labelMedium,
                             ),
                             Directionality(
-                              textDirection: TextDirection.ltr,
+                              textDirection: ui.TextDirection.ltr,
                               child: Text(
                                 '${badge.currentProgress}/${badge.requiredSolved}',
                                 style: Theme.of(context).textTheme.bodySmall,
