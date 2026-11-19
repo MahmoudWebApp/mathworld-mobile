@@ -208,7 +208,7 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
                               ),
                               const Spacer(),
                               if (user?.currentStageId == stage.id)
-                                Text(language == 'ar' ? 'مرحلتي الحالية' : 'My stage',
+                                Text(language == 'ar' ? 'المرحلة الحالية' : 'Current stage',
                                   maxLines: 1, overflow: TextOverflow.ellipsis,
                                   style: Theme.of(context).textTheme.labelSmall),
                             ],
@@ -223,8 +223,8 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
                   label: widget.onCreateAccount != null
                       ? (language == 'ar' ? 'إكمال إنشاء الحساب' : 'Finish registration')
                       : effective != null && effective == user?.currentStageId
-                      ? (language == 'ar' ? 'عرض فئاتي المفتوحة' : 'See my unlocked topics')
-                      : (language == 'ar' ? 'حفظ المرحلة وعرض الفئات' : 'Save stage and show topics'),
+                      ? (language == 'ar' ? 'استكشف الفئات' : 'Explore topics')
+                      : (language == 'ar' ? 'حفظ المرحلة والمتابعة' : 'Save stage and continue'),
                   trailingIcon: Icons.arrow_forward_rounded,
                   onPressed: effective == null || _saving
                       ? null
