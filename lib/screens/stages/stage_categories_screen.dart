@@ -505,7 +505,7 @@ class _CategoryCard extends StatelessWidget {
                                 ? 'لا توجد مسائل منشورة بعد' : 'No published problems yet')
                             : locked
                                 ? (localeCode == 'ar'
-                                    ? 'Premium · مقفلة' : 'Premium · Locked')
+                                    ? 'بعد ترقية الحساب' : 'Unlock with upgrade')
                                 : (localeCode == 'ar' ? 'مفتوحة' : 'Unlocked'),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -538,17 +538,32 @@ class _CategoryCard extends StatelessWidget {
                 ),
                 if (category.progress != null) ...[
                   const SizedBox(height: AppSpacing.sm),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(99),
-                    child: LinearProgressIndicator(
-                      semanticsLabel: localeCode == 'ar'
-                          ? 'تقدم $title' : '$title progress',
-                      semanticsValue:
-                          '${(category.progress! * 100).round()}%',
-                      value: category.progress,
-                      minHeight: 5,
-                      backgroundColor: accent.withValues(alpha: 0.10),
-                      valueColor: AlwaysStoppedAnimation(accent),
+                  Semantics(
+                    label: localeCode == 'ar'
+                        ? 'تقدم $title' : '$title progress',
+                    value: '${(category.progress! * 100).round()}%',
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(99),
+                      child: SizedBox(
+                        height: 5,
+                        child: LayoutBuilder(
+                          builder: (context, limits) => Stack(
+                            children: [
+                              Container(color: accent.withValues(alpha: 0.10)),
+                              Align(
+                                alignment: AlignmentDirectional.centerStart,
+                                child: Container(
+                                  width: limits.maxWidth *
+                                      category.progress!.clamp(0.0, 1.0).toDouble(),
+                                  decoration: const BoxDecoration(
+                                    gradient: AppGradients.primary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -571,7 +586,7 @@ class _CategoryCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(localeCode == 'ar' ? 'هذه الفئة ضمن Premium' : 'This topic requires Premium',
+              Text(localeCode == 'ar' ? 'هذه الفئة بتفتح بعد ترقية الحساب' : 'Upgrade your account to unlock this topic',
                 style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: AppSpacing.sm),
               Text(localeCode == 'ar'
@@ -585,8 +600,8 @@ class _CategoryCard extends StatelessWidget {
                     guest ? AppRoutes.login : AppRoutes.premiumBenefits);
                 },
                 child: Text(localeCode == 'ar'
-                    ? (guest ? 'تسجيل الدخول' : 'تغيير الخطة')
-                    : (guest ? 'Sign in' : 'Change plan')),
+                    ? (guest ? 'تسجيل الدخول' : 'ترقية الحساب')
+                    : (guest ? 'Sign in' : 'Upgrade account')),
               ),
             ],
           ),
