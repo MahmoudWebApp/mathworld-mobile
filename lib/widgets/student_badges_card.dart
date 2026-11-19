@@ -60,11 +60,21 @@ class StudentBadgesCard extends ConsumerWidget {
             data: (result) => Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  ar
-                      ? 'حصلت على ${result.earnedCount} من ${result.totalBadges} شارات'
-                      : 'Earned ${result.earnedCount} of ${result.totalBadges} badges',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: AppSpacing.sm,
+                  children: [
+                    Text(ar ? 'الشارات المكتسبة' : 'Earned badges',
+                      style: Theme.of(context).textTheme.bodyMedium),
+                    Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Text('${result.earnedCount} / ${result.totalBadges}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 if (result.badges.any((badge) => !badge.isAvailable)) ...[
                   const SizedBox(height: AppSpacing.sm),
@@ -119,9 +129,12 @@ class StudentBadgesCard extends ConsumerWidget {
                               overflow: TextOverflow.ellipsis,
                               style: Theme.of(context).textTheme.labelMedium,
                             ),
-                            Text(
-                              '${badge.currentProgress}/${badge.requiredSolved}',
-                              style: Theme.of(context).textTheme.bodySmall,
+                            Directionality(
+                              textDirection: TextDirection.ltr,
+                              child: Text(
+                                '${badge.currentProgress}/${badge.requiredSolved}',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
                             ),
                             if (!badge.isAvailable)
                               Text(
