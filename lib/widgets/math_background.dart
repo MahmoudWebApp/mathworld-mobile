@@ -11,7 +11,7 @@ class MathBackground extends StatelessWidget {
   const MathBackground({
     super.key,
     required this.child,
-    this.showSymbols = false,
+    this.showSymbols = true,
   });
 
   @override
