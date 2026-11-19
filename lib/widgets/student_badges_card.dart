@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/design_tokens.dart';
 import '../providers/student_badges_provider.dart';
-import '../config/app_routes.dart';
 import 'glass_card.dart';
 
 class StudentBadgesCard extends ConsumerWidget {
@@ -77,22 +76,6 @@ class StudentBadgesCard extends ConsumerWidget {
                     ),
                   ],
                 ),
-                if (result.badges.any((badge) => !badge.isAvailable)) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    ar ? 'في شارات إضافية بتفتح لما ترقّي حسابك. تقدّمك محفوظ.'
-                        : 'More badges unlock when you upgrade your account. Your progress is saved.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: TextButton(
-                      onPressed: () => Navigator.pushNamed(
-                        context, AppRoutes.premiumBenefits),
-                      child: Text(ar ? 'ترقية الحساب' : 'Upgrade account'),
-                    ),
-                  ),
-                ],
                 const SizedBox(height: AppSpacing.md),
                 Wrap(
                   spacing: AppSpacing.sm,
@@ -152,7 +135,7 @@ class StudentBadgesCard extends ConsumerWidget {
                                               (badge.currentProgress / badge.requiredSolved)
                                                   .clamp(0.0, 1.0),
                                           decoration: const BoxDecoration(
-                                            gradient: AppGradients.primary,
+                                            color: AppColors.success,
                                           ),
                                         ),
                                       ),
