@@ -8,6 +8,7 @@ import '../../config/design_tokens.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/stages_provider.dart';
+import '../../providers/social_link_status_provider.dart';
 import '../../services/google_identity_service.dart';
 import '../../core/utils/error_message.dart';
 import '../../core/errors/app_exception.dart';
@@ -25,6 +26,9 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final currentUser = ref.watch(authProvider.select((state) => state.user));
+    final googleLinkState = GoogleIdentityService.available && currentUser?.role == 'Student'
+        ? ref.watch(googleLinkedProvider)
+        : null;
     final stages = ref.watch(stagesProvider).valueOrNull ?? [];
     final stage = stages.where((stage) => stage.id == currentUser?.currentStageId);
     final selectedStage = stage.isNotEmpty
@@ -190,33 +194,78 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
             const SizedBox(height: 24),
-            if (GoogleIdentityService.available) ...[
+            if (GoogleIdentityService.available &&
+                currentUser?.role == 'Student') ...[
+              _SectionTitle(
+                title: context.locale.languageCode == 'ar'
+                    ? 'الحسابات المرتبطة'
+                    : 'Connected accounts',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               GlassCard(
                 padding: EdgeInsets.zero,
                 child: ListTile(
-                  leading: const Icon(Icons.verified_user_outlined),
-                  title: Text('link_google'.tr()),
-                  subtitle: Text('link_google_desc'.tr()),
-                  trailing: const Icon(Icons.link_rounded),
-                  onTap: () async {
-                    try {
-                      await ref.read(authProvider.notifier).linkGoogle();
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('google_linked'.tr())),
-                      );
-                    } catch (error) {
-                      if (!context.mounted) return;
-                      if (error is AppException &&
-                          error.type == AppExceptionType.cancelled) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(localizedErrorMessage(error))),
-                      );
-                    }
-                  },
+                  leading: Icon(
+                    googleLinkState?.valueOrNull == true
+                        ? Icons.verified_rounded
+                        : Icons.account_circle_outlined,
+                    color: AppColors.primary,
+                  ),
+                  title: Text(googleLinkState?.valueOrNull == true
+                      ? (context.locale.languageCode == 'ar'
+                          ? 'Google مرتبط بالحساب'
+                          : 'Google account connected')
+                      : 'link_google'.tr()),
+                  subtitle: Text(googleLinkState?.hasError == true
+                      ? (context.locale.languageCode == 'ar'
+                          ? 'تعذّر التأكد من الربط. اضغط لإعادة المحاولة.'
+                          : 'Could not verify. Tap to retry.')
+                      : googleLinkState?.isLoading == true
+                          ? (context.locale.languageCode == 'ar'
+                              ? 'جاري التحقق من الربط…'
+                              : 'Checking connection…')
+                          : googleLinkState?.valueOrNull == true
+                              ? (context.locale.languageCode == 'ar'
+                                  ? 'ما في حاجة لإعادة ربط الحساب.'
+                                  : 'No need to connect again.')
+                              : 'link_google_desc'.tr()),
+                  trailing: googleLinkState?.isLoading == true
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(googleLinkState?.valueOrNull == true
+                          ? Icons.check_circle_rounded
+                          : googleLinkState?.hasError == true
+                              ? Icons.refresh_rounded
+                              : Icons.link_rounded),
+                  onTap: googleLinkState?.valueOrNull == true ||
+                          googleLinkState?.isLoading == true
+                      ? null
+                      : () async {
+                          if (googleLinkState?.hasError == true) {
+                            ref.invalidate(googleLinkedProvider);
+                            return;
+                          }
+                          try {
+                            await ref.read(authProvider.notifier).linkGoogle();
+                            ref.invalidate(googleLinkedProvider);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('google_linked'.tr())),
+                            );
+                          } catch (error) {
+                            if (!context.mounted) return;
+                            if (error is AppException &&
+                                error.type == AppExceptionType.cancelled) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(localizedErrorMessage(error))),
+                            );
+                          }
+                        },
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xl),
             ],
             _SectionTitle(title: 'about_and_legal'.tr()),
             const SizedBox(height: 10),
