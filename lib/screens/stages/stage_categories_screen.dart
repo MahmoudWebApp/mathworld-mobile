@@ -343,7 +343,14 @@ class _CategoryCard extends StatelessWidget {
     final mutedColor = isDark ? AppColors.darkMuted : AppColors.lightMuted;
     final noPublishedProblems = category.problemsCount == 0;
 
-    return GlassCard(
+    final lockTooltipKey = GlobalKey<TooltipState>();
+    return Tooltip(
+      key: lockTooltipKey,
+      message: localeCode == 'ar'
+          ? 'هذه الفئة متاحة لحساب Premium'
+          : 'Available with Premium',
+      triggerMode: TooltipTriggerMode.manual,
+      child: GlassCard(
       // The API now returns a real per-stage count. Never navigate into a
       // category known to have zero questions and then show a dead-end page.
       // Unavailable topics never route to a paywall or empty question list.
@@ -355,7 +362,7 @@ class _CategoryCard extends StatelessWidget {
                   : 'This category has no published problems yet.'),
             ))
           : locked
-              ? () => _explainLockedCategory(context)
+              ? () => lockTooltipKey.currentState?.ensureTooltipVisible()
               : () => Navigator.pushNamed(
                     context,
                     AppRoutes.problems,
@@ -460,31 +467,7 @@ class _CategoryCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  void _explainLockedCategory(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      useSafeArea: true,
-      builder: (sheetContext) => Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.lock_outline_rounded, size: 20),
-            const SizedBox(width: AppSpacing.sm),
-            Flexible(child: Text(
-              localeCode == 'ar'
-                ? 'هذه الفئة متاحة لحساب Premium'
-                : 'Available with Premium',
-              style: Theme.of(sheetContext).textTheme.titleMedium,
-            )),
-          ],
-        ),
-      ),
+    ),
     );
   }
 
