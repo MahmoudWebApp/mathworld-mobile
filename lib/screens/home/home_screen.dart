@@ -813,14 +813,14 @@ class _LearningJourneyCard extends StatelessWidget {
                 height: 8,
                 child: LayoutBuilder(
                   builder: (context, limits) => Stack(children: [
-                    Container(color: AppColors.primary.withValues(alpha: 0.12)),
+                    Container(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.45)),
                     Align(
                       alignment: AlignmentDirectional.centerStart,
                       child: Container(
                         width: limits.maxWidth *
                             (journey.completionPercent.clamp(0, 100) / 100),
                         decoration: const BoxDecoration(
-                          gradient: AppGradients.primary,
+                          color: AppColors.success,
                         ),
                       ),
                     ),
