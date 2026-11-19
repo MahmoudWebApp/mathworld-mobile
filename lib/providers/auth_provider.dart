@@ -23,6 +23,7 @@ import 'notification_provider.dart';
 import 'premium_analytics_provider.dart';
 import 'stage_category_access_provider.dart';
 import 'student_badges_provider.dart';
+import 'social_link_status_provider.dart';
 import 'repositories_provider.dart';
 import 'stages_provider.dart';
 import 'user_lists_provider.dart';
@@ -386,6 +387,7 @@ class AuthNotifier extends StateNotifier<AuthState>
     _ref.invalidate(notificationInboxProvider);
     _ref.invalidate(premiumAnalyticsProvider);
     _ref.invalidate(studentBadgesProvider);
+    _ref.invalidate(googleLinkedProvider);
   }
 
   void consumeSessionExpired() {

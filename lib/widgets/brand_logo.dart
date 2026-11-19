@@ -21,7 +21,6 @@ class BrandLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
     final markSize = height != null ? (height! < 52 ? height! : 52.0) : 48.0;
     return Semantics(
       label: semanticsLabel ?? 'MathWorld',
@@ -40,13 +39,17 @@ class BrandLogo extends StatelessWidget {
                 child: FittedBox(
                   alignment: AlignmentDirectional.centerStart,
                   fit: fit == BoxFit.fill ? BoxFit.scaleDown : fit,
-                  child: Text(
-                    'MathWorld',
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      color: dark ? const Color(0xFFEC4899) : AppColors.primary,
+                  child: ShaderMask(
+                    shaderCallback: AppGradients.primary.createShader,
+                    blendMode: BlendMode.srcIn,
+                    child: const Text(
+                      'MathWorld',
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),

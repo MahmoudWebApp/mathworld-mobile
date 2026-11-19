@@ -1,9 +1,11 @@
+import 'dart:ui' as ui;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/design_tokens.dart';
 import '../providers/student_badges_provider.dart';
+import '../config/app_routes.dart';
 import 'glass_card.dart';
 
 class StudentBadgesCard extends ConsumerWidget {
@@ -24,10 +26,15 @@ class StudentBadgesCard extends ConsumerWidget {
                   color: AppColors.primary, size: 27),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: Text(
-                  ar ? 'شارات إنجازاتي' : 'My achievement badges',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+                child: ShaderMask(
+                  shaderCallback: AppGradients.primary.createShader,
+                  blendMode: BlendMode.srcIn,
+                  child: Text(
+                    ar ? 'شارات إنجازاتي' : 'My achievement badges',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -54,23 +61,50 @@ class StudentBadgesCard extends ConsumerWidget {
             data: (result) => Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  ar
-                      ? 'حصلت على ${result.earnedCount} من ${result.totalBadges} شارات'
-                      : 'Earned ${result.earnedCount} of ${result.totalBadges} badges',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: AppSpacing.sm,
+                  children: [
+                    Text(ar ? 'الشارات المكتسبة' : 'Earned badges',
+                      style: Theme.of(context).textTheme.bodyMedium),
+                    Directionality(
+                      textDirection: ui.TextDirection.ltr,
+                      child: Text('${result.earnedCount} / ${result.totalBadges}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+                if (result.badges.any((badge) => !badge.isAvailable)) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    ar ? 'في شارات إضافية بتفتح لما ترقّي حسابك. تقدّمك محفوظ.'
+                        : 'More badges unlock when you upgrade your account. Your progress is saved.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: TextButton(
+                      onPressed: () => Navigator.pushNamed(
+                        context, AppRoutes.premiumBenefits),
+                      child: Text(ar ? 'ترقية الحساب' : 'Upgrade account'),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.md),
                 Wrap(
                   spacing: AppSpacing.sm,
                   runSpacing: AppSpacing.sm,
                   children: result.badges.map((badge) {
                     final color = badge.earned
-                        ? AppColors.primary
+                        ? AppColors.brandViolet
                         : Theme.of(context).colorScheme.outline;
                     return Semantics(
                       label: '${ar ? badge.titleAr : badge.titleEn}: '
-                          '${badge.currentProgress}/${badge.requiredSolved}',
+                          '${badge.currentProgress}/${badge.requiredSolved}. '
+                          '${!badge.isAvailable ? (ar ? 'تُفتح بعد ترقية الحساب' : 'Unlocks after account upgrade') : ''}',
                       child: Container(
                         width: 136,
                         padding: const EdgeInsets.all(AppSpacing.sm),
@@ -96,9 +130,44 @@ class StudentBadgesCard extends ConsumerWidget {
                               overflow: TextOverflow.ellipsis,
                               style: Theme.of(context).textTheme.labelMedium,
                             ),
-                            Text(
-                              '${badge.currentProgress}/${badge.requiredSolved}',
-                              style: Theme.of(context).textTheme.bodySmall,
+                            Directionality(
+                              textDirection: ui.TextDirection.ltr,
+                              child: Text(
+                                '${badge.currentProgress}/${badge.requiredSolved}',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ),
+                            if (!badge.isAvailable)
+                              Text(
+                                ar ? 'تُفتح بعد الترقية' : 'Unlocks after upgrade',
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(color: AppColors.brandViolet),
+                              ),
+                            const SizedBox(height: 6),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: SizedBox(
+                                height: 5,
+                                child: LayoutBuilder(
+                                  builder: (context, limits) => Stack(
+                                    children: [
+                                      Container(color: color.withValues(alpha: 0.10)),
+                                      Align(
+                                        alignment: AlignmentDirectional.centerStart,
+                                        child: Container(
+                                          width: limits.maxWidth *
+                                              (badge.currentProgress / badge.requiredSolved)
+                                                  .clamp(0.0, 1.0),
+                                          decoration: const BoxDecoration(
+                                            gradient: AppGradients.primary,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
                         ),
