@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
 import '../../models/problem.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/learning_provider.dart';
 import '../../providers/problem_details_provider.dart';
 import '../../widgets/app_states.dart';
@@ -56,6 +57,38 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
         body: AppErrorView(
           message: 'invalid_route_arguments'.tr(),
           onRetry: () => Navigator.maybePop(context),
+        ),
+      );
+    }
+
+    final loggedIn = ref.watch(authProvider.select((state) => state.user != null));
+    if (!loggedIn) {
+      final ar = context.locale.languageCode == 'ar';
+      return Scaffold(
+        appBar: AppBar(title: Text('problem_details'.tr())),
+        body: MathBackground(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.login_rounded, size: 42),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    ar ? 'سجّل دخولك حتى تحل هذه المسألة' : 'Sign in to solve this problem',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  FilledButton(
+                    onPressed: () => Navigator.pushNamed(context, AppRoutes.login),
+                    child: Text(ar ? 'تسجيل الدخول' : 'Sign in'),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       );
     }
