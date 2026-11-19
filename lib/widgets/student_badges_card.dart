@@ -136,7 +136,7 @@ class StudentBadgesCard extends ConsumerWidget {
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ),
-badge locked label                            const SizedBox(height: 6),
+                            const SizedBox(height: 6),
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: SizedBox(
