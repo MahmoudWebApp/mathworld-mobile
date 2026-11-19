@@ -621,7 +621,7 @@ class _StatsGrid extends StatelessWidget {
         Icons.trending_up_rounded,
         '${journey.completionPercent}%',
         'stage_completion'.tr(),
-        AppColors.brandViolet,
+        AppColors.success,
       ),
       _StatData(
         Icons.favorite_border_rounded,
@@ -770,7 +770,7 @@ class _LearningJourneyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final language = context.locale.languageCode;
-    final color = Theme.of(context).colorScheme.primary;
+    final color = AppColors.stageForIdentity(journey.stageId, journey.nameEn);
     final reviewCount = journey.categories.where((category) =>
         !category.isLocked &&
         category.attemptedProblems > category.solvedProblems).length;
@@ -787,16 +787,16 @@ class _LearningJourneyCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ShaderMask(
-            shaderCallback: AppGradients.primary.createShader,
-            blendMode: BlendMode.srcIn,
-            child: Text('learning_journey'.tr(),
-                style: Theme.of(context).textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w800, color: Colors.white)),
-          ),
+          Row(children: [
+            StageMathGlyph(stageOrder: journey.stageId, color: color, size: 30),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(child: Text('learning_journey'.tr(),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w900, color: color))),
+          ]),
           const SizedBox(height: AppSpacing.xs),
           Text(journey.getName(language),
-              style: Theme.of(context).textTheme.bodyMedium),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: color)),
           const SizedBox(height: AppSpacing.lg),
           Row(
             children: [
@@ -809,7 +809,7 @@ class _LearningJourneyCard extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               Text('${journey.completionPercent}%',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: color)),
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.success)),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
