@@ -136,53 +136,59 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.xl),
-                ...items.map((stage) {
-                  final selected = effective == stage.id;
-                  const tones = [
-                    AppColors.stageCyan, AppColors.stageOrange,
-                    AppColors.stageGreen, AppColors.stageViolet,
-                  ];
-                  final accent = tones[(stage.order <= 0 ? 0 : stage.order - 1) % tones.length];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child: GlassCard(
-                      padding: EdgeInsets.zero,
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.sm,
-                        ),
-                        leading: Container(
-                          width: 48, height: 48,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(14),
-                            color: accent.withValues(alpha: .12),
-                            border: Border.all(color: accent.withValues(alpha: .28)),
-                          ),
-                          child: selected
-                              ? Icon(Icons.check_circle_rounded, color: accent, size: 28)
-                              : StageMathGlyph(stageOrder: stage.order, color: accent, size: 36),
-                        ),
-                        title: Text(
-                          stage.getName(language),
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        selected: selected,
-                        subtitle: user?.currentStageId == stage.id
-                            ? Text(language == 'ar'
-                                ? 'مرحلتك الحالية'
-                                : 'Your current stage')
-                            : null,
-                        onTap: _saving
-                            ? null
-                            : () => setState(() {
-                                  _selectedStageId = stage.id;
-                                }),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final count = constraints.maxWidth >= 760 ? 4
+                      : constraints.maxWidth >= 540 ? 3 : 2;
+                    final scale = MediaQuery.textScalerOf(context).scale(1);
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: count,
+                        mainAxisSpacing: AppSpacing.md,
+                        crossAxisSpacing: AppSpacing.md,
+                        mainAxisExtent: (165.0 + (scale - 1).clamp(0.0, 1.0) * 45).toDouble(),
                       ),
-                    ),
-                  );
-                }),
+                      itemCount: items.length,
+                      itemBuilder: (context, index) {
+                        final stage = items[index];
+                        final selected = effective == stage.id;
+                        final accent = AppColors.stageForOrder(stage.order);
+                        return GlassCard(
+                          onTap: _saving ? null : () => setState(() => _selectedStageId = stage.id),
+                          border: BorderSide(color: accent.withValues(alpha: selected ? .8 : .22),
+                            width: selected ? 2 : 1),
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(children: [
+                                StageMathGlyph(stageOrder: stage.order, color: accent, size: 43),
+                                const Spacer(),
+                                if (selected) Icon(Icons.check_circle_rounded,
+                                  color: accent, size: 21),
+                              ]),
+                              const SizedBox(height: AppSpacing.md),
+                              Text(
+                                stage.getName(language),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: accent, fontWeight: FontWeight.w900),
+                              ),
+                              const Spacer(),
+                              if (user?.currentStageId == stage.id)
+                                Text(language == 'ar' ? 'مرحلتي الحالية' : 'My stage',
+                                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.labelSmall),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
                 const SizedBox(height: AppSpacing.lg),
                 PremiumButton(
                   label: effective != null && effective == user?.currentStageId

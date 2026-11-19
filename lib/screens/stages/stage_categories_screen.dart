@@ -112,15 +112,13 @@ class StageCategoriesScreen extends ConsumerWidget {
             // Guests have the same Free access as students. Only a verified
             // Admin or Premium account can see every category as unlocked.
             final isAdmin = user?.role == 'Admin';
-            final hasFullAccess = isAdmin || isPremium;
-            final available = categories.where((category) =>
-                hasFullAccess ||
-                access.freeCategoryIds.contains(category.id)).toList();
-            final unavailable = categories.where((category) =>
-                !hasFullAccess &&
-                !access.freeCategoryIds.contains(category.id)).toList();
-            final ready = available.where((c) => (c.problemsCount ?? 0) > 0).toList();
-            final unverified = available.where((c) => c.problemsCount == null).toList();
+            final hasFullAccess = isAdmin || isPremium || user == null;
+            final ordered = [
+              ...categories.where((category) => hasFullAccess ||
+                  access.freeCategoryIds.contains(category.id)),
+              ...categories.where((category) => !hasFullAccess &&
+                  !access.freeCategoryIds.contains(category.id)),
+            ];
             final ar = localeCode == 'ar';
 
             return LayoutBuilder(
@@ -135,7 +133,7 @@ class StageCategoriesScreen extends ConsumerWidget {
                   textScale: textScale,
                 );
 
-                Widget cards(List<Category> items, {required bool locked}) =>
+                Widget cards(List<Category> items) =>
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -153,8 +151,8 @@ class StageCategoriesScreen extends ConsumerWidget {
                           localeCode: localeCode,
                           stageId: stage.id,
                           stageOrder: stage.order,
-                          locked: locked,
-                          guest: user == null,
+                          locked: !hasFullAccess &&
+                            !access.freeCategoryIds.contains(category.id),
                         );
                       },
                     );
@@ -176,142 +174,63 @@ class StageCategoriesScreen extends ConsumerWidget {
                       embedded ? 144 : AppSpacing.xxl,
                     ),
                     children: [
-                      Text(
-                        ar ? 'فئات مرحلتك' : 'Your stage topics',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(stage.getName(localeCode),
-                          style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: AppSpacing.md),
-                      if (user?.role == 'Student' && (premiumState?.isLoading ?? false)) ...[
-                        GlassCard(
-                          child: Text(localeCode == 'ar'
-                              ? 'عم نتحقق من اشتراكك، وبتقدر تتصفح الفئات المجانية أثناء التحقق.'
-                              : 'Checking your membership. Free topics stay available while we verify your plan.'),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                      ],
-                      if (user?.role == 'Student' && (premiumState?.hasError ?? false)) ...[
-                        GlassCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(ar
-                                  ? 'تعذر التأكد من اشتراكك. عم نعرض الفئات المجانية بأمان، وما عم نعتبر حسابك مجاني.'
-                                  : "We couldn't verify your plan. Free topics remain visible; your membership hasn't been changed."),
-                              const SizedBox(height: AppSpacing.sm),
-                              OutlinedButton.icon(
-                                onPressed: () => ref.invalidate(studentPremiumProvider),
-                                icon: const Icon(Icons.refresh_rounded),
-                                label: Text('retry'.tr()),
-                              ),
-                            ],
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 48, height: 48, alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: AppColors.stageForOrder(stage.order).withValues(alpha: .12),
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                            ),
+                            child: StageMathGlyph(
+                              stageOrder: stage.order,
+                              color: AppColors.stageForOrder(stage.order),
+                              size: 36,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                      ],
-                      GlassCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              hasFullAccess
-                                  ? (ar ? 'كل الفئات متاحة لحسابك' : 'All topics are unlocked')
-                                  : (ar ? 'هاي فئاتك المفتوحة' : 'These are your unlocked topics'),
-                              style: Theme.of(context).textTheme.titleLarge,
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  user?.role == 'Student'
+                                    ? (ar ? 'فئات مرحلتي' : 'My stage topics')
+                                    : (ar ? 'فئات المرحلة' : 'Stage topics'),
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                                Text(
+                                  stage.getName(localeCode),
+                                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                    color: AppColors.stageForOrder(stage.order),
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              hasFullAccess
-                                  ? (ar
-                                      ? 'اختَر فئة فيها مسائل وابدأ الحل.'
-                                      : 'Choose any topic with questions to start.')
-                                  : (ar
-                                      ? (user == null
-                                          ? 'بتقدر تتصفح الفئتين المجانيتين بكل مرحلة. سجّل الدخول حتى تبدأ الحل وتحفظ تقدمك.'
-                                          : 'بتقدر تحل بلا حد داخل الفئتين المفتوحتين في كل مرحلة. ابدأ من الفئات تحت.')
-                                      : (user == null
-                                          ? 'Browse the two Free topics in each stage. Sign in to solve and save progress.'
-                                          : 'Two topics per stage are open for Free practice without daily limits. Start below.')),
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
-                            Text(
-                              ar
-                                  ? '${available.length} فئة مفتوحة · ${ready.length} فيها مسائل منشورة'
-                                  : '${available.length} unlocked · ${ready.length} with published questions',
-                              style: Theme.of(context).textTheme.labelLarge,
-                            ),
-                            if (unverified.isNotEmpty) ...[
-                              const SizedBox(height: AppSpacing.sm),
-                              Text(
-                                ar
-                                    ? 'عدد المسائل غير متاح لبعض الفئات على هذا الخادم؛ افتح الفئة لتتحقق من محتواها.'
-                                    : 'This server has not provided question counts for every topic. Open one to check its content.',
-                              ),
-                            ],
-                            if (ready.isEmpty && unverified.isEmpty) ...[
-                              const SizedBox(height: AppSpacing.sm),
-                              Text(
-                                ar
-                                    ? 'ما في مسائل جاهزة للحل بهالمرحلة حاليًا. جرّب التحديث أو غيّر مرحلتك.'
-                                    : 'No questions are ready in this stage. Refresh or change your stage.',
-                              ),
-                              const SizedBox(height: AppSpacing.sm),
-                              OutlinedButton.icon(
-                                onPressed: () => Navigator.pushNamed(
-                                    context, AppRoutes.learningStage),
-                                icon: const Icon(Icons.school_outlined),
-                                label: Text(ar ? 'تغيير المرحلة' : 'Change stage'),
-                              ),
-                            ],
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: AppSpacing.lg),
-                      if (available.isNotEmpty) ...[
-                        Text(
-                          ar ? '1. ابدأ بفئاتك المفتوحة' : '1. Start with unlocked topics',
-                          style: Theme.of(context).textTheme.titleLarge,
+                      const SizedBox(height: AppSpacing.md),
+                      if (user?.role == 'Student' &&
+                          (premiumState?.hasError ?? false)) ...[
+                        TextButton.icon(
+                          onPressed: () => ref.invalidate(studentPremiumProvider),
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: Text(ar ? 'إعادة تحميل الصلاحيات' : 'Retry access'),
                         ),
-                        const SizedBox(height: AppSpacing.sm),
-                        cards(available, locked: false),
                       ],
-                      if (unavailable.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.xl),
-                        Text(
-                          ar ? '2. فئات Premium' : '2. Premium topics',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          ar
-                              ? 'هاي الفئات تتطلب Premium. فيك تشوف مميزات الاشتراك من مكان واحد.'
-                              : 'These topics require Premium. View membership benefits in one place.',
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        cards(unavailable, locked: true),
-                        const SizedBox(height: AppSpacing.md),
-                        OutlinedButton.icon(
+                      cards(ordered),
+                      if (user?.role == 'Student') ...[
+                        const SizedBox(height: AppSpacing.lg),
+                        TextButton.icon(
                           onPressed: () => Navigator.pushNamed(
-                              context, user == null
-                                  ? AppRoutes.login
-                                  : AppRoutes.premiumCheckout),
-                          icon: Icon(user == null
-                              ? Icons.login_rounded
-                              : Icons.workspace_premium_outlined),
-                          label: Text(user == null
-                              ? (ar ? 'سجّل الدخول للمتابعة' : 'Sign in to continue')
-                              : (ar ? 'تغيير الخطة' : 'Change plan')),
+                            context, AppRoutes.learningStage),
+                          icon: const Icon(Icons.school_outlined),
+                          label: Text(ar ? 'تغيير مرحلتي' : 'Change my stage'),
                         ),
                       ],
-                      const SizedBox(height: AppSpacing.lg),
-                      TextButton.icon(
-                        onPressed: () => Navigator.pushNamed(
-                            context, AppRoutes.learningStage),
-                        icon: const Icon(Icons.school_outlined),
-                        label: Text(ar ? 'مو مرحلتك؟ غيّر المرحلة' : 'Wrong stage? Change stage'),
-                      ),
                     ],
                   ),
                 );
@@ -324,7 +243,13 @@ class StageCategoriesScreen extends ConsumerWidget {
     return embedded
         ? content
         : Scaffold(
-            appBar: AppBar(title: Text(stage.getName(localeCode))),
+            appBar: AppBar(title: Text(
+        stage.getName(localeCode),
+        style: TextStyle(
+          color: AppColors.stageForOrder(stage.order),
+          fontWeight: FontWeight.w900,
+        ),
+      )),
             body: content,
           );
   }
@@ -407,7 +332,6 @@ class _CategoryCard extends StatelessWidget {
   final int stageId;
   final int stageOrder;
   final bool locked;
-  final bool guest;
 
   const _CategoryCard({
     required this.category,
@@ -415,19 +339,24 @@ class _CategoryCard extends StatelessWidget {
     required this.stageId,
     required this.stageOrder,
     required this.locked,
-    required this.guest,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accent = _categoryColor(stageOrder);
+    final accent = AppColors.stageForOrder(stageOrder);
     final title = category.getName(localeCode);
-    final titleColor = isDark ? AppColors.darkText : AppColors.lightText;
     final mutedColor = isDark ? AppColors.darkMuted : AppColors.lightMuted;
     final noPublishedProblems = category.problemsCount == 0;
 
-    return GlassCard(
+    final lockTooltipKey = GlobalKey<TooltipState>();
+    return Tooltip(
+      key: lockTooltipKey,
+      message: localeCode == 'ar'
+          ? 'هذه الفئة متاحة لحساب Premium'
+          : 'Available with Premium',
+      triggerMode: TooltipTriggerMode.manual,
+      child: GlassCard(
       // The API now returns a real per-stage count. Never navigate into a
       // category known to have zero questions and then show a dead-end page.
       // Unavailable topics never route to a paywall or empty question list.
@@ -439,11 +368,11 @@ class _CategoryCard extends StatelessWidget {
                   : 'This category has no published problems yet.'),
             ))
           : locked
-              ? () => _explainLockedCategory(context)
+              ? () => lockTooltipKey.currentState?.ensureTooltipVisible()
               : () => Navigator.pushNamed(
                     context,
-                    guest ? AppRoutes.login : AppRoutes.problems,
-                    arguments: guest ? null : {
+                    AppRoutes.problems,
+                    arguments: {
                       'categoryId': category.id,
                       'stageId': stageId,
                       'title': title,
@@ -482,43 +411,15 @@ class _CategoryCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: titleColor,
+                        color: accent,
                         fontWeight: FontWeight.w900,
                       ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      noPublishedProblems ? Icons.info_outline_rounded
-                          : locked ? Icons.lock_outline_rounded
-                          : Icons.lock_open_rounded,
-                      size: 15,
-                      color: accent,
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Flexible(
-                      child: Text(
-                        noPublishedProblems
-                            ? (localeCode == 'ar'
-                                ? 'لا توجد مسائل منشورة بعد' : 'No published problems yet')
-                            : locked
-                                ? (localeCode == 'ar'
-                                    ? 'بعد ترقية الحساب' : 'Unlock with upgrade')
-                                : (localeCode == 'ar' ? 'مفتوحة' : 'Unlocked'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: accent,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xs),
+                if (locked) ...[
+                  Icon(Icons.lock_outline_rounded, color: mutedColor, size: 17),
+                  const SizedBox(height: AppSpacing.xs),
+                ],
                 Text(
                   noPublishedProblems
                       ? (localeCode == 'ar'
@@ -549,14 +450,14 @@ class _CategoryCard extends StatelessWidget {
                         child: LayoutBuilder(
                           builder: (context, limits) => Stack(
                             children: [
-                              Container(color: accent.withValues(alpha: 0.10)),
+                              Container(color: mutedColor.withValues(alpha: 0.18)),
                               Align(
                                 alignment: AlignmentDirectional.centerStart,
                                 child: Container(
                                   width: limits.maxWidth *
                                       category.progress!.clamp(0.0, 1.0).toDouble(),
                                   decoration: const BoxDecoration(
-                                    gradient: AppGradients.primary,
+                                    color: AppColors.success,
                                   ),
                                 ),
                               ),
@@ -572,41 +473,7 @@ class _CategoryCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  void _explainLockedCategory(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(localeCode == 'ar' ? 'هذه الفئة بتفتح بعد ترقية الحساب' : 'Upgrade your account to unlock this topic',
-                style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: AppSpacing.sm),
-              Text(localeCode == 'ar'
-                  ? 'الفئتان المحددتان من كل مرحلة مفتوحتان مجاناً، وحل المسائل فيهما غير محدود.'
-                  : 'Two categories per stage are free, with unlimited practice inside them.'),
-              const SizedBox(height: AppSpacing.md),
-              FilledButton(
-                onPressed: () {
-                  Navigator.pop(sheetContext);
-                  Navigator.pushNamed(context,
-                    guest ? AppRoutes.login : AppRoutes.premiumBenefits);
-                },
-                child: Text(localeCode == 'ar'
-                    ? (guest ? 'تسجيل الدخول' : 'ترقية الحساب')
-                    : (guest ? 'Sign in' : 'Upgrade account')),
-              ),
-            ],
-          ),
-        ),
-      ),
+    ),
     );
   }
 
@@ -633,15 +500,4 @@ class _CategoryCard extends StatelessWidget {
     return StageMathGlyph(stageOrder: stageOrder, color: accent, size: 32);
   }
 
-  Color _categoryColor(int value) {
-    const colors = [
-      AppColors.brandPurple,
-      AppColors.brandViolet,
-      AppColors.brandPink,
-      AppColors.brandLavender,
-    ];
-
-    final index = (value <= 0 ? 0 : value - 1) % colors.length;
-    return colors[index];
-  }
 }

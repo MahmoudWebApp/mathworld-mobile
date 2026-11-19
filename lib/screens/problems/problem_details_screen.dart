@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
 import '../../models/problem.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/learning_provider.dart';
 import '../../providers/problem_details_provider.dart';
 import '../../widgets/app_states.dart';
@@ -60,6 +62,38 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
       );
     }
 
+    final loggedIn = ref.watch(authProvider.select((state) => state.user != null));
+    if (!loggedIn) {
+      final ar = context.locale.languageCode == 'ar';
+      return Scaffold(
+        appBar: AppBar(title: Text('problem_details'.tr())),
+        body: MathBackground(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.login_rounded, size: 42),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    ar ? 'سجّل دخولك حتى تحل هذه المسألة' : 'Sign in to solve this problem',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  FilledButton(
+                    onPressed: () => Navigator.pushNamed(context, AppRoutes.login),
+                    child: Text(ar ? 'تسجيل الدخول' : 'Sign in'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     final state = ref.watch(problemDetailsProvider(problemId));
     final notifier = ref.read(problemDetailsProvider(problemId).notifier);
     final loadedProblem = state.problem.valueOrNull;
@@ -80,7 +114,15 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text('problem_details'.tr())),
+      appBar: AppBar(title: Text(
+        loadedProblem?.stageName.isNotEmpty == true
+            ? loadedProblem!.stageName : 'problem_details'.tr(),
+        style: loadedProblem == null ? null : TextStyle(
+          color: AppColors.stageForIdentity(
+            loadedProblem.stageId, loadedProblem.stageName),
+          fontWeight: FontWeight.w800,
+        ),
+      )),
       body: MathBackground(
         child: state.problem.when(
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -710,6 +752,7 @@ class _ProblemHeader extends StatelessWidget {
             _InfoPill(
               icon: Icons.category_outlined,
               label: problem.categoryName,
+              color: AppColors.stageForIdentity(problem.stageId, problem.stageName),
             ),
             _InfoPill(
               icon: Icons.star_rounded,

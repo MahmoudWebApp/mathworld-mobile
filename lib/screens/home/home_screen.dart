@@ -13,6 +13,7 @@ import '../../models/daily_challenge.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/learning_journey_provider.dart';
 import '../../providers/notifications_provider.dart';
+import '../notifications/notifications_screen.dart';
 import '../../providers/daily_challenge_provider.dart';
 import '../../providers/student_badges_provider.dart';
 import '../../utils/layout_utils.dart';
@@ -433,9 +434,7 @@ class _JourneyStatusCard extends StatelessWidget {
                 child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
               )
             else
-              const StageMathGlyph(
-                stageOrder: 2, color: AppColors.stageOrange, size: 36,
-              ),
+              Icon(Icons.school_outlined, color: scheme.onSurfaceVariant, size: 36),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
@@ -564,8 +563,16 @@ class _HeroCard extends ConsumerWidget {
               ),
               IconButton(
                 tooltip: 'notifications_title'.tr(),
-                onPressed: () => Navigator.pushNamed(
-                  context, AppRoutes.notifications,
+                onPressed: () => showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  useSafeArea: true,
+                  showDragHandle: true,
+                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  builder: (sheetContext) => const FractionallySizedBox(
+                    heightFactor: .86,
+                    child: NotificationsScreen(),
+                  ),
                 ),
                 icon: Badge(
                   isLabelVisible: unreadNotifications > 0,
@@ -612,7 +619,7 @@ class _StatsGrid extends StatelessWidget {
         Icons.trending_up_rounded,
         '${journey.completionPercent}%',
         'stage_completion'.tr(),
-        AppColors.brandViolet,
+        AppColors.success,
       ),
       _StatData(
         Icons.favorite_border_rounded,
@@ -761,7 +768,7 @@ class _LearningJourneyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final language = context.locale.languageCode;
-    final color = Theme.of(context).colorScheme.primary;
+    final color = AppColors.stageForIdentity(journey.stageId, journey.nameEn);
     final reviewCount = journey.categories.where((category) =>
         !category.isLocked &&
         category.attemptedProblems > category.solvedProblems).length;
@@ -778,16 +785,16 @@ class _LearningJourneyCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ShaderMask(
-            shaderCallback: AppGradients.primary.createShader,
-            blendMode: BlendMode.srcIn,
-            child: Text('learning_journey'.tr(),
-                style: Theme.of(context).textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w800, color: Colors.white)),
-          ),
+          Row(children: [
+            StageMathGlyph(stageOrder: journey.stageId, color: color, size: 30),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(child: Text('learning_journey'.tr(),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w900, color: color))),
+          ]),
           const SizedBox(height: AppSpacing.xs),
           Text(journey.getName(language),
-              style: Theme.of(context).textTheme.bodyMedium),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: color)),
           const SizedBox(height: AppSpacing.lg),
           Row(
             children: [
@@ -800,7 +807,7 @@ class _LearningJourneyCard extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               Text('${journey.completionPercent}%',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: color)),
+                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.success)),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -813,14 +820,14 @@ class _LearningJourneyCard extends StatelessWidget {
                 height: 8,
                 child: LayoutBuilder(
                   builder: (context, limits) => Stack(children: [
-                    Container(color: AppColors.primary.withValues(alpha: 0.12)),
+                    Container(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.45)),
                     Align(
                       alignment: AlignmentDirectional.centerStart,
                       child: Container(
                         width: limits.maxWidth *
                             (journey.completionPercent.clamp(0, 100) / 100),
                         decoration: const BoxDecoration(
-                          gradient: AppGradients.primary,
+                          color: AppColors.success,
                         ),
                       ),
                     ),
@@ -931,8 +938,8 @@ class _LearningJourneyCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Text(language == 'ar'
-                  ? 'ما قدرنا نتحقق من الفئات المفتوحة: الخادم الحالي ما أرسل صلاحيات الوصول. ما رح نعتبرها Premium بدون تأكيد.'
-                  : 'The connected server did not send category-access permissions. We cannot safely identify free topics or label them Premium.',
+                  ? 'تعذّر تحميل صلاحيات الفئات حالياً.'
+                  : 'Topic access could not be loaded right now.',
                 style: Theme.of(context).textTheme.bodyMedium),
             ),
           if (visibleCategories.isEmpty && journey.categories.isNotEmpty && !accessUnknown)

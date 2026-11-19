@@ -55,55 +55,57 @@ class StagesScreen extends ConsumerWidget {
                     ],
                   ),
                 )
-              : RefreshIndicator(
-            onRefresh: () => ref.refresh(stagesProvider.future),
-            child: ListView.separated(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                embedded ? AppSpacing.lg : AppSpacing.sm,
-                AppSpacing.lg,
-                embedded ? 132 : AppSpacing.xxl,
-              ),
-              itemCount: items.length + (embedded ? 1 : 0),
-              separatorBuilder: (_, __) =>
-                  const SizedBox(height: AppSpacing.lg),
-              itemBuilder: (context, index) {
-                if (embedded && index == 0) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'educational_stages'.tr(),
-                          style: Theme.of(context).textTheme.headlineSmall,
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    final cols = constraints.maxWidth >= 900
+                        ? 4
+                        : constraints.maxWidth >= 600 ? 3 : 2;
+                    final scale = MediaQuery.textScalerOf(context).scale(1);
+                    final cardHeight = (205.0 + (scale - 1).clamp(0.0, 1.0) * 48).toDouble();
+                    return RefreshIndicator(
+                      onRefresh: () => ref.refresh(stagesProvider.future),
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(
+                          AppSpacing.md, embedded ? AppSpacing.lg : AppSpacing.sm,
+                          AppSpacing.md, embedded ? 132 : AppSpacing.xxl,
                         ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          'stages_description'.tr(),
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                final stage = items[index - (embedded ? 1 : 0)];
-                return _StageCard(
-                  title: stage.getName(localeCode),
-                  order: stage.order,
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    AppRoutes.stageCategories,
-                    arguments: stage,
-                  ),
-                );
-              },
-            ),
+                        children: [
+                          if (embedded) ...[
+                            Text('educational_stages'.tr(),
+                              style: Theme.of(context).textTheme.headlineSmall),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text('stages_description'.tr(),
+                              style: Theme.of(context).textTheme.bodyMedium),
+                            const SizedBox(height: AppSpacing.lg),
+                          ],
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: cols,
+                              mainAxisSpacing: AppSpacing.md,
+                              crossAxisSpacing: AppSpacing.md,
+                              mainAxisExtent: cardHeight,
+                            ),
+                            itemCount: items.length,
+                            itemBuilder: (context, index) {
+                              final stage = items[index];
+                              return _StageCard(
+                                title: stage.getName(localeCode),
+                                order: stage.order,
+                                onTap: () => Navigator.pushNamed(
+                                  context, AppRoutes.stageCategories, arguments: stage),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
           ),
         ),
-      ),
     );
 
     if (embedded) {
@@ -130,87 +132,51 @@ class _StageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accent = _stageColor(order);
-    final titleColor = isDark ? AppColors.darkText : AppColors.lightText;
-    final subtitleColor = isDark ? AppColors.darkMuted : AppColors.lightMuted;
+    final accent = AppColors.stageForOrder(order);
+    final dark = Theme.of(context).brightness == Brightness.dark;
 
     return GlassCard(
       onTap: onTap,
-      color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-      border: BorderSide(
-        color: accent.withValues(alpha: isDark ? 0.26 : 0.18),
-      ),
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Row(
+      color: dark ? AppColors.darkSurface : AppColors.lightSurface,
+      border: BorderSide(color: accent.withValues(alpha: dark ? .32 : .22)),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: isDark ? 0.16 : 0.10),
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(
-                color: accent.withValues(alpha: isDark ? 0.34 : 0.22),
+          Row(children: [
+            Container(
+              width: 48,
+              height: 48,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: dark ? .18 : .10),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: accent.withValues(alpha: .24)),
               ),
+              child: StageMathGlyph(stageOrder: order, color: accent, size: 37),
             ),
-            child: Center(child: StageMathGlyph(stageOrder: order, color: accent, size: 40)),
-          ),
-          const SizedBox(width: AppSpacing.lg),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: titleColor,
-                        fontWeight: FontWeight.w900,
-                      ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'stage_number'.tr(
-                    namedArgs: {'number': '$order'},
-                  ),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: subtitleColor,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: isDark ? 0.13 : 0.08),
-              shape: BoxShape.circle,
-            ),
-            child: LayoutUtils.forwardIcon(
-              context,
+            const Spacer(),
+            LayoutUtils.forwardIcon(context, color: accent, size: 19),
+          ]),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: accent,
-              size: 22,
+              fontWeight: FontWeight.w900,
             ),
+          ),
+          const Spacer(),
+          Text(
+            'stage_number'.tr(namedArgs: {'number': '$order'}),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
       ),
     );
-  }
-
-  Color _stageColor(int value) {
-    const colors = [
-      AppColors.stageCyan,
-      AppColors.stageOrange,
-      AppColors.stageGreen,
-      AppColors.stageViolet,
-    ];
-
-    final index = (value <= 0 ? 0 : value - 1) % colors.length;
-    return colors[index];
   }
 }
