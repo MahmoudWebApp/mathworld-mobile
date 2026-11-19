@@ -106,7 +106,6 @@ class StagesScreen extends ConsumerWidget {
                 ),
           ),
         ),
-      ),
     );
 
     if (embedded) {
