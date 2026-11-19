@@ -22,7 +22,7 @@ class StudentBadgesCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.workspace_premium_outlined,
+              const Icon(Icons.military_tech_rounded,
                   color: AppColors.primary, size: 27),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
@@ -69,7 +69,7 @@ class StudentBadgesCard extends ConsumerWidget {
                       style: Theme.of(context).textTheme.bodyMedium),
                     Directionality(
                       textDirection: ui.TextDirection.ltr,
-                      child: Text('${result.earnedCount} / ${result.totalBadges}',
+                      child: Text('${result.earnedCount} / ${result.badges.where((badge) => badge.isAvailable).length}',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -97,14 +97,13 @@ class StudentBadgesCard extends ConsumerWidget {
                 Wrap(
                   spacing: AppSpacing.sm,
                   runSpacing: AppSpacing.sm,
-                  children: result.badges.map((badge) {
+                  children: result.badges.where((badge) => badge.isAvailable).map((badge) {
                     final color = badge.earned
                         ? AppColors.brandViolet
                         : Theme.of(context).colorScheme.outline;
                     return Semantics(
                       label: '${ar ? badge.titleAr : badge.titleEn}: '
-                          '${badge.currentProgress}/${badge.requiredSolved}. '
-                          '${!badge.isAvailable ? (ar ? 'تُفتح بعد ترقية الحساب' : 'Unlocks after account upgrade') : ''}',
+                          '${badge.currentProgress}/${badge.requiredSolved}. ',
                       child: Container(
                         width: 136,
                         padding: const EdgeInsets.all(AppSpacing.sm),
@@ -137,14 +136,7 @@ class StudentBadgesCard extends ConsumerWidget {
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ),
-                            if (!badge.isAvailable)
-                              Text(
-                                ar ? 'تُفتح بعد الترقية' : 'Unlocks after upgrade',
-                                textAlign: TextAlign.center,
-                                style: Theme.of(context).textTheme.labelSmall
-                                    ?.copyWith(color: AppColors.brandViolet),
-                              ),
-                            const SizedBox(height: 6),
+badge locked label                            const SizedBox(height: 6),
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: SizedBox(
