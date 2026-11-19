@@ -22,6 +22,7 @@ class ProblemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final titleColor = isDark ? AppColors.darkText : AppColors.lightText;
+    final stageAccent = AppColors.stageForIdentity(problem.stageId, problem.stageName);
 
     return GlassCard(
       onTap: onTap,
@@ -38,7 +39,7 @@ class ProblemCard extends StatelessWidget {
                 height: 48,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  gradient: AppGradients.primary,
+                  color: stageAccent,
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: const Icon(
@@ -100,7 +101,7 @@ class ProblemCard extends StatelessWidget {
               _MetaPill(
                 icon: Icons.category_outlined,
                 label: problem.categoryName,
-                color: Theme.of(context).colorScheme.primary,
+                color: stageAccent,
               ),
               _MetaPill(
                 icon: Icons.star_rounded,
