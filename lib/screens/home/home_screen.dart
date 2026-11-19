@@ -13,6 +13,7 @@ import '../../models/daily_challenge.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/learning_journey_provider.dart';
 import '../../providers/notifications_provider.dart';
+import '../notifications/notifications_screen.dart';
 import '../../providers/daily_challenge_provider.dart';
 import '../../providers/student_badges_provider.dart';
 import '../../utils/layout_utils.dart';
@@ -564,8 +565,16 @@ class _HeroCard extends ConsumerWidget {
               ),
               IconButton(
                 tooltip: 'notifications_title'.tr(),
-                onPressed: () => Navigator.pushNamed(
-                  context, AppRoutes.notifications,
+                onPressed: () => showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  useSafeArea: true,
+                  showDragHandle: true,
+                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  builder: (sheetContext) => const FractionallySizedBox(
+                    heightFactor: .86,
+                    child: NotificationsScreen(),
+                  ),
                 ),
                 icon: Badge(
                   isLabelVisible: unreadNotifications > 0,
