@@ -277,7 +277,7 @@ class CurrentStageCategoriesScreen extends ConsumerWidget {
                 context,
                 AppRoutes.learningStage,
               ),
-              icon: Icon(LayoutUtils.forwardArrow(context), textDirection: TextDirection.ltr),
+              icon: Icon(LayoutUtils.forwardArrow(context), textDirection: ui.TextDirection.ltr),
               label: Text('learning_stage'.tr()),
             ),
           ),
