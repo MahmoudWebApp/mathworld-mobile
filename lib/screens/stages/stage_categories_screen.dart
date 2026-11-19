@@ -421,7 +421,7 @@ class _CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accent = _categoryColor(stageOrder);
+    final accent = AppColors.stageForOrder(stageOrder);
     final title = category.getName(localeCode);
     final titleColor = isDark ? AppColors.darkText : AppColors.lightText;
     final mutedColor = isDark ? AppColors.darkMuted : AppColors.lightMuted;
@@ -549,14 +549,14 @@ class _CategoryCard extends StatelessWidget {
                         child: LayoutBuilder(
                           builder: (context, limits) => Stack(
                             children: [
-                              Container(color: accent.withValues(alpha: 0.10)),
+                              Container(color: mutedColor.withValues(alpha: 0.18)),
                               Align(
                                 alignment: AlignmentDirectional.centerStart,
                                 child: Container(
                                   width: limits.maxWidth *
                                       category.progress!.clamp(0.0, 1.0).toDouble(),
                                   decoration: const BoxDecoration(
-                                    gradient: AppGradients.primary,
+                                    color: AppColors.success,
                                   ),
                                 ),
                               ),
@@ -633,15 +633,4 @@ class _CategoryCard extends StatelessWidget {
     return StageMathGlyph(stageOrder: stageOrder, color: accent, size: 32);
   }
 
-  Color _categoryColor(int value) {
-    const colors = [
-      AppColors.brandPurple,
-      AppColors.brandViolet,
-      AppColors.brandPink,
-      AppColors.brandLavender,
-    ];
-
-    final index = (value <= 0 ? 0 : value - 1) % colors.length;
-    return colors[index];
-  }
 }
