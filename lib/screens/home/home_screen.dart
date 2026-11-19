@@ -434,9 +434,7 @@ class _JourneyStatusCard extends StatelessWidget {
                 child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
               )
             else
-              const StageMathGlyph(
-                stageOrder: 2, color: AppColors.stageOrange, size: 36,
-              ),
+              Icon(Icons.school_outlined, color: scheme.onSurfaceVariant, size: 36),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
@@ -940,8 +938,8 @@ class _LearningJourneyCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Text(language == 'ar'
-                  ? 'ما قدرنا نتحقق من الفئات المفتوحة: الخادم الحالي ما أرسل صلاحيات الوصول. ما رح نعتبرها Premium بدون تأكيد.'
-                  : 'The connected server did not send category-access permissions. We cannot safely identify free topics or label them Premium.',
+                  ? 'تعذّر تحميل صلاحيات الفئات حالياً.'
+                  : 'Topic access could not be loaded right now.',
                 style: Theme.of(context).textTheme.bodyMedium),
             ),
           if (visibleCategories.isEmpty && journey.categories.isNotEmpty && !accessUnknown)
