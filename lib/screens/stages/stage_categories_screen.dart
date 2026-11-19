@@ -11,6 +11,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/stages_provider.dart';
 import '../../providers/stage_category_access_provider.dart';
 import '../../utils/category_grid_layout.dart';
+import '../../utils/layout_utils.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
@@ -195,9 +196,7 @@ class StageCategoriesScreen extends ConsumerWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  user?.role == 'Student'
-                                    ? (ar ? 'فئات مرحلتي' : 'My stage topics')
-                                    : (ar ? 'فئات المرحلة' : 'Stage topics'),
+                                  (ar ? 'استكشف الفئات' : 'Explore topics'),
                                   style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                                 Text(
@@ -228,7 +227,7 @@ class StageCategoriesScreen extends ConsumerWidget {
                           onPressed: () => Navigator.pushNamed(
                             context, AppRoutes.learningStage),
                           icon: const Icon(Icons.school_outlined),
-                          label: Text(ar ? 'تغيير مرحلتي' : 'Change my stage'),
+                          label: Text(ar ? 'تغيير المرحلة' : 'Change stage'),
                         ),
                       ],
                     ],
@@ -277,7 +276,7 @@ class CurrentStageCategoriesScreen extends ConsumerWidget {
                 context,
                 AppRoutes.learningStage,
               ),
-              icon: const Icon(Icons.arrow_forward_rounded),
+              icon: Icon(LayoutUtils.forwardArrow(context), textDirection: TextDirection.ltr),
               label: Text('learning_stage'.tr()),
             ),
           ),
@@ -382,95 +381,72 @@ class _CategoryCard extends StatelessWidget {
       border: BorderSide(
         color: accent.withValues(alpha: isDark ? 0.27 : 0.18),
       ),
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 52,
-            height: 52,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: isDark ? 0.17 : 0.10),
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(
-                color: accent.withValues(alpha: isDark ? 0.34 : 0.23),
+          Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: isDark ? 0.17 : 0.10),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border.all(
+                    color: accent.withValues(alpha: isDark ? 0.34 : 0.23),
+                  ),
+                ),
+                child: _categoryIcon(accent),
+              ),
+              const Spacer(),
+              if (locked)
+                Icon(Icons.lock_outline_rounded, color: mutedColor, size: 19),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            title,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: accent,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            noPublishedProblems
+                ? (localeCode == 'ar' ? 'لا توجد مسائل' : 'No problems')
+                : category.problemsCount != null
+                    ? 'problems_count_value'.tr(namedArgs: {
+                        'count': '${category.problemsCount}',
+                      })
+                    : 'browse_all'.tr(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: mutedColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (category.progress != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Semantics(
+              label: localeCode == 'ar' ? 'تقدم $title' : '$title progress',
+              value: '${(category.progress! * 100).round()}%',
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(99),
+                child: LinearProgressIndicator(
+                  minHeight: 5,
+                  value: category.progress!.clamp(0.0, 1.0).toDouble(),
+                  backgroundColor: mutedColor.withValues(alpha: 0.18),
+                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.success),
+                ),
               ),
             ),
-            child: _categoryIcon(accent),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: accent,
-                        fontWeight: FontWeight.w900,
-                      ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                if (locked) ...[
-                  Icon(Icons.lock_outline_rounded, color: mutedColor, size: 17),
-                  const SizedBox(height: AppSpacing.xs),
-                ],
-                Text(
-                  noPublishedProblems
-                      ? (localeCode == 'ar'
-                          ? 'لا توجد مسائل منشورة بعد'
-                          : 'No published problems yet')
-                      : category.problemsCount != null
-                          ? 'problems_count_value'.tr(namedArgs: {
-                              'count': '${category.problemsCount}',
-                            })
-                          : 'browse_all'.tr(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: mutedColor,
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                if (category.progress != null) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Semantics(
-                    label: localeCode == 'ar'
-                        ? 'تقدم $title' : '$title progress',
-                    value: '${(category.progress! * 100).round()}%',
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(99),
-                      child: SizedBox(
-                        height: 5,
-                        child: LayoutBuilder(
-                          builder: (context, limits) => Stack(
-                            children: [
-                              Container(color: mutedColor.withValues(alpha: 0.18)),
-                              Align(
-                                alignment: AlignmentDirectional.centerStart,
-                                child: Container(
-                                  width: limits.maxWidth *
-                                      category.progress!.clamp(0.0, 1.0).toDouble(),
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.success,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
+          ],
         ],
       ),
     ),
