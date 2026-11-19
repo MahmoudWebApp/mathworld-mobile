@@ -243,7 +243,13 @@ class StageCategoriesScreen extends ConsumerWidget {
     return embedded
         ? content
         : Scaffold(
-            appBar: AppBar(title: Text(stage.getName(localeCode))),
+            appBar: AppBar(title: Text(
+        stage.getName(localeCode),
+        style: TextStyle(
+          color: AppColors.stageForOrder(stage.order),
+          fontWeight: FontWeight.w900,
+        ),
+      )),
             body: content,
           );
   }
