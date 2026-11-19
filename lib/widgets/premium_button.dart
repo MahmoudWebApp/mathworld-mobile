@@ -28,16 +28,22 @@ class PremiumButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = Theme.of(context).brightness == Brightness.dark
-        ? AppColors.darkBackground
-        : Colors.white;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // A dark text color on the purple half of the gradient had insufficient
+    // contrast. Use the same legible white foreground across both themes.
+    const foreground = Colors.white;
+    final actionGradient = isDark && gradient == AppGradients.primary
+        ? const LinearGradient(colors: [
+            Color(0xFF6324B9), Color(0xFF9A249E), Color(0xFFC02D8B),
+          ])
+        : gradient;
     final isEnabled = onPressed != null && !isLoading;
 
     final child = Container(
       constraints: const BoxConstraints(minHeight: 52),
       padding: padding,
       decoration: BoxDecoration(
-        gradient: onPressed == null ? null : gradient,
+        gradient: onPressed == null ? null : actionGradient,
         color: onPressed == null
             ? Theme.of(context).colorScheme.surfaceContainerHighest
             : null,
