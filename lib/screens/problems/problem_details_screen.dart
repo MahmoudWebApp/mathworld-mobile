@@ -710,6 +710,7 @@ class _ProblemHeader extends StatelessWidget {
             _InfoPill(
               icon: Icons.category_outlined,
               label: problem.categoryName,
+              color: AppColors.stageForIdentity(problem.stageId, problem.stageName),
             ),
             _InfoPill(
               icon: Icons.star_rounded,
