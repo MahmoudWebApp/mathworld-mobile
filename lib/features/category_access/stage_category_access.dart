@@ -30,6 +30,8 @@ class StageCategoryItem {
   final int id;
   final String nameAr;
   final String nameEn;
+  final String descriptionAr;
+  final String descriptionEn;
   final String icon;
   final int order;
   final int? problemsCount;
@@ -39,6 +41,8 @@ class StageCategoryItem {
     required this.id,
     required this.nameAr,
     required this.nameEn,
+    this.descriptionAr = '',
+    this.descriptionEn = '',
     required this.icon,
     required this.order,
     required this.problemsCount,
@@ -51,6 +55,8 @@ class StageCategoryItem {
       nameAr: (json['NameAr'] ?? json['nameAr']) as String? ?? '',
       nameEn: (json['NameEn'] ?? json['nameEn']) as String? ?? '',
       icon: (json['Icon'] ?? json['icon']) as String? ?? '📐',
+      descriptionAr: (json['DescriptionAr'] ?? json['descriptionAr']) as String? ?? '',
+      descriptionEn: (json['DescriptionEn'] ?? json['descriptionEn']) as String? ?? '',
       order: ((json['Order'] ?? json['order']) as num?)?.toInt() ?? 0,
       problemsCount: ((json['ProblemsCount'] ?? json['problemsCount']) as num?)?.toInt(),
       isFree: (json['IsFree'] ?? json['isFree']) == true,
