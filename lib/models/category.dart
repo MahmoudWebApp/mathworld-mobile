@@ -4,6 +4,8 @@ class Category {
   final String nameAr;
   final String nameEn;
   final String? icon;
+  final String descriptionAr;
+  final String descriptionEn;
   final int stageId;
   final int order;
   final int? problemsCount;
@@ -13,6 +15,8 @@ class Category {
     required this.nameAr,
     required this.nameEn,
     this.icon,
+    this.descriptionAr = '',
+    this.descriptionEn = '',
     required this.stageId,
     required this.order,
     this.problemsCount,
@@ -38,6 +42,8 @@ class Category {
               ? localizedName
               : arabicName,
       icon: _nullableString(json['Icon'] ?? json['icon']),
+      descriptionAr: _string(json['DescriptionAr'] ?? json['descriptionAr']),
+      descriptionEn: _string(json['DescriptionEn'] ?? json['descriptionEn']),
       stageId: _int(json['StageId'] ?? json['stageId']),
       order: _int(json['Order'] ?? json['order']),
       problemsCount: _nullableInt(
@@ -46,6 +52,9 @@ class Category {
       solvedCount: _nullableInt(json['SolvedCount'] ?? json['solvedCount']),
     );
   }
+  String getDescription(String languageCode) =>
+      (languageCode == 'en' ? descriptionEn : descriptionAr).trim();
+
   String getName(String languageCode) {
     final preferred = languageCode == 'en' ? nameEn : nameAr;
     final fallback = languageCode == 'en' ? nameAr : nameEn;
@@ -65,6 +74,8 @@ class Category {
       'NameAr': nameAr,
       'NameEn': nameEn,
       'Icon': icon,
+      'DescriptionAr': descriptionAr,
+      'DescriptionEn': descriptionEn,
       'StageId': stageId,
       'Order': order,
       'ProblemsCount': problemsCount,
