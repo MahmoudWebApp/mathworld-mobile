@@ -15,13 +15,12 @@ if (releaseKeystoreFile.exists()) {
 val hasReleaseSigning = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
     .all { !releaseKeystoreProperties.getProperty(it).isNullOrBlank() }
 
-// Only manual-test CI APKs opt in. The production appId, signing and label
-// remain unchanged for every ordinary Android build.
-val isolatedQaApk = System.getenv("MATHWORLD_ISOLATED_QA_APK") == "true"
+// A single stable developer-signed APK uses the app's real package name.
+// It is not a separate .qa application and does not create a second install.
+// Default release builds keep their existing production/debug signing behavior.
+val stableDevelopmentSigning = System.getenv("MATHWORLD_STABLE_DEV_SIGNING") == "true"
 
-// Unlike the Android debug keystore generated separately on each CI runner,
-// the isolated QA variant requires a persistent signing key provided through
-// repository secrets. It must never fall back to an ephemeral key.
+// GitHub Actions and local Windows builds use the same user-owned test key.
 val qaSigningEnvironment = listOf(
     "MATHWORLD_QA_KEYSTORE_FILE",
     "MATHWORLD_QA_STORE_PASSWORD",
@@ -29,8 +28,8 @@ val qaSigningEnvironment = listOf(
     "MATHWORLD_QA_KEY_PASSWORD",
 )
 val hasQaSigning = qaSigningEnvironment.all { !System.getenv(it).isNullOrBlank() }
-if (isolatedQaApk && !hasQaSigning) {
-    throw GradleException("Isolated QA builds require a persistent QA keystore and all signing environment variables.")
+if (stableDevelopmentSigning && !hasQaSigning) {
+    throw GradleException("MathWorld stable development APK requires a persistent keystore and all signing environment variables.")
 }
 
 android {
@@ -58,7 +57,7 @@ android {
 
     signingConfigs {
         if (hasQaSigning) {
-            create("isolatedQaRelease") {
+            create("stableDevelopmentRelease") {
                 storeFile = file(System.getenv("MATHWORLD_QA_KEYSTORE_FILE"))
                 storePassword = System.getenv("MATHWORLD_QA_STORE_PASSWORD")
                 keyAlias = System.getenv("MATHWORLD_QA_KEY_ALIAS")
@@ -77,16 +76,10 @@ android {
 
     buildTypes {
         release {
-            // Isolated QA builds coexist with the user's existing MathWorld
-            // installation, avoiding Android's signature-mismatch rejection.
-            if (isolatedQaApk) {
-                applicationIdSuffix = ".qa"
-                versionNameSuffix = "-qa"
-                manifestPlaceholders["mathworldAppLabel"] = "MathWorld QA"
-            }
-            // Without a production keystore, CI builds are debug-signed QA only.
+            // Never add a .qa suffix: there is exactly one MathWorld Android app.
+            // Stable development signing is opt-in; no key is kept in Git.
             signingConfig = when {
-                isolatedQaApk -> signingConfigs.getByName("isolatedQaRelease")
+                stableDevelopmentSigning -> signingConfigs.getByName("stableDevelopmentRelease")
                 hasReleaseSigning -> signingConfigs.getByName("productionRelease")
                 else -> {
                     logger.warn("MathWorld: ONE-OFF DEBUG-SIGNED APK; updates may fail across CI runs.")

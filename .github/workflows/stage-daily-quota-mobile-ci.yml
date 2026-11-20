@@ -1,26 +1,65 @@
-name: Flutter Free-access tests and debug-signed Android QA APK
+name: MathWorld Android (one app, Google sign-in)
 
 on:
   pull_request:
     paths:
       - 'lib/**'
-      - 'assets/branding/**'
+      - 'assets/**'
       - 'android/**'
-      - 'test/models/stage_daily_quota_test.dart'
-      - 'test/daily_challenge_model_test.dart'
+      - 'test/**'
       - 'pubspec.yaml'
       - '.github/workflows/stage-daily-quota-mobile-ci.yml'
   push:
-    branches:
-      - feature/stage-daily-quota-mobile-brand-fixes-v1
+    branches: [main]
+    paths:
+      - 'lib/**'
+      - 'assets/**'
+      - 'android/**'
+      - 'test/**'
+      - 'pubspec.yaml'
+      - '.github/workflows/stage-daily-quota-mobile-ci.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  stage-quota:
+  verify:
+    name: Flutter tests and analyzer (no secrets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.38.10'
+          cache: true
+      - name: Provide non-secret application environment
+        run: cp .env.example .env
+      - name: Resolve Flutter packages
+        run: flutter pub get
+      - name: Verify Free access and Google build configuration
+        run: flutter test test/models/stage_daily_quota_test.dart test/daily_challenge_model_test.dart test/google_oauth_configuration_test.dart
+      - name: Analyze Flutter
+        run: flutter analyze --no-fatal-infos
+
+  google-android-apk:
+    name: Build one signed MathWorld Android APK
+    needs: verify
+    # Keystore secrets are NEVER exposed to pull requests or arbitrary branches.
+    # Run manually on reviewed main after Google Android OAuth is registered.
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'MahmoudWebApp/mathworld-mobile'
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      MATHWORLD_STABLE_DEV_SIGNING: 'true'
+      MATHWORLD_QA_KEYSTORE_FILE: 'mathworld-qa.jks'
+      MATHWORLD_QA_KEYSTORE_BASE64: ${{ secrets.MATHWORLD_QA_KEYSTORE_BASE64 }}
+      MATHWORLD_QA_STORE_PASSWORD: ${{ secrets.MATHWORLD_QA_STORE_PASSWORD }}
+      MATHWORLD_QA_KEY_ALIAS: ${{ secrets.MATHWORLD_QA_KEY_ALIAS }}
+      MATHWORLD_QA_KEY_PASSWORD: ${{ secrets.MATHWORLD_QA_KEY_PASSWORD }}
+      GOOGLE_WEB_CLIENT_ID: ${{ vars.MATHWORLD_GOOGLE_WEB_CLIENT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -32,73 +71,49 @@ jobs:
           channel: stable
           flutter-version: '3.38.10'
           cache: true
-      - name: Provide non-secret test environment
+      - name: Provide non-secret application environment
         run: cp .env.example .env
-      - name: Resolve Flutter packages
-        run: flutter pub get
-      - name: Verify Free unlimited access and optional daily practice model
-        run: flutter test test/models/stage_daily_quota_test.dart test/daily_challenge_model_test.dart
-      - name: Build Android release-mode QA APK (debug-signed)
-        run: flutter build apk --release
-      - name: Explain artifact signing and release limitation
-        run: |
-          echo '### Android QA APK — not production signed' >> "$GITHUB_STEP_SUMMARY"
-          echo 'This release-mode APK uses the Android debug signing configuration. It is intended for manual UI and launcher-icon validation only, not Google Play publishing.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Production keystore configuration and final application ID are tracked in mobile issue #13.' >> "$GITHUB_STEP_SUMMARY"
-      - name: Upload debug-signed release-mode QA APK for device validation
-        uses: actions/upload-artifact@v4
-        with:
-          name: mathworld-android-qa-release-mode-debug-signed
-          path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 14
-          if-no-files-found: error
-      # Distinct, permanently signed QA app, installable beside MathWorld.
-      # GitHub's per-run debug key is not stable. No QA release artifact is
-      # published until the four repository secrets are configured.
-      - name: Check persistent QA-signing secrets
-        id: qa-signing
+      - name: Check signing and OAuth configuration
         shell: bash
-        env:
-          QA_KEYSTORE_BASE64: ${{ secrets.MATHWORLD_QA_KEYSTORE_BASE64 }}
-          QA_STORE_PASSWORD: ${{ secrets.MATHWORLD_QA_STORE_PASSWORD }}
-          QA_KEY_ALIAS: ${{ secrets.MATHWORLD_QA_KEY_ALIAS }}
-          QA_KEY_PASSWORD: ${{ secrets.MATHWORLD_QA_KEY_PASSWORD }}
         run: |
-          if [[ -z "${QA_KEYSTORE_BASE64}" || -z "${QA_STORE_PASSWORD}" || -z "${QA_KEY_ALIAS}" || -z "${QA_KEY_PASSWORD}" ]]; then
-            echo 'configured=false' >> "$GITHUB_OUTPUT"
-            echo 'Stable MathWorld QA APK skipped: configure four repository signing secrets.' >> "$GITHUB_STEP_SUMMARY"
-          else
-            printf '%s' "$QA_KEYSTORE_BASE64" | base64 --decode > android/app/mathworld-qa.jks
-            test -s android/app/mathworld-qa.jks
-            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          if [[ -z "${MATHWORLD_QA_KEYSTORE_BASE64}" || -z "${MATHWORLD_QA_STORE_PASSWORD}" || -z "${MATHWORLD_QA_KEY_ALIAS}" || -z "${MATHWORLD_QA_KEY_PASSWORD}" ]]; then
+            echo "::error::Configure the four MATHWORLD_QA_* GitHub Actions secrets before running the signed Android build."
+            exit 1
           fi
-      - name: Build independently installable and updateable MathWorld QA
-        if: steps.qa-signing.outputs.configured == 'true'
-        env:
-          MATHWORLD_ISOLATED_QA_APK: 'true'
-          MATHWORLD_QA_KEYSTORE_FILE: 'mathworld-qa.jks'
-          MATHWORLD_QA_STORE_PASSWORD: ${{ secrets.MATHWORLD_QA_STORE_PASSWORD }}
-          MATHWORLD_QA_KEY_ALIAS: ${{ secrets.MATHWORLD_QA_KEY_ALIAS }}
-          MATHWORLD_QA_KEY_PASSWORD: ${{ secrets.MATHWORLD_QA_KEY_PASSWORD }}
+          if ! [[ "${GOOGLE_WEB_CLIENT_ID}" =~ ^[0-9]+-[a-zA-Z0-9_-]+[.]apps[.]googleusercontent[.]com$ ]]; then
+            echo "::error::Set the MATHWORLD_GOOGLE_WEB_CLIENT_ID Actions variable to the existing MathWorld Web OAuth client ID."
+            exit 1
+          fi
+          printf '%s' "${MATHWORLD_QA_KEYSTORE_BASE64}" | base64 --decode > android/app/mathworld-qa.jks
+          test -s android/app/mathworld-qa.jks
+          actual_sha1="$(keytool -list -v -keystore android/app/mathworld-qa.jks -alias "${MATHWORLD_QA_KEY_ALIAS}" -storepass:env MATHWORLD_QA_STORE_PASSWORD | awk '/^[[:space:]]*SHA1:/ { print $2; exit }')"
+          expected_sha1="8B:E7:F7:DB:00:1B:97:16:8E:E4:7D:3B:56:B6:C0:32:07:51:52:36"
+          if [[ "${actual_sha1^^}" != "${expected_sha1}" ]]; then
+            echo "::error::The uploaded signing certificate SHA-1 does not match the fingerprint registered in Google Cloud. Do not publish a non-working Google build."
+            exit 1
+          fi
+          echo "One Android app: com.mathworld.mathworld_mobile"
+          echo "Stable signing certificate SHA-1 matched."
+      - name: Resolve Flutter dependencies
+        run: flutter pub get
+      - name: Build signed app with Google sign-in enabled
+        shell: bash
         run: |
-          # Force a fresh Gradle manifest/package/signing configuration after
-          # the earlier legacy APK build in this same CI workspace.
-          flutter clean
-          flutter pub get
-          flutter build apk --release --build-number=${{ github.run_number }}
-      - name: Upload updateable standalone QA APK
-        if: steps.qa-signing.outputs.configured == 'true'
+          set -euo pipefail
+          flutter build apk --release --no-pub --build-number=${{ github.run_number }} \
+            --dart-define=MATHWORLD_SOCIAL_LOGIN_ENABLED=true \
+            "--dart-define=MATHWORLD_GOOGLE_SERVER_CLIENT_ID=${GOOGLE_WEB_CLIENT_ID}"
+      - name: Upload single MathWorld Android APK
         uses: actions/upload-artifact@v4
         with:
-          name: mathworld-qa-updateable-stable-signing
+          name: mathworld-android-google-login
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 14
           if-no-files-found: error
-      - name: Explain APK update compatibility
+      - name: Build summary
         run: |
-          echo '### APK installation and future updates' >> "$GITHUB_STEP_SUMMARY"
-          echo 'The legacy debug-signed artifact can conflict with previous installs because CI creates a new debug keystore.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'The independently installed MathWorld QA artifact has applicationId com.mathworld.mathworld_mobile.qa, a fixed signing key supplied via GitHub Secrets and a monotonically increasing GitHub run-number versionCode.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'The persistent QA build is skipped unless signing secrets are configured; skipped never means updateable APK produced.' >> "$GITHUB_STEP_SUMMARY"
-          echo 'Both builds currently bundle the example Render API; avoid any writes to live data.' >> "$GITHUB_STEP_SUMMARY"
-
+          echo "### MathWorld Android test build" >> "$GITHUB_STEP_SUMMARY"
+          echo "Package: `com.mathworld.mathworld_mobile` (no .qa suffix)." >> "$GITHUB_STEP_SUMMARY"
+          echo "Google login enabled with the existing MathWorld Web OAuth client." >> "$GITHUB_STEP_SUMMARY"
+          echo "Uses one persistent developer signing key. This APK is for device testing, not Google Play publishing." >> "$GITHUB_STEP_SUMMARY"

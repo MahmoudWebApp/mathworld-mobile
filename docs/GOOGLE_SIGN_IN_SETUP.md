@@ -1,96 +1,100 @@
-# MathWorld Flutter — Google Sign-In release checklist
+# MathWorld Google sign-in — one website, one Android app (development)
 
-**Status:** Flutter UI, Google token retrieval, app-session handling, backend
-ID-token verification and account linking exist on feature branches.
-**Google login is OFF by default**, not yet validated on a real Android/iOS
-device, and must not be called production-ready. Payments are out of scope.
+## Project decision
 
-## 1. Google Cloud OAuth clients (owner action)
+There is **one** MathWorld website (`math-world-frontend.vercel.app`) and **one** Flutter Android app (`com.mathworld.mathworld_mobile`). The existing Render backend and Supabase database are shared. Everything is currently development/testing. Do **not** create a second .qa package, a second Vercel project, or another backend.
 
-In a Google Cloud project, configure the OAuth consent screen and authorized
-test users/publishing status as applicable. Create **three distinct OAuth
-clients** when shipping on both platforms:
+The Android Google OAuth entry called "MathWorld Android QA" with package `com.mathworld.mathworld_mobile.qa` is NOT used by the single-app build. In the SAME existing Google Cloud project, register an Android OAuth client with:
 
-- **Web application** client ID (this is the **server audience ID**, not a
-  client secret). The ASP.NET backend verifies Google ID tokens against this
-  exact ID using `Google:ClientId`.
-- **Android** client with package name
-  `com.mathworld.mathworld_mobile` and SHA-1 certificate fingerprint.
-  Register fingerprints for **debug**, **release/upload**, and **Google Play
-  App Signing** certificates as appropriate. SHA-256 is useful for diagnostics.
-  Obtain the correct fingerprint from the actual signing certificate, e.g.
-  `keytool -list -v -keystore <path-to-keystore> -alias <alias>`.
-  Never assume the CI debug key equals a developer's local key.
-- **iOS** client with final iOS bundle ID; configure its reversed client-ID
-  URL scheme in `ios/Runner/Info.plist` under `CFBundleURLTypes`. The
-  iOS URL scheme is **not configured in this repository yet**; iOS must be
-  tested only after that native change. Apple app review and alternate-sign-in
-  requirements must be evaluated before publishing.
+- Package name: `com.mathworld.mathworld_mobile`
+- SHA-1: `8B:E7:F7:DB:00:1B:97:16:8E:E4:7D:3B:56:B6:C0:32:07:51:52:36` **only if** this fingerprint comes from the actual `android/app/mathworld-qa.jks` that will sign APKs. If different, determine and register the genuine signing certificate fingerprint first.
+- **Never** put the Android OAuth client ID in Flutter's `serverClientId`. Use the existing "MathWorld Web" OAuth client ID instead.
 
-The Web/server client ID must be passed to the Flutter SDK as
-`serverClientId` and configured as the **same value** in the backend
-`Google:ClientId`. Do not substitute the Android client ID.
+Existing site Google login must continue to use the existing authorized JavaScript origin `https://math-world-frontend.vercel.app`. Backend Google ID-token audience (`Google__ClientId`) must match the SAME Web OAuth client ID.
 
-## 2. Configure without committing credentials
+## Stable local signing key
 
-Backend service environment (Render/staging):
+Keep a safe backup of the `android/app/mathworld-qa.jks` created on Windows. **Do not generate a new key if you already have one.** This is a developer/test signing key reused for the **same, original** Android package name.
 
-```
-Google__ClientId=<WEB_APPLICATION_OAUTH_CLIENT_ID>
+Inspect its SHA-1 from the Flutter project root with PowerShell:
+
+```powershell
+keytool -list -v -keystore android/app/mathworld-qa.jks -alias mathworldqa
 ```
 
-Android Flutter QA build (value is a public client identifier, not a secret):
+If no key exists yet, create one locally using Java `keytool`:
 
-```bash
-flutter build apk --release \
-  --dart-define=MATHWORLD_SOCIAL_LOGIN_ENABLED=true \
-  --dart-define=MATHWORLD_GOOGLE_SERVER_CLIENT_ID=<WEB_APPLICATION_OAUTH_CLIENT_ID>
+```powershell
+keytool -genkeypair -v -keystore android/app/mathworld-qa.jks -storetype PKCS12 -keyalg RSA -keysize 3072 -validity 10000 -alias mathworldqa
 ```
 
-Flutter's `SocialAuthConfig.googleAvailable` shows the Google button only
-on supported native builds with a plausible OAuth client ID. The default
-`flutter build apk --release` **does not enable** Google login. For iOS
-also supply `--dart-define=MATHWORLD_GOOGLE_IOS_CLIENT_ID=<IOS_OAUTH_CLIENT_ID>`
-and configure the iOS native URL scheme before distributing test builds. Once that native scheme is actually installed, also use `--dart-define=MATHWORLD_GOOGLE_IOS_URL_SCHEME_CONFIGURED=true`; otherwise the Google button intentionally stays hidden on iOS.
+Store the keystore and its passwords securely off-repository. Git ignores `android/app/*.jks`. A different signing certificate cannot install as an update to an existing APK with the same package name: uninstall the old debug-signed app before the **first** stable-signed test install (this removes local app data; backend user data is separate). Keep this signing key stable for subsequent test updates.
 
-No Firebase dependency is required solely to use this plugin with explicit
-OAuth IDs. Never bundle Google client **secrets** or service-account keys in
-the mobile app. Keep provider tokens out of logs.
+## GitHub Actions — setup (owner action)
 
-## 3. Verify on real devices (acceptance)
+Go to `https://github.com/MahmoudWebApp/mathworld-mobile/settings/secrets/actions`. Configure the following **repository secrets** (do not paste them in PRs, logs or chat):
 
-1. Install a QA build signed with the **same certificate registered** in
-   Google Cloud. Check Google sign-in button appears only in enabled builds.
-2. New Google account: sign in, backend issues MathWorld JWT, student selects
-   learning stage, and can solve within the Free two-category policy.
-3. Returning Google account: same MathWorld user ID, stage, answers and points.
-4. Existing password account with same email: backend requires **explicit
-   account linking**, never silently merges by email. Sign in by password,
-   open Settings → Link Google, then retry Google login.
-5. Cancel the Google account chooser: return to the login screen without
-   showing an error or creating a session.
-6. Sign out: local JWT and Google SDK state are cleared; the next learner on a
-   shared device can select their own account.
-7. Try disabled user, invalid token, revoked authorization, slow/no network
-   and a different Google account. Verify no cross-account cached progress,
-   badges or notifications.
-8. Test **both debug and production signing** (their certificate fingerprints
-   are different). Do a clean install and check the **external launcher logo**.
-9. On iOS, confirm reversed URL scheme, ID-token audience, iPhone app lifecycle
-   and any relevant App Store guidelines.
+| Secret name | Value |
+|---|---|
+| `MATHWORLD_QA_KEYSTORE_BASE64` | Base64 bytes of the existing `mathworld-qa.jks` file |
+| `MATHWORLD_QA_STORE_PASSWORD` | Local keystore password |
+| `MATHWORLD_QA_KEY_ALIAS` | Usually `mathworldqa` |
+| `MATHWORLD_QA_KEY_PASSWORD` | Private key password |
 
-**Common Android error:** Credential Manager can sometimes report a
-`canceled` error even after selecting an account if SHA, package name or
-`serverClientId` is wrong. Check native OAuth configuration before assuming
-a user intentionally dismissed it.
+PowerShell command to copy the key as Base64 (without printing it):
 
-## 4. Release blockers
+```powershell
+[Convert]::ToBase64String(
+  [IO.File]::ReadAllBytes((Resolve-Path 'android/app/mathworld-qa.jks').Path)
+) | Set-Clipboard
+```
 
-- Actual Google Cloud OAuth client IDs, Android SHA registrations and
-  iOS URL-scheme configuration are **external/owner actions**.
-- The deployed backend configuration and mobile build flags have not been
-  inspected/changed by this feature-branch work.
-- CI `flutter analyze` and Android APK compilation do **not** validate a
-  Google authorization exchange.
-- Do not merge, deploy, or mark Google login completed without signed-device
-  acceptance and explicit approval.
+Create a **repository variable**, NOT another secret:
+
+| Variable name | Value |
+|---|---|
+| `MATHWORLD_GOOGLE_WEB_CLIENT_ID` | The existing **MathWorld Web** OAuth client ID from Google Cloud (ends in `.apps.googleusercontent.com`) |
+
+Do not put the Android client ID here. This is a public client identifier; do not share client *secrets*.
+
+After the GitHub workflow in `main` is available: **Actions → MathWorld Android (one app, Google sign-in) → Run workflow → Branch: main**. It runs Flutter checks first, then builds `app-release.apk` with:
+
+- `MATHWORLD_STABLE_DEV_SIGNING=true`: stable developer keystore; **no .qa suffix**
+- `MATHWORLD_SOCIAL_LOGIN_ENABLED=true`
+- `MATHWORLD_GOOGLE_SERVER_CLIENT_ID`: the existing MathWorld Web ID
+
+The action refuses to create an APK if required secrets/variable are missing, or if signing SHA-1 differs from the registered development certificate. GitHub Actions signing secrets are **not used by pull requests**. Download the artifact named `mathworld-android-google-login`. This is an Android device-test APK, **not** a Play Store production release.
+
+## Local Windows APK (same package and key)
+
+From the Flutter project root, with `.env` containing the existing non-secret API base URL:
+
+```powershell
+$env:MATHWORLD_STABLE_DEV_SIGNING = 'true'
+$env:MATHWORLD_QA_KEYSTORE_FILE = 'mathworld-qa.jks'
+$env:MATHWORLD_QA_KEY_ALIAS = 'mathworldqa'
+$pass = Read-Host 'Developer keystore password' -AsSecureString
+$plain = [System.Net.NetworkCredential]::new('', $pass).Password
+$env:MATHWORLD_QA_STORE_PASSWORD = $plain
+$env:MATHWORLD_QA_KEY_PASSWORD = $plain
+
+$env:GOOGLE_WEB_CLIENT_ID = 'PASTE_YOUR_EXISTING_MATHWORLD_WEB_OAUTH_CLIENT_ID'
+flutter pub get
+flutter build apk --release `
+  --dart-define=MATHWORLD_SOCIAL_LOGIN_ENABLED=true `
+  "--dart-define=MATHWORLD_GOOGLE_SERVER_CLIENT_ID=$env:GOOGLE_WEB_CLIENT_ID"
+```
+
+Use the same keystore file for Windows and GitHub Actions. Passwords may differ between the keystore and private key; when they do, supply each value independently.
+
+## Manual Android acceptance — required before calling Google login done
+
+1. Install the signed MathWorld APK with the *original* package `com.mathworld.mathworld_mobile`; confirm there is only one MathWorld app on the phone.
+2. Confirm the "Continue with Google" button is present on login/registration; the default unconfigured developer build intentionally hides it.
+3. Sign in with a new Google account → app receives MathWorld JWT → user selects educational stage → opens an allowed Free category.
+4. Sign out and sign in again with the same account; prior student stage and progress must persist.
+5. Password-account linking is explicit in Settings; do not auto-merge users by email.
+6. Cancel Google chooser, retry, test a second account, no-network behavior and cache isolation.
+7. Confirm backend `Google__ClientId` accepts the same Web audience and Google Cloud Audience allows the test user.
+
+OAuth account/project will be changed for the public launch later; no production credentials, release signing or iOS setup is implied by this development workflow.
