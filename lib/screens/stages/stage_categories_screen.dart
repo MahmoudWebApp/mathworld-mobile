@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
@@ -63,6 +64,8 @@ class StageCategoriesScreen extends ConsumerWidget {
               id: item.id,
               nameAr: item.nameAr,
               nameEn: item.nameEn,
+              descriptionAr: item.descriptionAr,
+              descriptionEn: item.descriptionEn,
               icon: item.icon,
               stageId: stage.id,
               order: item.order,
@@ -349,14 +352,7 @@ class _CategoryCard extends StatelessWidget {
     final mutedColor = isDark ? AppColors.darkMuted : AppColors.lightMuted;
     final noPublishedProblems = category.problemsCount == 0;
 
-    final lockTooltipKey = GlobalKey<TooltipState>();
-    return Tooltip(
-      key: lockTooltipKey,
-      message: localeCode == 'ar'
-          ? 'هذه الفئة متاحة لحساب Premium'
-          : 'Available with Premium',
-      triggerMode: TooltipTriggerMode.manual,
-      child: GlassCard(
+    return GlassCard(
       // The API now returns a real per-stage count. Never navigate into a
       // category known to have zero questions and then show a dead-end page.
       // Unavailable topics never route to a paywall or empty question list.
@@ -368,7 +364,7 @@ class _CategoryCard extends StatelessWidget {
                   : 'This category has no published problems yet.'),
             ))
           : locked
-              ? () => lockTooltipKey.currentState?.ensureTooltipVisible()
+              ? () => _showPremiumLockedSheet(context, title)
               : () => Navigator.pushNamed(
                     context,
                     AppRoutes.problems,
@@ -450,12 +446,66 @@ class _CategoryCard extends StatelessWidget {
           ],
         ],
       ),
-    ),
+    );
+  }
+
+  Future<void> _showPremiumLockedSheet(BuildContext context, String title) async {
+    final ar = localeCode == 'ar';
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Icon(Icons.lock_rounded, size: 40,
+                color: Theme.of(context).colorScheme.primary),
+              const SizedBox(height: AppSpacing.md),
+              Text(ar ? 'هذه الفئة متاحة مع Premium' : 'This topic requires Premium',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+              const SizedBox(height: AppSpacing.sm),
+              Text(title, textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: AppSpacing.lg),
+              Text(ar
+                ? 'افتح كل فئات مرحلتك وشاهد الحل قبل الإجابة واحصل على إحصائيات وتقارير شخصية.'
+                : 'Unlock all topics in your stage, preview solutions, and access personal reports.',
+                textAlign: TextAlign.center),
+              const SizedBox(height: AppSpacing.lg),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  Navigator.pushNamed(context, AppRoutes.premiumBenefits);
+                },
+                icon: const Icon(Icons.workspace_premium_rounded),
+                label: Text(ar ? 'المميزات وترقية الحساب' : 'Benefits & upgrade'),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
   Widget _categoryIcon(Color accent) {
     final value = category.icon?.trim() ?? '';
+    if (value.startsWith('https://') && value.toLowerCase().split('?').first.endsWith('.svg')) {
+      return SvgPicture.network(value, width: 34, height: 34,
+        placeholderBuilder: (_) => SizedBox.square(
+          dimension: 24,
+          child: CircularProgressIndicator(strokeWidth: 2, color: accent),
+        ),
+        errorBuilder: (context, error, stackTrace) =>
+          Icon(Icons.calculate_outlined, color: accent, size: 26),
+      );
+    }
     if (value.startsWith('https://')) {
       return Image.network(
         value,
