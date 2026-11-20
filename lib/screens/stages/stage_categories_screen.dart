@@ -17,6 +17,7 @@ import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/stage_math_glyph.dart';
+import '../../widgets/category_brand_icon.dart';
 
 /// Displays localized categories for the selected educational stage.
 class StageCategoriesScreen extends ConsumerWidget {
@@ -64,6 +65,8 @@ class StageCategoriesScreen extends ConsumerWidget {
               nameAr: item.nameAr,
               nameEn: item.nameEn,
               icon: item.icon,
+              descriptionAr: item.descriptionAr,
+              descriptionEn: item.descriptionEn,
               stageId: stage.id,
               order: item.order,
               problemsCount: item.problemsCount,
@@ -212,6 +215,12 @@ class StageCategoriesScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
+                      if (stage.getDescription(localeCode).isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(stage.getDescription(localeCode),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
                       const SizedBox(height: AppSpacing.md),
                       if (user?.role == 'Student' &&
                           (premiumState?.hasError ?? false)) ...[
@@ -349,14 +358,7 @@ class _CategoryCard extends StatelessWidget {
     final mutedColor = isDark ? AppColors.darkMuted : AppColors.lightMuted;
     final noPublishedProblems = category.problemsCount == 0;
 
-    final lockTooltipKey = GlobalKey<TooltipState>();
-    return Tooltip(
-      key: lockTooltipKey,
-      message: localeCode == 'ar'
-          ? 'هذه الفئة متاحة لحساب Premium'
-          : 'Available with Premium',
-      triggerMode: TooltipTriggerMode.manual,
-      child: GlassCard(
+    return GlassCard(
       // The API now returns a real per-stage count. Never navigate into a
       // category known to have zero questions and then show a dead-end page.
       // Unavailable topics never route to a paywall or empty question list.
@@ -368,7 +370,7 @@ class _CategoryCard extends StatelessWidget {
                   : 'This category has no published problems yet.'),
             ))
           : locked
-              ? () => lockTooltipKey.currentState?.ensureTooltipVisible()
+              ? () => _showLockedCategoryDialog(context)
               : () => Navigator.pushNamed(
                     context,
                     AppRoutes.problems,
@@ -399,7 +401,7 @@ class _CategoryCard extends StatelessWidget {
                     color: accent.withValues(alpha: isDark ? 0.34 : 0.23),
                   ),
                 ),
-                child: _categoryIcon(accent),
+                child: CategoryBrandIcon(icon: category.icon, size: 38),
               ),
               const Spacer(),
               if (locked)
@@ -416,6 +418,15 @@ class _CategoryCard extends StatelessWidget {
               fontWeight: FontWeight.w800,
             ),
           ),
+          if (category.getDescription(localeCode).isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(category.getDescription(localeCode),
+              maxLines: 2, overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: mutedColor, fontSize: 11, height: 1.3,
+              ),
+            ),
+          ],
           const Spacer(),
           Text(
             noPublishedProblems
@@ -450,31 +461,51 @@ class _CategoryCard extends StatelessWidget {
           ],
         ],
       ),
-    ),
     );
   }
 
-  Widget _categoryIcon(Color accent) {
-    final value = category.icon?.trim() ?? '';
-    if (value.startsWith('https://')) {
-      return Image.network(
-        value,
-        width: 30,
-        height: 30,
-        fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) =>
-            Icon(Icons.calculate_outlined, color: accent, size: 26),
-      );
-    }
-    // The API may return an asset path or URL instead of a glyph.
-    // Never display a long raw URL or path over the category card.
-    if (value.isNotEmpty &&
-        value.runes.length <= 4 &&
-        !value.contains('/') &&
-        !value.contains('\\')) {
-      return Text(value, style: const TextStyle(fontSize: 25));
-    }
-    return StageMathGlyph(stageOrder: stageOrder, color: accent, size: 32);
+  void _showLockedCategoryDialog(BuildContext context) {
+    final ar = localeCode == 'ar';
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.lock_outline_rounded, size: 40),
+              const SizedBox(height: AppSpacing.md),
+              Text(ar ? 'هذه الفئة ضمن Premium' : 'Premium topic',
+                textAlign: TextAlign.center,
+                style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800)),
+              const SizedBox(height: AppSpacing.sm),
+              Text(ar
+                ? 'افتح جميع فئات مرحلتك، شاهد الحل قبل الإجابة واستفد من التقارير المتقدمة. الترقية بكود من الإدارة دون عرض أسعار حالياً.'
+                : 'Unlock every topic in your stage, preview solutions and access advanced reports. Activate with an admin-issued code; no prices are listed.',
+                textAlign: TextAlign.center),
+              const SizedBox(height: AppSpacing.lg),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  Navigator.pushNamed(context, AppRoutes.premiumBenefits);
+                },
+                icon: const Icon(Icons.workspace_premium_rounded),
+                label: Text(ar ? 'المميزات وترقية الحساب' : 'Benefits & upgrade'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(sheetContext),
+                child: Text(ar ? 'لاحقاً' : 'Maybe later'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
 }
