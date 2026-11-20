@@ -246,6 +246,7 @@ class ProblemPreview {
   final int points;
   final bool isSolved;
   final bool hasAttempted;
+  final bool progressKnown;
   final bool isFavorite;
 
   const ProblemPreview({
