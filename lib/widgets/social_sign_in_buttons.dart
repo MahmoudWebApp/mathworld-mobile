@@ -56,13 +56,15 @@ class _SocialSignInButtonsState extends ConsumerState<SocialSignInButtons> {
     final isSubmitting = ref.watch(
       authProvider.select((state) => state.isSubmitting),
     );
+    // Disable both submit paths while either request is active, but only
+    // animate the Google button for its own operation.
     final busy = _working || isSubmitting;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: OutlinedButton.icon(
         onPressed: busy ? null : _signIn,
-        icon: busy
+        icon: _working
             ? const SizedBox(
                 width: 17,
                 height: 17,
