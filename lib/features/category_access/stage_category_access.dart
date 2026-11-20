@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// The backend remains authoritative for problem access.
 class StageCategoryAccess {
@@ -30,6 +31,8 @@ class StageCategoryItem {
   final int id;
   final String nameAr;
   final String nameEn;
+  final String descriptionAr;
+  final String descriptionEn;
   final String icon;
   final int order;
   final int? problemsCount;
@@ -39,6 +42,8 @@ class StageCategoryItem {
     required this.id,
     required this.nameAr,
     required this.nameEn,
+    this.descriptionAr = '',
+    this.descriptionEn = '',
     required this.icon,
     required this.order,
     required this.problemsCount,
@@ -51,6 +56,8 @@ class StageCategoryItem {
       nameAr: (json['NameAr'] ?? json['nameAr']) as String? ?? '',
       nameEn: (json['NameEn'] ?? json['nameEn']) as String? ?? '',
       icon: (json['Icon'] ?? json['icon']) as String? ?? '📐',
+      descriptionAr: (json['DescriptionAr'] ?? json['descriptionAr']) as String? ?? '',
+      descriptionEn: (json['DescriptionEn'] ?? json['descriptionEn']) as String? ?? '',
       order: ((json['Order'] ?? json['order']) as num?)?.toInt() ?? 0,
       problemsCount: ((json['ProblemsCount'] ?? json['problemsCount']) as num?)?.toInt(),
       isFree: (json['IsFree'] ?? json['isFree']) == true,
@@ -112,7 +119,13 @@ class StageCategoryAccessGrid extends StatelessWidget {
             final unlocked = category.canOpen(isPremium: isPremium);
             return Card(
               child: ListTile(
-                leading: Text(category.icon),
+                leading: category.icon.startsWith('https://') && category.icon.toLowerCase().endsWith('.svg')
+                    ? SvgPicture.network(category.icon, width: 32, height: 32,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.calculate_outlined))
+                    : category.icon.startsWith('http')
+                        ? Image.network(category.icon, width: 32, height: 32,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.calculate_outlined))
+                        : Text(category.icon.runes.length <= 4 ? category.icon : '∑'),
                 title: Text(isArabic ? category.nameAr : category.nameEn),
                 subtitle: Text(unlocked
                     ? (isArabic ? 'متاحة' : 'Unlocked')

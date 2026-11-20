@@ -3,6 +3,8 @@ class Category {
   final int id;
   final String nameAr;
   final String nameEn;
+  final String descriptionAr;
+  final String descriptionEn;
   final String? icon;
   final int stageId;
   final int order;
@@ -12,6 +14,8 @@ class Category {
     required this.id,
     required this.nameAr,
     required this.nameEn,
+    this.descriptionAr = '',
+    this.descriptionEn = '',
     this.icon,
     required this.stageId,
     required this.order,
@@ -38,6 +42,8 @@ class Category {
               ? localizedName
               : arabicName,
       icon: _nullableString(json['Icon'] ?? json['icon']),
+      descriptionAr: _string(json['DescriptionAr'] ?? json['descriptionAr']),
+      descriptionEn: _string(json['DescriptionEn'] ?? json['descriptionEn']),
       stageId: _int(json['StageId'] ?? json['stageId']),
       order: _int(json['Order'] ?? json['order']),
       problemsCount: _nullableInt(
@@ -52,6 +58,9 @@ class Category {
     return preferred.trim().isNotEmpty ? preferred : fallback;
   }
 
+  String getDescription(String languageCode) =>
+      languageCode == 'en' ? descriptionEn : descriptionAr;
+
   double? get progress {
     if (problemsCount == null || problemsCount == 0 || solvedCount == null) {
       return null;
@@ -64,6 +73,8 @@ class Category {
       'Id': id,
       'NameAr': nameAr,
       'NameEn': nameEn,
+      'DescriptionAr': descriptionAr,
+      'DescriptionEn': descriptionEn,
       'Icon': icon,
       'StageId': stageId,
       'Order': order,

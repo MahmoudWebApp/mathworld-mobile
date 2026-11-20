@@ -48,8 +48,9 @@ jobs:
     name: Build one signed MathWorld Android APK
     needs: verify
     # Keystore secrets are NEVER exposed to pull requests or arbitrary branches.
-    # Run manually on reviewed main after Google Android OAuth is registered.
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'MahmoudWebApp/mathworld-mobile'
+    # A reviewed main-branch push creates the same signed testing APK automatically.
+    # Users may also run this workflow manually on main.
+    if: (github.event_name == 'workflow_dispatch' || github.event_name == 'push') && github.ref == 'refs/heads/main' && github.repository == 'MahmoudWebApp/mathworld-mobile'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
