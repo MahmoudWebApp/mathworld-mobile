@@ -34,6 +34,9 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardState = ref.watch(dashboardProvider);
+    final premiumAccount = ref.watch(authProvider.select(
+      (state) => state.user?.subscriptionType.toLowerCase() == 'premium',
+    ));
     final learningJourney = ref.watch(learningJourneyProvider);
     final dailyPractice = ref.watch(dailyChallengeProvider);
     final badges = ref.watch(studentBadgesProvider);
@@ -95,7 +98,43 @@ class HomeScreen extends ConsumerWidget {
                   journey: learningJourney.valueOrNull,
                   onContinue: onOpenStages,
                 )),
-                const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.lg),
+                if (!premiumAccount) ...[
+                  GlassCard(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Icon(Icons.workspace_premium_rounded,
+                            color: Theme.of(context).colorScheme.primary),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(child: Text(
+                            context.locale.languageCode == 'ar'
+                              ? 'مميزات Premium وترقية الحساب'
+                              : 'Premium benefits and account upgrade',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800),
+                          )),
+                        ]),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(context.locale.languageCode == 'ar'
+                          ? 'افتح جميع فئات مرحلتك وشاهد الحل قبل الإجابة واحصل على تقارير شخصية. التفعيل حالياً بكود من الإدارة، دون عرض أسعار.'
+                          : 'Unlock all topics in your stage, preview solutions and access personal reports. Activation uses an admin-issued code; no prices are shown.',
+                          style: Theme.of(context).textTheme.bodyMedium),
+                        const SizedBox(height: AppSpacing.md),
+                        OutlinedButton.icon(
+                          onPressed: () => Navigator.pushNamed(context, AppRoutes.premiumBenefits),
+                          icon: const Icon(Icons.arrow_circle_up_rounded),
+                          label: Text(context.locale.languageCode == 'ar'
+                            ? 'المميزات وترقية الحساب' : 'Benefits & upgrade'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                ] else
+                  const SizedBox(height: AppSpacing.md),
                 if (backendMismatch) ...[
                   GlassCard(
                     child: Column(
