@@ -53,7 +53,7 @@ class _PremiumBenefitsScreenState
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
               Text(
-                ar ? 'خطتك التعليمية' : 'Your learning plan',
+                ar ? 'مقارنة Free وPremium' : 'Free vs Premium',
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w900,
                 ),
@@ -61,8 +61,8 @@ class _PremiumBenefitsScreenState
               const SizedBox(height: AppSpacing.sm),
               Text(
                 ar
-                    ? 'قارن المميزات واختر ما يناسبك. المسائل غير محدودة في الفئات المتاحة لحسابك.'
-                    : 'Compare benefits and choose what fits. Solving is unlimited within your accessible categories.',
+                    ? 'قارن الحسابين ومميزاتهما بدون أسعار حالياً. المسائل غير محدودة ضمن الفئات المتاحة لحسابك.'
+                    : 'Compare the two plans without prices for now. Practice is unlimited in your accessible topics.',
                 style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -84,7 +84,7 @@ class _PremiumBenefitsScreenState
                 selected: premium,
                 icon: Icons.workspace_premium_rounded,
                 features: [
-                  ar ? 'كل فئات جميع المراحل' : 'Every category in every stage',
+                  ar ? 'كل فئات المرحلة التعليمية المختارة' : 'Every topic in your selected stage',
                   ar ? 'حل عدد غير محدود من المسائل' : 'Unlimited problem solving',
                   ar ? 'عرض الحل قبل إرسال الإجابة' : 'See the solution before answering',
                   ar ? 'تقارير تقدم تفصيلية وإحصائيات خاصة' : 'Detailed private progress analytics',

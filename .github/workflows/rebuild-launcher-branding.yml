@@ -1,9 +1,9 @@
-name: Rebuild mobile iOS and PWA launcher icons on dev
+name: Rebuild MathWorld launcher icons from the exact original logo
 
 on:
   push:
     branches:
-      - feature/premium-entitlements-client
+      - main
     paths:
       - "tools/rebuild_launcher_branding.py"
       - ".github/workflows/rebuild-launcher-branding.yml"
@@ -14,13 +14,13 @@ permissions:
 
 jobs:
   regenerate:
-    if: github.repository == 'MahmoudWebApp/mathworld-mobile' && github.ref == 'refs/heads/feature/premium-entitlements-client'
+    if: github.repository == 'MahmoudWebApp/mathworld-mobile' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feature/premium-entitlements-client
+          ref: main
           fetch-depth: 0
           persist-credentials: true
       - uses: actions/setup-python@v5
@@ -28,9 +28,9 @@ jobs:
           python-version: "3.12"
       - name: Install required image tooling
         run: python -m pip install "Pillow>=11,<13"
-      - name: Regenerate native iOS and Flutter Web icons from approved mark
+      - name: Regenerate Android, iOS and PWA icons from exact approved mark
         run: python tools/rebuild_launcher_branding.py
-      - name: Review and commit generated images only to feature branch
+      - name: Commit generated brand assets to the same single app on main
         shell: bash
         run: |
           set -euo pipefail
@@ -43,6 +43,6 @@ jobs:
           fi
           git diff --cached --stat
           git commit -m "fix(brand): replace black iOS and Flutter Web icon backgrounds with approved mark"
-          git fetch origin feature/premium-entitlements-client
-          git rebase origin/feature/premium-entitlements-client
-          git push origin HEAD:feature/premium-entitlements-client
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main

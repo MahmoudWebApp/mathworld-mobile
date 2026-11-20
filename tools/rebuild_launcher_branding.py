@@ -105,12 +105,19 @@ def main():
     maskable=master(mark,0.56)
     # Adaptive icons need the symbol entirely INSIDE the central launcher
     # safe area. The background remains the native MathWorld purple layer.
-    adaptive=transparent_square(mark,0.52)
+    adaptive=transparent_square(mark,0.58)
     save(adaptive,ANDROID/"drawable-nodpi/mathworld_adaptive_foreground.png",432)
     save(adaptive,ANDROID/"drawable-nodpi/ic_launcher_foreground.png",432)
     # Preserve the original saturated purple mark, not the later shrunken
     # launcher variant that left wide empty margins.
-    legacy=transparent_square(mark,0.88)
+    legacy=transparent_square(mark,0.76)
+    # Legacy Android icons are also rendered from the exact approved image.
+    # Lossless WebP replaces the old tiny approximate launcher artwork.
+    (ANDROID/"drawable-nodpi/mathworld_external_launcher.webp").parent.mkdir(parents=True,exist_ok=True)
+    legacy.resize((432,432),Image.Resampling.LANCZOS).save(
+        ANDROID/"drawable-nodpi/mathworld_external_launcher.webp",
+        "WEBP", lossless=True, method=6,
+    )
     for folder,px in (
         ("mipmap-mdpi",48),("mipmap-hdpi",72),
         ("mipmap-xhdpi",96),("mipmap-xxhdpi",144),
