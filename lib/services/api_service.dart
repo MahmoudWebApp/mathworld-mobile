@@ -111,6 +111,7 @@ class ApiService implements ApiClient {
     return _execute(
       () => _dio.get(path, queryParameters: queryParameters),
       handleUnauthorized: handleUnauthorized,
+      transientGetRetries: 1,
     );
   }
 
@@ -187,10 +188,20 @@ class ApiService implements ApiClient {
   Future<Response<dynamic>> _execute(
     Future<Response<dynamic>> Function() request, {
     required bool handleUnauthorized,
+    int transientGetRetries = 0,
   }) async {
     try {
       return await request();
     } on DioException catch (error) {
+      // Only retry a read request once. Do not repeat answer submissions,
+      // payment calls or any other mutation after an uncertain response.
+      if (transientGetRetries > 0 && _isTransientGetError(error)) {
+        await Future<void>.delayed(const Duration(milliseconds: 650));
+        return _execute(request,
+          handleUnauthorized: handleUnauthorized,
+          transientGetRetries: transientGetRetries - 1,
+        );
+      }
       final exception = _mapError(
         error,
         handleUnauthorized: handleUnauthorized,
@@ -202,6 +213,17 @@ class ApiService implements ApiClient {
 
       throw exception;
     }
+  }
+
+  bool _isTransientGetError(DioException error) {
+    final status = error.response?.statusCode;
+    if (status == 502 || status == 503 || status == 504 ||
+        (status != null && status >= 520 && status < 600)) {
+      return true;
+    }
+    return error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.connectionError;
   }
 
   AppException _mapError(
@@ -225,6 +247,17 @@ class ApiService implements ApiClient {
       return AppException(
         type: AppExceptionType.notFound,
         messageKey: 'server_feature_unavailable',
+        statusCode: statusCode,
+        cause: error,
+      );
+    }
+
+    // Providers and reverse proxies can return nonstandard 52x errors.
+    // They are server outages, not unidentified student-facing failures.
+    if (statusCode != null && statusCode >= 500 && statusCode < 600) {
+      return AppException(
+        type: AppExceptionType.server,
+        messageKey: 'server_error',
         statusCode: statusCode,
         cause: error,
       );
