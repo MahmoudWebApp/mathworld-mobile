@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 /// The backend remains authoritative for problem access.
 class StageCategoryAccess {
@@ -118,7 +119,13 @@ class StageCategoryAccessGrid extends StatelessWidget {
             final unlocked = category.canOpen(isPremium: isPremium);
             return Card(
               child: ListTile(
-                leading: Text(category.icon),
+                leading: category.icon.startsWith('https://') && category.icon.toLowerCase().endsWith('.svg')
+                    ? SvgPicture.network(category.icon, width: 32, height: 32,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.calculate_outlined))
+                    : category.icon.startsWith('http')
+                        ? Image.network(category.icon, width: 32, height: 32,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.calculate_outlined))
+                        : Text(category.icon.runes.length <= 4 ? category.icon : '∑'),
                 title: Text(isArabic ? category.nameAr : category.nameEn),
                 subtitle: Text(unlocked
                     ? (isArabic ? 'متاحة' : 'Unlocked')
