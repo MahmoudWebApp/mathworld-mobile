@@ -297,6 +297,7 @@ class ProblemPreview {
       points: _int(json['Points'] ?? json['points']),
       isSolved: _bool(json['IsSolved'] ?? json['isSolved']),
       hasAttempted: _bool(json['HasAttempted'] ?? json['hasAttempted']),
+      progressKnown: json.containsKey('HasAttempted') || json.containsKey('hasAttempted'),
       isFavorite: _bool(json['IsFavorite'] ?? json['isFavorite']),
     );
   }
