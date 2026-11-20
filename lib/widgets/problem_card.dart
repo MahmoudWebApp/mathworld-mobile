@@ -98,7 +98,7 @@ class ProblemCard extends StatelessWidget {
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
             children: [
-              _MetaPill(
+              if (problem.progressKnown) _MetaPill(
                 icon: problem.isSolved
                     ? Icons.check_circle_outline_rounded
                     : problem.hasAttempted
