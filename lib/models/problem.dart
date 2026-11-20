@@ -245,6 +245,8 @@ class ProblemPreview {
   final int viewsCount;
   final int points;
   final bool isSolved;
+  final bool hasAttempted;
+  final bool progressKnown;
   final bool isFavorite;
 
   const ProblemPreview({
@@ -257,6 +259,8 @@ class ProblemPreview {
     required this.viewsCount,
     required this.points,
     this.isSolved = false,
+    this.hasAttempted = false,
+    this.progressKnown = false,
     this.isFavorite = false,
   });
 
@@ -292,6 +296,8 @@ class ProblemPreview {
       viewsCount: _int(json['ViewsCount'] ?? json['viewsCount']),
       points: _int(json['Points'] ?? json['points']),
       isSolved: _bool(json['IsSolved'] ?? json['isSolved']),
+      hasAttempted: _bool(json['HasAttempted'] ?? json['hasAttempted']),
+      progressKnown: json.containsKey('HasAttempted') || json.containsKey('hasAttempted'),
       isFavorite: _bool(json['IsFavorite'] ?? json['isFavorite']),
     );
   }

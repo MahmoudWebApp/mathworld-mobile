@@ -98,6 +98,21 @@ class ProblemCard extends StatelessWidget {
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
             children: [
+              if (problem.progressKnown) _MetaPill(
+                icon: problem.isSolved
+                    ? Icons.check_circle_outline_rounded
+                    : problem.hasAttempted
+                        ? Icons.history_rounded
+                        : Icons.fiber_new_outlined,
+                label: problem.isSolved
+                    ? (context.locale.languageCode == 'ar' ? 'محلولة' : 'Solved')
+                    : problem.hasAttempted
+                        ? (context.locale.languageCode == 'ar' ? 'تمت تجربتها' : 'Attempted')
+                        : (context.locale.languageCode == 'ar' ? 'جديدة' : 'New'),
+                color: problem.isSolved ? AppColors.success
+                    : problem.hasAttempted ? AppColors.warning
+                    : Theme.of(context).colorScheme.outline,
+              ),
               _MetaPill(
                 icon: Icons.category_outlined,
                 label: problem.categoryName,
