@@ -729,14 +729,6 @@ class _LearningJourneyCard extends StatelessWidget {
     final reviewCount = journey.categories.where((category) =>
         !category.isLocked &&
         category.attemptedProblems > category.solvedProblems).length;
-    // An old backend can omit IsLocked. That's unknown, not Premium.
-    final accessUnknown = journey.categories.any((c) => !c.accessVerified);
-    // The home screen highlights available lessons instead of a paywall list.
-    final visibleCategories = journey.categories
-        .where((c) => c.accessVerified && !c.isLocked)
-        .take(4).toList();
-    final lockedCount = journey.categories
-        .where((c) => c.accessVerified && c.isLocked).length;
 
     return GlassCard(
       child: Column(
