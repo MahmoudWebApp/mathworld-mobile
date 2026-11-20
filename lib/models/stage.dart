@@ -3,11 +3,15 @@ class Stage {
   final int id;
   final String nameAr;
   final String nameEn;
+  final String descriptionAr;
+  final String descriptionEn;
   final int order;
   const Stage({
     required this.id,
     required this.nameAr,
     required this.nameEn,
+    this.descriptionAr = '',
+    this.descriptionEn = '',
     required this.order,
   });
   factory Stage.fromJson(
@@ -29,6 +33,8 @@ class Stage {
           : languageCode == 'en'
               ? localizedName
               : arabicName,
+      descriptionAr: _string(json['DescriptionAr'] ?? json['descriptionAr']),
+      descriptionEn: _string(json['DescriptionEn'] ?? json['descriptionEn']),
       order: _int(json['Order'] ?? json['order']),
     );
   }
@@ -38,11 +44,16 @@ class Stage {
     return preferred.trim().isNotEmpty ? preferred : fallback;
   }
 
+  String getDescription(String languageCode) =>
+      languageCode == 'en' ? descriptionEn : descriptionAr;
+
   Map<String, dynamic> toJson() {
     return {
       'Id': id,
       'NameAr': nameAr,
       'NameEn': nameEn,
+      'DescriptionAr': descriptionAr,
+      'DescriptionEn': descriptionEn,
       'Order': order,
     };
   }
