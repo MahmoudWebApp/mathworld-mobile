@@ -93,6 +93,7 @@ class StagesScreen extends ConsumerWidget {
                               final stage = items[index];
                               return _StageCard(
                                 title: stage.getName(localeCode),
+                                description: stage.getDescription(localeCode),
                                 order: stage.order,
                                 onTap: () => Navigator.pushNamed(
                                   context, AppRoutes.stageCategories, arguments: stage),
@@ -121,11 +122,13 @@ class StagesScreen extends ConsumerWidget {
 
 class _StageCard extends StatelessWidget {
   final String title;
+  final String description;
   final int order;
   final VoidCallback onTap;
 
   const _StageCard({
     required this.title,
+    required this.description,
     required this.order,
     required this.onTap,
   });
@@ -170,8 +173,8 @@ class _StageCard extends StatelessWidget {
           ),
           const Spacer(),
           Text(
-            'stage_number'.tr(namedArgs: {'number': '$order'}),
-            maxLines: 1,
+            description.isNotEmpty ? description : 'stage_number'.tr(namedArgs: {'number': '$order'}),
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall,
           ),
