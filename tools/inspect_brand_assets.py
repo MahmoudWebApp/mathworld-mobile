@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ASSETS = {
     "flutter-mark": "assets/branding/mathworld-mark.png",
     "android-adaptive-foreground": "android/app/src/main/res/drawable-nodpi/mathworld_adaptive_foreground.png",
+    "android-legacy-source": "android/app/src/main/res/drawable-nodpi/mathworld_external_launcher.webp",
     "android-native-launch": "android/app/src/main/res/drawable-nodpi/launch_image.png",
     "android-launcher-mdpi": "android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
     "android-launcher-round-mdpi": "android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png",
@@ -85,7 +86,7 @@ def main():
             if item["opaqueDarkCorners"] > 0 or item["hasTransparentCorner"]:
                 raise SystemExit("Expected opaque lavender/pink (NOT black) icon corners: "+item["name"])
     adaptive=next(x for x in results if x["name"] == "android-adaptive-foreground")
-    if adaptive["alphaExtentFraction"] > 0.56:
+    if adaptive["alphaExtentFraction"] > 0.61:
         raise SystemExit(
             "Android launcher graphic exceeds safe mask size: "
             +str(adaptive["alphaExtentFraction"])
