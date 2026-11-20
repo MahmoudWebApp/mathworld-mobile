@@ -24,6 +24,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _passwordSubmitting = false;
   @override
   void dispose() {
     _emailController.dispose();
@@ -32,9 +33,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    if (_passwordSubmitting || ref.read(authProvider).isSubmitting) return;
     if (!_formKey.currentState!.validate()) {
       return;
     }
+    setState(() => _passwordSubmitting = true);
     try {
       await ref.read(authProvider.notifier).login(
             _emailController.text.trim(),
@@ -56,6 +59,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(localizedErrorMessage(error))),
       );
+    } finally {
+      if (mounted) setState(() => _passwordSubmitting = false);
     }
   }
 
@@ -145,7 +150,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           onPressed: isLoading ? null : _submit,
                           label: 'login'.tr(),
                           leadingIcon: Icons.login_rounded,
-                          isLoading: isLoading,
+                          // A Google sign-in disables this button but must not animate it.
+                          isLoading: _passwordSubmitting,
                           expand: true,
                         ),
                         const SizedBox(height: AppSpacing.md),
