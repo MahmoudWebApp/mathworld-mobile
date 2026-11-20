@@ -29,7 +29,7 @@ class CategoryBrandIcon extends StatelessWidget {
     if (value.startsWith('https://')) {
       return Image.network(value, width: size, height: size,
         fit: BoxFit.contain,
-        errorBuilder: (_, _, _) => Icon(Icons.functions_rounded,
+        errorBuilder: (context, error, stackTrace) => Icon(Icons.functions_rounded,
           size: size * 0.75, color: Theme.of(context).colorScheme.primary));
     }
     if (value.isNotEmpty && value.runes.length <= 4 &&
