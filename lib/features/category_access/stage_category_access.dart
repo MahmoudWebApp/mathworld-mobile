@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/category_brand_icon.dart';
 
 /// The backend remains authoritative for problem access.
 class StageCategoryAccess {
@@ -31,6 +32,8 @@ class StageCategoryItem {
   final String nameAr;
   final String nameEn;
   final String icon;
+  final String descriptionAr;
+  final String descriptionEn;
   final int order;
   final int? problemsCount;
   final bool isFree;
@@ -40,6 +43,8 @@ class StageCategoryItem {
     required this.nameAr,
     required this.nameEn,
     required this.icon,
+    this.descriptionAr = '',
+    this.descriptionEn = '',
     required this.order,
     required this.problemsCount,
     required this.isFree,
@@ -51,6 +56,8 @@ class StageCategoryItem {
       nameAr: (json['NameAr'] ?? json['nameAr']) as String? ?? '',
       nameEn: (json['NameEn'] ?? json['nameEn']) as String? ?? '',
       icon: (json['Icon'] ?? json['icon']) as String? ?? '📐',
+      descriptionAr: (json['DescriptionAr'] ?? json['descriptionAr']) as String? ?? '',
+      descriptionEn: (json['DescriptionEn'] ?? json['descriptionEn']) as String? ?? '',
       order: ((json['Order'] ?? json['order']) as num?)?.toInt() ?? 0,
       problemsCount: ((json['ProblemsCount'] ?? json['problemsCount']) as num?)?.toInt(),
       isFree: (json['IsFree'] ?? json['isFree']) == true,
@@ -112,11 +119,11 @@ class StageCategoryAccessGrid extends StatelessWidget {
             final unlocked = category.canOpen(isPremium: isPremium);
             return Card(
               child: ListTile(
-                leading: Text(category.icon),
+                leading: CategoryBrandIcon(icon: category.icon, size: 44),
                 title: Text(isArabic ? category.nameAr : category.nameEn),
-                subtitle: Text(unlocked
-                    ? (isArabic ? 'متاحة' : 'Unlocked')
-                    : (isArabic ? 'مقفلة' : 'Locked')),
+                subtitle: Text([isArabic ? category.descriptionAr : category.descriptionEn,
+                  unlocked ? (isArabic ? 'متاحة' : 'Unlocked') :
+                    (isArabic ? 'مقفلة' : 'Locked')].where((x) => x.isNotEmpty).join(' • ')),
                 trailing: TextButton(
                   onPressed: unlocked
                       ? () => onOpenCategory(category.id)
