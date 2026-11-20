@@ -689,7 +689,7 @@ class _ContinueLearningCard extends StatelessWidget {
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       context.locale.languageCode == 'ar'
-                          ? 'شوف الفئتين المفتوحتين إلك ضمن مرحلتك وابدأ حل المسائل خطوة بخطوة.'
+                          ? 'ابدأ حل المسائل ضمن الفئات المتاحة.'
                           : 'See your two unlocked stage topics and start practising step by step.',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
@@ -745,7 +745,7 @@ class _LearningJourneyCard extends StatelessWidget {
           Row(children: [
             StageMathGlyph(stageOrder: journey.stageId, color: color, size: 30),
             const SizedBox(width: AppSpacing.sm),
-            Expanded(child: Text('learning_journey'.tr(),
+            Expanded(child: Text(language == 'ar' ? 'تقدّمي' : 'My progress',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w900, color: color))),
           ]),
@@ -813,52 +813,6 @@ class _LearningJourneyCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          if (journey.recommendedCategory case final suggested?) ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.32),
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.20),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(language == 'ar' ? 'الخطوة المقترحة لك' : 'Suggested next step',
-                    style: Theme.of(context).textTheme.titleSmall),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(suggested.getName(language),
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(suggested.attemptedProblems > 0
-                      ? (language == 'ar'
-                          ? 'كمّل فئتك الحالية حتى تحسّن تقدّمك.'
-                          : 'Continue this unfinished topic to improve your progress.')
-                      : (language == 'ar'
-                          ? 'بلّش بفئة جديدة ومفتوحة لحسابك.'
-                          : 'Explore a new topic already unlocked for you.')),
-                  const SizedBox(height: AppSpacing.sm),
-                  OutlinedButton.icon(
-                    onPressed: () => Navigator.pushNamed(
-                      context,
-                      AppRoutes.problems,
-                      arguments: <String, dynamic>{
-                        'categoryId': suggested.categoryId,
-                        'stageId': journey.stageId,
-                        'title': suggested.getName(language),
-                      },
-                    ),
-                    icon: const Icon(Icons.play_arrow_rounded),
-                    label: Text(language == 'ar' ? 'تابع حل المسائل' : 'Practice this category'),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-          ],
           if (reviewCount > 0) ...[
             OutlinedButton.icon(
               onPressed: () => Navigator.pushNamed(
@@ -870,81 +824,6 @@ class _LearningJourneyCard extends StatelessWidget {
                   : 'Review your attempts in the error notebook'),
             ),
             const SizedBox(height: AppSpacing.md),
-          ],
-          Text('stage_topics'.tr(),
-              style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: AppSpacing.sm),
-          if (const bool.fromEnvironment(
-            'MATHWORLD_LEADERBOARD_ENABLED',
-            defaultValue: true,
-          ))
-            OutlinedButton.icon(
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.leaderboard),
-            icon: const Icon(Icons.emoji_events_outlined),
-            label: Text('leaderboard_title'.tr()),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          if (journey.categories.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-              child: Text(language == 'ar'
-                  ? 'ما في فئات منشورة لهالمرحلة بعد. جرّب مرحلة ثانية أو ارجع لاحقاً.'
-                  : 'This stage has no published topics yet. Try another stage or check again later.'),
-            ),
-          if (accessUnknown)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-              child: Text(language == 'ar'
-                  ? 'تعذّر تحميل صلاحيات الفئات حالياً.'
-                  : 'Topic access could not be loaded right now.',
-                style: Theme.of(context).textTheme.bodyMedium),
-            ),
-          if (visibleCategories.isEmpty && journey.categories.isNotEmpty && !accessUnknown)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-              child: Text(language == 'ar'
-                  ? 'ما في فئات متاحة للحل ضمن مرحلتك الحالية. افتح قسم الفئات لتعرف المتاح.'
-                  : 'No topics are currently available to practise in this stage. Open Categories to check availability.'),
-            ),
-          ...visibleCategories.map((category) {
-            final canPractice = !category.isLocked && category.totalProblems > 0;
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 3),
-              child: ListTile(
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-                title: Text(category.getName(language),
-                    maxLines: 2, overflow: TextOverflow.ellipsis),
-                subtitle: Text(category.totalProblems == 0
-                    ? (language == 'ar' ? 'لا توجد مسائل منشورة بعد' : 'No published questions yet')
-                    : '${category.solvedProblems} / ${category.totalProblems}'),
-                trailing: canPractice
-                    ? LayoutUtils.forwardIcon(context, color: color)
-                    : const Icon(Icons.hourglass_empty_rounded, size: 20),
-                onTap: canPractice
-                    ? () => Navigator.pushNamed(
-                          context,
-                          AppRoutes.problems,
-                          arguments: <String, dynamic>{
-                            'categoryId': category.categoryId,
-                            'stageId': journey.stageId,
-                            'title': category.getName(language),
-                          },
-                        )
-                    : null,
-              ),
-            );
-          }),
-          if (!accessUnknown &&
-              (lockedCount > 0 || journey.categories.length > visibleCategories.length)) ...[
-            const SizedBox(height: AppSpacing.sm),
-            OutlinedButton.icon(
-              onPressed: onOpenStages,
-              icon: LayoutUtils.forwardIcon(context),
-              label: Text(language == 'ar'
-                  ? 'استعراض فئات مرحلتي'
-                  : 'Browse stage topics'),
-            ),
           ],
         ],
       ),
