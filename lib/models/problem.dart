@@ -260,6 +260,7 @@ class ProblemPreview {
     required this.points,
     this.isSolved = false,
     this.hasAttempted = false,
+    this.progressKnown = false,
     this.isFavorite = false,
   });
 
