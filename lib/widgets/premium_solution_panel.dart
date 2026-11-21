@@ -123,7 +123,11 @@ class _PremiumSolutionPanelState extends State<PremiumSolutionPanel> {
                   if (solution.detailedSolution?.isNotEmpty == true)
                     Padding(
                       padding: const EdgeInsets.only(top: 12),
-                      child: SelectableText(solution.detailedSolution!),
+                      child: RichMathText(
+                        text: solution.detailedSolution!,
+                        isArabic: widget.isArabic,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
                     ),
                   if (correctOption != null)
                     Padding(
