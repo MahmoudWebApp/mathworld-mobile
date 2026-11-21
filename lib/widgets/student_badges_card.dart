@@ -3,12 +3,62 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../config/app_routes.dart';
 import '../config/design_tokens.dart';
 import '../providers/student_badges_provider.dart';
 import 'glass_card.dart';
 
 class StudentBadgesCard extends ConsumerWidget {
   const StudentBadgesCard({super.key});
+
+  void _showPremiumBadge(BuildContext context, String badgeName, bool ar) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.lock_outline_rounded,
+                  size: 32, color: AppColors.brandViolet),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                ar ? 'شارة Premium مقفولة' : 'Locked Premium badge',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                ar
+                    ? 'شارة «$badgeName» تظهر لك للتعرّف عليها، ويمكن فتحها عند ترقية حسابك إلى Premium.'
+                    : 'The “$badgeName” badge stays visible for you to discover. Upgrade to Premium to unlock it.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    Navigator.pushNamed(context, AppRoutes.premiumBenefits);
+                  },
+                  child: Text(ar
+                      ? 'عرض المميزات وترقية الحساب'
+                      : 'View benefits and upgrade'),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -29,7 +79,7 @@ class StudentBadgesCard extends ConsumerWidget {
                   shaderCallback: AppGradients.primary.createShader,
                   blendMode: BlendMode.srcIn,
                   child: Text(
-                    ar ? 'شارات إنجازاتي' : 'My achievement badges',
+                    ar ? 'الشارات والإنجازات' : 'Badges & achievements',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
@@ -64,11 +114,12 @@ class StudentBadgesCard extends ConsumerWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   spacing: AppSpacing.sm,
                   children: [
-                    Text(ar ? 'الشارات المكتسبة' : 'Earned badges',
+                    Text(ar ? 'الشارات المكتسبة من المتاحة' : 'Earned from available badges',
                       style: Theme.of(context).textTheme.bodyMedium),
                     Directionality(
                       textDirection: ui.TextDirection.ltr,
-                      child: Text('${result.earnedCount} / ${result.badges.where((badge) => badge.isAvailable).length}',
+                      child: Text(
+                        '${result.earnedCount} / ${result.badges.where((badge) => badge.isAvailable).length}',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
@@ -77,74 +128,107 @@ class StudentBadgesCard extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
+                // Keep Premium badges visible to Free learners. An unavailable
+                // badge is locked, not an earned or progress-bearing badge.
                 Wrap(
                   spacing: AppSpacing.sm,
                   runSpacing: AppSpacing.sm,
-                  children: result.badges.where((badge) => badge.isAvailable).map((badge) {
-                    final color = badge.earned
-                        ? AppColors.brandViolet
-                        : Theme.of(context).colorScheme.outline;
+                  children: result.badges.map((badge) {
+                    final locked = !badge.isAvailable;
+                    final name = ar ? badge.titleAr : badge.titleEn;
+                    final earned = !locked && badge.earned;
+                    final color = locked
+                        ? Theme.of(context).colorScheme.outline
+                        : earned
+                            ? AppColors.brandViolet
+                            : Theme.of(context).colorScheme.outline;
+                    final progress = badge.requiredSolved > 0
+                        ? (badge.currentProgress / badge.requiredSolved)
+                            .clamp(0.0, 1.0)
+                        : 0.0;
                     return Semantics(
-                      label: '${ar ? badge.titleAr : badge.titleEn}: '
-                          '${badge.currentProgress}/${badge.requiredSolved}. ',
-                      child: Container(
-                        width: 136,
-                        padding: const EdgeInsets.all(AppSpacing.sm),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: badge.earned ? 0.10 : 0.04),
-                          border: Border.all(color: color.withValues(alpha: 0.3)),
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(
-                              badge.earned
-                                  ? Icons.verified_rounded
-                                  : Icons.lock_outline_rounded,
-                              color: color,
-                              size: 26,
-                            ),
-                            const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              ar ? badge.titleAr : badge.titleEn,
-                              maxLines: 2,
-                              textAlign: TextAlign.center,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.labelMedium,
-                            ),
-                            Directionality(
-                              textDirection: ui.TextDirection.ltr,
-                              child: Text(
-                                '${badge.currentProgress}/${badge.requiredSolved}',
-                                style: Theme.of(context).textTheme.bodySmall,
+                      button: locked,
+                      label: locked
+                          ? '$name: ${ar ? "شارة Premium مقفولة" : "Locked Premium badge"}'
+                          : '$name: ${badge.currentProgress}/${badge.requiredSolved}',
+                      child: InkWell(
+                        onTap: locked
+                            ? () => _showPremiumBadge(context, name, ar)
+                            : null,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        child: Container(
+                          width: 136,
+                          constraints: const BoxConstraints(minHeight: 138),
+                          padding: const EdgeInsets.all(AppSpacing.sm),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: earned ? 0.10 : 0.04),
+                            border: Border.all(color: color.withValues(alpha: 0.3)),
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                locked
+                                    ? Icons.lock_rounded
+                                    : earned
+                                        ? Icons.verified_rounded
+                                        : Icons.military_tech_outlined,
+                                color: color,
+                                size: 26,
                               ),
-                            ),
-                            const SizedBox(height: 6),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: SizedBox(
-                                height: 5,
-                                child: LayoutBuilder(
-                                  builder: (context, limits) => Stack(
-                                    children: [
-                                      Container(color: color.withValues(alpha: 0.10)),
-                                      Align(
-                                        alignment: AlignmentDirectional.centerStart,
-                                        child: Container(
-                                          width: limits.maxWidth *
-                                              (badge.currentProgress / badge.requiredSolved)
-                                                  .clamp(0.0, 1.0),
-                                          decoration: const BoxDecoration(
-                                            color: AppColors.success,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                name,
+                                maxLines: 2,
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.labelMedium,
+                              ),
+                              if (locked) ...[
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  ar ? 'Premium · مقفولة' : 'Premium · Locked',
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.brandViolet,
                                   ),
                                 ),
-                              ),
-                            ),
-                          ],
+                              ] else ...[
+                                Directionality(
+                                  textDirection: ui.TextDirection.ltr,
+                                  child: Text(
+                                    '${badge.currentProgress}/${badge.requiredSolved}',
+                                    style: Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: SizedBox(
+                                    height: 5,
+                                    child: LayoutBuilder(
+                                      builder: (context, limits) => Stack(
+                                        children: [
+                                          Container(color: color.withValues(alpha: 0.10)),
+                                          Align(
+                                            alignment: AlignmentDirectional.centerStart,
+                                            child: Container(
+                                              width: limits.maxWidth * progress,
+                                              decoration: const BoxDecoration(
+                                                color: AppColors.success,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                       ),
                     );
