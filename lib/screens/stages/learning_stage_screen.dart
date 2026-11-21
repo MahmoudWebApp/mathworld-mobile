@@ -11,6 +11,7 @@ import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/stage_math_glyph.dart';
 import '../../widgets/premium_button.dart';
+import '../../widgets/curriculum_framework_note.dart';
 
 /// First-login stage onboarding and later stage switching.
 /// All progress stays assigned to the original question stage in the API.
@@ -164,6 +165,8 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
                   style: Theme.of(context).textTheme.bodySmall,
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: AppSpacing.lg),
+                const CurriculumFrameworkNote(),
                 const SizedBox(height: AppSpacing.xl),
                 LayoutBuilder(
                   builder: (context, constraints) {
