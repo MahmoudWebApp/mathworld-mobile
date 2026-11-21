@@ -74,30 +74,29 @@ def main():
     if missing:
         raise SystemExit("Missing external launcher/Flutter icon assets: "+", ".join(missing))
     for item in results:
+        if item["name"] in ("flutter-mark", "android-native-launch", "ios-native-launch-3x"):
+            if not item["hasTransparentCorner"]:
+                raise SystemExit("Expected unchanged transparent in-app/splash mark: "+item["name"])
         if item["name"] in (
-            "flutter-mark", "android-adaptive-foreground", "android-native-launch",
+            "android-adaptive-foreground", "android-legacy-source",
             "android-launcher-mdpi", "android-launcher-xxxhdpi",
             "android-launcher-round-mdpi", "android-launcher-round-xxxhdpi",
-            "ios-native-launch-3x",
         ):
-            if not item["hasTransparentCorner"]:
-                raise SystemExit("Expected transparent approved mark: "+item["name"])
+            if item["hasTransparentCorner"] or item["alphaRange"] != [255, 255]:
+                raise SystemExit("External launcher must be one opaque continuous purple surface: "+item["name"])
         if item["name"] in ("ios-app-icon-1024", "flutter-web-icon-512", "flutter-web-maskable-512"):
             if item["opaqueDarkCorners"] > 0 or item["hasTransparentCorner"]:
                 raise SystemExit("Expected opaque lavender/pink (NOT black) icon corners: "+item["name"])
     adaptive=next(x for x in results if x["name"] == "android-adaptive-foreground")
-    if adaptive["alphaExtentFraction"] > 0.61:
-        raise SystemExit(
-            "Android launcher graphic exceeds safe mask size: "
-            +str(adaptive["alphaExtentFraction"])
-        )
+    if adaptive["width"] != 432 or adaptive["height"] != 432:
+        raise SystemExit("External Android adaptive icon must be 432x432 pixels")
     android_launch=next(x for x in results if x["name"] == "android-native-launch")
     if (android_launch["width"],android_launch["height"]) != (300,300):
         raise SystemExit("Native Android splash must be 300x300 transparent artwork")
     native_launch=next(x for x in results if x["name"] == "ios-native-launch-3x")
     if (native_launch["width"],native_launch["height"]) != (504,555):
         raise SystemExit("Native iOS splash image must be 504x555 pixels at 3x")
-    print("PASS: iOS/PWA icons have no black matte; iOS native splash and Flutter marks retain transparency")
+    print("PASS: Android launcher full-bleed; Flutter mark, iOS/PWA and native splash unchanged")
 
 if __name__=="__main__":
     main()
