@@ -6,6 +6,7 @@ class ProblemSearchParams {
   final String? query;
   final int? categoryId;
   final int? stageId;
+  final bool hideSolved;
   final int page;
   final int pageSize;
 
@@ -13,6 +14,7 @@ class ProblemSearchParams {
     this.query,
     this.categoryId,
     this.stageId,
+    this.hideSolved = false,
     this.page = 1,
     this.pageSize = AppConstants.pageSize,
   });
@@ -24,6 +26,7 @@ class ProblemSearchParams {
             other.query == query &&
             other.categoryId == categoryId &&
             other.stageId == stageId &&
+            other.hideSolved == hideSolved &&
             other.page == page &&
             other.pageSize == pageSize;
   }
@@ -33,6 +36,7 @@ class ProblemSearchParams {
         query,
         categoryId,
         stageId,
+        hideSolved,
         page,
         pageSize,
       );

@@ -34,6 +34,9 @@ class ProblemsRepository {
     if (params.stageId != null) {
       queryParameters['stageId'] = params.stageId;
     }
+    if (params.hideSolved) {
+      queryParameters['hideSolved'] = true;
+    }
 
     final response = await _apiService.get(
       ApiConstants.problemsSearch,
