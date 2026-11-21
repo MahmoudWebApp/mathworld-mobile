@@ -126,10 +126,10 @@ class StageCategoriesScreen extends ConsumerWidget {
               );
             }
 
-            // Guests have the same Free access as students. Only a verified
-            // Admin or Premium account can see every category as unlocked.
+            // Guests can browse stage metadata, but they have only Free
+            // category access. Do not display Premium-only topics as unlocked.
             final isAdmin = user?.role == 'Admin';
-            final hasFullAccess = isAdmin || isPremium || user == null;
+            final hasFullAccess = isAdmin || isPremium;
             final ordered = [
               ...categories.where((category) => hasFullAccess ||
                   access.freeCategoryIds.contains(category.id)),
