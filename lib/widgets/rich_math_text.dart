@@ -332,6 +332,14 @@ class RichMathText extends StatelessWidget {
       return input;
     }
 
+    // Some API/imported content has been escaped twice, producing literal
+    // double backslashes before TeX delimiters or commands. Collapse only
+    // TeX-command/brace-delimiter escapes, preserving valid TeX line breaks.
+    input = input.replaceAll(
+      RegExp(r'\\\\(?=[A-Za-z\[\]\(\)])'),
+      '\\',
+    );
+
     final pureProse = _extractPureArabicProse(input);
     if (pureProse != null) {
       return pureProse;
