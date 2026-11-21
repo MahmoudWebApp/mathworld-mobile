@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mathworld_mobile/utils/category_grid_layout.dart';
 import 'package:mathworld_mobile/features/category_access/stage_category_access.dart';
+import 'package:mathworld_mobile/models/published_curriculum_skill.dart';
 
 void main() {
   test('category grid shows two compact columns on phones', () {
@@ -15,6 +16,42 @@ void main() {
     expect(StageCategoryGridLayout.columns(740), 3);
     expect(StageCategoryGridLayout.columns(1000), 4);
     expect(StageCategoryGridLayout.cardExtent(3), 224);
+  });
+
+  test('published curriculum skills parse both API JSON casing styles', () {
+    final pascal = PublishedCurriculumSkill.fromJson({
+      'StableKey': 'p-fractions-decimals-equivalence',
+      'CategoryId': 21,
+      'DomainKey': 'numbers-operations',
+      'NameAr': 'الكسور المتكافئة',
+      'NameEn': 'Equivalent Fractions',
+      'DescriptionAr': 'الكسور المتكافئة',
+      'DescriptionEn': 'Equivalent Fractions',
+    });
+    final camel = PublishedCurriculumSkill.fromJson({
+      'stableKey': 's-sequences-series-series-convergence',
+      'categoryId': 23,
+      'domainKey': 'algebra-functions',
+      'nameAr': 'تقارب المتسلسلات وتباعدها',
+      'nameEn': 'Series Convergence and Divergence',
+      'descriptionAr': 'تقارب المتسلسلات وتباعدها',
+      'descriptionEn': 'Series Convergence and Divergence',
+    });
+    expect(pascal.categoryId, 21);
+    expect(pascal.localizedName('ar'), 'الكسور المتكافئة');
+    expect(pascal.localizedName('en'), 'Equivalent Fractions');
+    expect(camel.categoryId, 23);
+    expect(camel.localizedName('en'), 'Series Convergence and Divergence');
+    expect(camel.stableKey, isNotEmpty);
+  });
+
+  test('malformed skills fail validation instead of becoming fake objectives', () {
+    expect(() => PublishedCurriculumSkill.fromJson({
+      'StableKey': 'bad',
+      'CategoryId': 0,
+      'NameAr': '',
+      'NameEn': '',
+    }), throwsFormatException);
   });
 
   test('five stage categories keep Free at two and fifth Premium-only', () {
