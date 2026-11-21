@@ -115,6 +115,33 @@ void main() {
     expect(find.textContaining(r'\times'), findsNothing);
   });
 
+  testWidgets('renders real API question when TeX was double-escaped',
+      (tester) async {
+    const question = r'بسّط \\(2^{3}\\times2^2\\) على صورة قوة للعدد 2.';
+    await tester.pumpWidget(const MaterialApp(
+      locale: Locale('ar'),
+      home: Scaffold(body: RichMathText(text: question, isArabic: true)),
+    ));
+
+    expect(find.byType(Math), findsOneWidget);
+    expect(find.textContaining(r'\times'), findsNothing);
+    expect(find.textContaining(r'\\('), findsNothing);
+    expect(find.textContaining('بسّط', findRichText: true), findsWidgets);
+  });
+
+  testWidgets('renders Arabic solution with double-escaped display math',
+      (tester) async {
+    const solution = r'نجمع الأسس: \\[2^{3}\\times2^2=2^5\\] إذن الناتج.';
+    await tester.pumpWidget(const MaterialApp(
+      locale: Locale('ar'),
+      home: Scaffold(body: RichMathText(text: solution, isArabic: true)),
+    ));
+
+    expect(find.byType(Math), findsOneWidget);
+    expect(find.textContaining(r'\times'), findsNothing);
+    expect(find.textContaining(r'\\['), findsNothing);
+  });
+
   testWidgets('keeps already supported dollar math and renders TeX answers',
       (tester) async {
     await tester.pumpWidget(const MaterialApp(
