@@ -19,4 +19,13 @@ void main() {
     expect(first, second);
     expect(first.hashCode, second.hashCode);
   });
+
+  test('hide-solved uses a distinct provider key for pagination', () {
+    const all = ProblemSearchParams(stageId: 1, page: 1);
+    const unsolved = ProblemSearchParams(
+      stageId: 1, page: 1, hideSolved: true,
+    );
+    expect(all, isNot(unsolved));
+    expect(unsolved.hideSolved, isTrue);
+  });
 }

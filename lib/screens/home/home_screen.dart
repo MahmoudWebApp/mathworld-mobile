@@ -10,11 +10,13 @@ import '../../core/utils/relative_time.dart';
 import '../../models/dashboard_stats.dart';
 import '../../models/learning_journey.dart';
 import '../../models/daily_challenge.dart';
+import '../../models/problem_search.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/learning_journey_provider.dart';
 import '../../providers/daily_challenge_provider.dart';
 import '../../providers/student_badges_provider.dart';
+import '../../providers/repositories_provider.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/animated_entry.dart';
 import '../../widgets/app_states.dart';
@@ -50,6 +52,48 @@ class HomeScreen extends ConsumerWidget {
       dailyPractice.asError?.error,
       badges.asError?.error,
     ].any(isBackendMismatch);
+
+    Future<void> resumeNextProblem() async {
+      final learner = ref.read(authProvider).user;
+      final stageId = learner?.currentStageId;
+      // Free students start from their unlocked categories.
+      if (learner?.subscriptionType.toLowerCase() != 'premium' ||
+          stageId == null || stageId <= 0) {
+        onOpenStages();
+        return;
+      }
+      try {
+        // The server excludes solved work before pagination.
+        final result = await ref.read(problemsRepositoryProvider).search(
+          ProblemSearchParams(stageId: stageId, hideSolved: true, pageSize: 1),
+          context.locale.languageCode,
+        );
+        if (!context.mounted) return;
+        if (result.problems.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(context.locale.languageCode == 'ar'
+                ? 'أنجزت المسائل المتاحة في مرحلتك. يمكنك استكشاف الفئات.'
+                : 'You have completed the available questions in this stage.'),
+          ));
+          onOpenStages();
+          return;
+        }
+        await Navigator.pushNamed(
+          context, AppRoutes.problemDetails,
+          arguments: result.problems.first.id,
+        );
+        ref.invalidate(dashboardProvider);
+        ref.invalidate(learningJourneyProvider);
+      } catch (_) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(context.locale.languageCode == 'ar'
+              ? 'تعذّر تحديد المسألة التالية. يمكنك المتابعة من الفئات.'
+              : 'Could not load the next question. Browse your topics.'),
+        ));
+        onOpenStages();
+      }
+    }
 
     return MathBackground(
       showSymbols: true,
@@ -96,7 +140,7 @@ class HomeScreen extends ConsumerWidget {
                 AnimatedEntry(child: _HeroCard(
                   dashboard: dashboard,
                   journey: learningJourney.valueOrNull,
-                  onContinue: onOpenStages,
+                  onContinue: () { void resumeNextProblem(); },
                 )),
                 const SizedBox(height: AppSpacing.lg),
                 if (!premiumAccount) ...[

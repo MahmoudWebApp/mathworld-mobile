@@ -26,6 +26,7 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
   final _searchController = TextEditingController();
   Timer? _debounce;
   int _page = 1;
+  bool _hideSolved = false;
   int? _categoryId;
   int? _stageId;
   String? _query;
@@ -90,6 +91,7 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
       query: _query,
       categoryId: _categoryId,
       stageId: _stageId,
+      hideSolved: _hideSolved,
       page: _page,
     );
     final problemsState = ref.watch(problemsProvider(parameters));
@@ -146,6 +148,25 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                 },
               ),
             ),
+            Padding(
+              padding: const EdgeInsetsDirectional.only(
+                start: AppSpacing.lg, end: AppSpacing.lg,
+                bottom: AppSpacing.sm,
+              ),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: FilterChip(
+                  selected: _hideSolved,
+                  avatar: const Icon(Icons.check_circle_outline_rounded, size: 18),
+                  label: Text(context.locale.languageCode == 'ar'
+                      ? 'إخفاء المحلولة' : 'Hide solved'),
+                  onSelected: (selected) => setState(() {
+                    _hideSolved = selected;
+                    _page = 1;
+                  }),
+                ),
+              ),
+            ),
             Expanded(
               child: problemsState.when(
                 loading: () => const _ProblemsSkeleton(),
@@ -197,7 +218,11 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                                   ? (context.locale.languageCode == 'ar'
                                       ? 'لا توجد مسائل في هذه الصفحة'
                                       : 'No problems on this page')
-                                  : 'no_results'.tr(),
+                                  : _hideSolved && _query == null
+                                      ? (context.locale.languageCode == 'ar'
+                                          ? 'لا توجد مسائل غير محلولة'
+                                          : 'No unsolved problems')
+                                      : 'no_results'.tr(),
                               subtitle: _page > 1
                                   ? (context.locale.languageCode == 'ar'
                                       ? 'يمكن أن يكون المحتوى تغيّر أثناء التصفح.'
