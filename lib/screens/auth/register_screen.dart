@@ -10,7 +10,7 @@ import '../../widgets/brand_logo.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/premium_button.dart';
 import '../../widgets/social_sign_in_buttons.dart';
-import '../stages/learning_stage_screen.dart';
+import '../../core/utils/error_message.dart';
 
 /// Displays the account registration form.
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -36,27 +36,30 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     super.dispose();
   }
 
-  Future<void> _registerWithStage(int stageId) =>
-      ref.read(authProvider.notifier).register(
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate() ||
+        ref.read(authProvider).isSubmitting) return;
+    try {
+      // Create the account first. Stage selection happens in the authenticated
+      // onboarding screen, not in the registration form.
+      await ref.read(authProvider.notifier).register(
         _nameController.text.trim(),
         _emailController.text.trim(),
         _passwordController.text,
-        stageId,
+        null,
       );
-
-  void _submit() {
-    if (!_formKey.currentState!.validate()) return;
-    // Keep registration details in memory. The existing backend requires
-    // StageId, so account creation happens after explicit stage confirmation.
-    // Nothing is registered or preselected while browsing this first screen.
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(
-        builder: (_) => LearningStageScreen(
-          onCreateAccount: _registerWithStage,
-        ),
-      ),
-    );
+      if (!mounted) return;
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.learningStage,
+        (_) => false,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(localizedErrorMessage(error))),
+      );
+    }
   }
 
   @override

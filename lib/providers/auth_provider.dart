@@ -220,7 +220,7 @@ class AuthNotifier extends StateNotifier<AuthState>
     String fullName,
     String email,
     String password,
-    int stageId,
+    int? stageId,
   ) async {
     _resetAccountScopedState();
     state = state.copyWith(
