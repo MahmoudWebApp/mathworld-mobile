@@ -116,7 +116,19 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(
+      appBar: AppBar(
+        // An explicit physical back arrow avoids a second RTL flip.
+        leading: Builder(
+          builder: (appBarContext) => IconButton(
+            tooltip: MaterialLocalizations.of(appBarContext).backButtonTooltip,
+            onPressed: () => Navigator.maybePop(appBarContext),
+            icon: Icon(
+              LayoutUtils.backArrow(appBarContext),
+              textDirection: ui.TextDirection.ltr,
+            ),
+          ),
+        ),
+        title: Text(
         loadedProblem?.stageName.isNotEmpty == true
             ? loadedProblem!.stageName : 'problem_details'.tr(),
         style: loadedProblem == null ? null : TextStyle(
