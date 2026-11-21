@@ -19,7 +19,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets/branding/mathworld-approved-android-external.webp.b64"
 ANDROID = ROOT / "android/app/src/main/res"
-EXPECTED_SHA256 = "c3798e4abec7caa3bf76b178715255ca0481cc8f27793c57d09f151e7da45ff5"
+EXPECTED_SHA256 = "ab6e65e4817cbcfb7fb51496c0c3f993d5b0109fb986f9a800a29e11fb821057"
 DENSITIES = {
     "mipmap-mdpi": 48,
     "mipmap-hdpi": 72,
