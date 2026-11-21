@@ -45,6 +45,26 @@ void main() {
     expect(direction.textDirection, TextDirection.rtl);
   });
 
+  testWidgets('anonymous guest cannot open a Premium topic as if unlocked', (tester) async {
+    final opened = <int>[];
+    var upgradeRequests = 0;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: StageCategoryAccessGrid(
+          catalog: catalog,
+          isPremium: false,
+          isArabic: true,
+          onOpenCategory: opened.add,
+          onUpgrade: () => upgradeRequests++,
+        ),
+      ),
+    ));
+    expect(find.text('مقفلة'), findsOneWidget);
+    await tester.tap(find.text('افتح مع Premium'));
+    expect(upgradeRequests, 1);
+    expect(opened, isEmpty);
+  });
+
   testWidgets('Premium category chooser opens all categories', (tester) async {
     final opened = <int>[];
     await tester.pumpWidget(MaterialApp(
