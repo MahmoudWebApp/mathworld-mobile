@@ -405,9 +405,9 @@ class RichMathText extends StatelessWidget {
         );
       }
       final raw = match.group(0)!;
-      final isBlock = (raw.startsWith(r'$') && raw.endsWith(r'$')) ||
+      final isBlock = (raw.startsWith(r'$$') && raw.endsWith(r'$$')) ||
           (raw.startsWith(r'\[') && raw.endsWith(r'\]'));
-      final content = (raw.startsWith(r'$') || raw.startsWith(r'\['))
+      final content = (raw.startsWith(r'$$') || raw.startsWith(r'\['))
           ? raw.substring(2, raw.length - 2).trim()
           : raw.substring(1, raw.length - 1).trim();
       tokens.add(
