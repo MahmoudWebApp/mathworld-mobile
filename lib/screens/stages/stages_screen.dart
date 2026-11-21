@@ -11,6 +11,7 @@ import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/stage_math_glyph.dart';
+import '../../widgets/curriculum_framework_note.dart';
 
 /// Displays educational stages with accessible contrast in both themes.
 class StagesScreen extends ConsumerWidget {
@@ -79,6 +80,8 @@ class StagesScreen extends ConsumerWidget {
                               style: Theme.of(context).textTheme.bodyMedium),
                             const SizedBox(height: AppSpacing.lg),
                           ],
+                          const CurriculumFrameworkNote(),
+                          const SizedBox(height: AppSpacing.lg),
                           GridView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
