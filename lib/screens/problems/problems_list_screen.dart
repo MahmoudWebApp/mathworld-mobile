@@ -164,7 +164,7 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                             onPressed: () {
                               Navigator.maybePop(context);
                             },
-                            icon: const Icon(Icons.arrow_back_rounded),
+                            icon: LayoutUtils.backIcon(context),
                             label: Text('category_locked_continue_free'.tr()),
                           ),
                         ),
