@@ -99,7 +99,7 @@ void main() {
     expect(find.byType(Math), findsOneWidget);
     expect(find.textContaining(r'\times'), findsNothing);
     expect(find.textContaining(r'\('), findsNothing);
-    expect(find.textContaining('بسّط'), findsWidgets);
+    expect(find.textContaining('بسّط', findRichText: true), findsWidgets);
   });
 
   testWidgets('renders block TeX delimiters in Arabic worked solutions',
