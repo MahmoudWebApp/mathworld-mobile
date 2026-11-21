@@ -29,8 +29,12 @@ class RichMathText extends StatelessWidget {
     this.assumeMath = false,
   });
 
+  // The curriculum stores TeX using both dollar delimiters and the
+  // conventional \( ... \) / \[ ... \] syntax. Tokenize those
+  // forms before painting mixed Arabic prose; raw backslashes must never
+  // appear as question text.
   static final RegExp _latexPattern =
-      RegExp(r'(\$\$[\s\S]+?\$\$|\$[^\n$]+?\$)');
+      RegExp(r'(\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\$[^\n$]+?\$|\\\([\s\S]+?\\\))');
   static final RegExp _arabicPattern = RegExp(r'[\u0600-\u06FF]');
   static final RegExp _textCommandPattern = RegExp(r'\\text\s*\{([^{}]*)\}');
   static final RegExp _arabicRunPattern = RegExp(
@@ -401,21 +405,17 @@ class RichMathText extends StatelessWidget {
         );
       }
       final raw = match.group(0)!;
-      if (raw.startsWith(r'$$') && raw.endsWith(r'$$')) {
-        tokens.add(
-          _MathToken(
-            _MathTokenType.blockMath,
-            raw.substring(2, raw.length - 2).trim(),
-          ),
-        );
-      } else {
-        tokens.add(
-          _MathToken(
-            _MathTokenType.inlineMath,
-            raw.substring(1, raw.length - 1).trim(),
-          ),
-        );
-      }
+      final isBlock = (raw.startsWith(r'$') && raw.endsWith(r'$')) ||
+          (raw.startsWith(r'\[') && raw.endsWith(r'\]'));
+      final content = (raw.startsWith(r'$') || raw.startsWith(r'\['))
+          ? raw.substring(2, raw.length - 2).trim()
+          : raw.substring(1, raw.length - 1).trim();
+      tokens.add(
+        _MathToken(
+          isBlock ? _MathTokenType.blockMath : _MathTokenType.inlineMath,
+          content,
+        ),
+      );
       cursor = match.end;
     }
     if (cursor < input.length) {
