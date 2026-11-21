@@ -20,6 +20,7 @@ import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/stage_math_glyph.dart';
 import '../../widgets/curriculum_framework_note.dart';
+import '../../widgets/published_stage_skills_panel.dart';
 
 /// Displays localized categories for the selected educational stage.
 class StageCategoriesScreen extends ConsumerWidget {
@@ -228,6 +229,7 @@ class StageCategoriesScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: AppSpacing.md),
                       const CurriculumFrameworkNote(),
+                      PublishedStageSkillsPanel(stageId: stage.id, categories: categories),
                       const SizedBox(height: AppSpacing.lg),
                       if (user?.role == 'Student' &&
                           (premiumState?.hasError ?? false)) ...[
