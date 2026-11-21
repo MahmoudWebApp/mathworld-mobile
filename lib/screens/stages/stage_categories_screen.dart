@@ -12,12 +12,14 @@ import '../../models/stage.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/stages_provider.dart';
 import '../../providers/stage_category_access_provider.dart';
+import '../../providers/learning_journey_provider.dart';
 import '../../utils/category_grid_layout.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/stage_math_glyph.dart';
+import '../../widgets/curriculum_framework_note.dart';
 
 /// Displays localized categories for the selected educational stage.
 class StageCategoriesScreen extends ConsumerWidget {
@@ -37,6 +39,14 @@ class StageCategoriesScreen extends ConsumerWidget {
 
     final stage = arguments;
     final accessState = ref.watch(stageCategoryAccessProvider(stage.id));
+    // Actual journey data, never a guessed learning result.
+    final journey = ref.watch(learningJourneyProvider).valueOrNull;
+    final solvedCounts = <int, int>{};
+    if (journey?.stageId == stage.id) {
+      for (final result in journey!.categories) {
+        solvedCounts[result.categoryId] = result.solvedProblems;
+      }
+    }
     final user = ref.watch(authProvider.select((state) => state.user));
     final premiumState = user?.role == 'Student'
         ? ref.watch(studentPremiumProvider)
@@ -70,6 +80,7 @@ class StageCategoriesScreen extends ConsumerWidget {
               stageId: stage.id,
               order: item.order,
               problemsCount: item.problemsCount,
+              solvedCount: solvedCounts[item.id],
             )).toList()..sort((a, b) {
               final order = a.order.compareTo(b.order);
               return order != 0 ? order : a.id.compareTo(b.id);
@@ -216,6 +227,8 @@ class StageCategoriesScreen extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: AppSpacing.md),
+                      const CurriculumFrameworkNote(),
+                      const SizedBox(height: AppSpacing.lg),
                       if (user?.role == 'Student' &&
                           (premiumState?.hasError ?? false)) ...[
                         TextButton.icon(
@@ -428,7 +441,18 @@ class _CategoryCard extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          if (category.progress != null) ...[
+          if (category.solvedCount != null && category.solvedCount! > 0) ...[
+             const SizedBox(height: AppSpacing.xs),
+             Text(
+               localeCode == 'ar'
+                 ? 'تم حل ${category.solvedCount} من ${category.problemsCount ?? 0}'
+                 : 'Solved ${category.solvedCount} of ${category.problemsCount ?? 0}',
+               maxLines: 1,
+               overflow: TextOverflow.ellipsis,
+               style: Theme.of(context).textTheme.labelSmall?.copyWith(color: mutedColor),
+             ),
+           ],
+           if (category.progress != null) ...[
             const SizedBox(height: AppSpacing.sm),
             Semantics(
               label: localeCode == 'ar' ? 'تقدم $title' : '$title progress',
