@@ -337,7 +337,9 @@ class RichMathText extends StatelessWidget {
       return pureProse;
     }
 
-    if (input.contains(r'$')) {
+    // Math delimiters that are already present must not be wrapped again.
+    // A pure \\(2^8\\) answer otherwise turns into $\\(2^8\\)$ and fails.
+    if (_latexPattern.hasMatch(input)) {
       return input;
     }
 
