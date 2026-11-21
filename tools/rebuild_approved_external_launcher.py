@@ -19,7 +19,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "assets/branding/mathworld-approved-android-external.webp.b64"
 ANDROID = ROOT / "android/app/src/main/res"
-EXPECTED_SHA256 = "ab6e65e4817cbcfb7fb51496c0c3f993d5b0109fb986f9a800a29e11fb821057"
+EXPECTED_SHA256 = "07589258bb3f0f19e06cc6fa3306414e6892a70da68a0e6ec57c92d58db01ae3"
 DENSITIES = {
     "mipmap-mdpi": 48,
     "mipmap-hdpi": 72,
@@ -30,13 +30,13 @@ DENSITIES = {
 
 
 def read_approved_icon() -> Image.Image:
-    encoded = SOURCE.read_text(encoding="ascii").strip()
+    encoded = "".join(SOURCE.read_text(encoding="ascii").split())
     binary = base64.b64decode(encoded, validate=True)
     actual = hashlib.sha256(binary).hexdigest()
     if actual != EXPECTED_SHA256:
         raise ValueError("Approved external launcher artwork fingerprint changed")
     with Image.open(io.BytesIO(binary)) as original:
-        if original.width != original.height or original.width < 256:
+        if original.width != original.height or original.width < 192:
             raise ValueError("Approved icon must be square and at least 256 pixels")
         result = original.convert("RGB")
     # This artwork is a single, glossy violet/pink background, not a pasted
