@@ -1,0 +1,58 @@
+name: Approved external MathWorld Android launcher
+
+on:
+  pull_request:
+    paths:
+      - 'assets/branding/mathworld-approved-android-external.webp.b64'
+      - 'tools/rebuild_approved_external_launcher.py'
+      - 'tools/inspect_brand_assets.py'
+      - '.github/workflows/approved-android-external-launcher.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/branding/mathworld-approved-android-external.webp.b64'
+      - 'tools/rebuild_approved_external_launcher.py'
+      - '.github/workflows/approved-android-external-launcher.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  launcher:
+    name: Verify and generate exact external Android icon
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install icon tooling
+        run: python -m pip install "Pillow>=11,<13"
+      - name: Generate ONLY Android launcher assets
+        run: python tools/rebuild_approved_external_launcher.py
+      - name: Check source, logo separation and all launcher densities
+        run: python tools/inspect_brand_assets.py
+      - name: Commit generated binary launcher resources on the same main branch
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'MahmoudWebApp/mathworld-mobile'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add android/app/src/main/res/drawable-nodpi/mathworld_adaptive_foreground.png
+          git add android/app/src/main/res/drawable-nodpi/ic_launcher_foreground.png
+          git add android/app/src/main/res/drawable-nodpi/mathworld_external_launcher.webp
+          git add android/app/src/main/res/mipmap-*/ic_launcher.png
+          git add android/app/src/main/res/mipmap-*/ic_launcher_round.png
+          if git diff --cached --quiet; then
+            echo 'Android external launcher already matches the approved icon'
+            exit 0
+          fi
+          git commit -m 'feat(android): apply approved MathWorld external app icon'
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
