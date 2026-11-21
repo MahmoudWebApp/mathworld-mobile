@@ -140,7 +140,7 @@ class HomeScreen extends ConsumerWidget {
                 AnimatedEntry(child: _HeroCard(
                   dashboard: dashboard,
                   journey: learningJourney.valueOrNull,
-                  onContinue: () { void resumeNextProblem(); },
+                  onContinue: () { resumeNextProblem(); },
                 )),
                 const SizedBox(height: AppSpacing.lg),
                 if (!premiumAccount) ...[
