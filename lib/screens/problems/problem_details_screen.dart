@@ -292,7 +292,9 @@ class _ProblemContent extends ConsumerWidget {
             label: state.isRetryMode
                 ? 'submit_training_answer'.tr()
                 : 'submit_answer'.tr(),
-            trailingIcon: Icons.send_rounded,
+            // A checkmark denotes submitting an answer in both RTL and LTR.
+            // A paper-plane/send arrow misleadingly points the wrong way in Arabic.
+            trailingIcon: Icons.check_circle_outline_rounded,
             isLoading: state.isSubmitting,
             expand: true,
           ),
