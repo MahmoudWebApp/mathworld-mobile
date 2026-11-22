@@ -182,7 +182,7 @@
   "leaderboard_first_try": "صحيح من أول محاولة",
   "leaderboard_previous": "السابق",
   "leaderboard_next": "التالي",
-  "leaderboard_privacy": "نخفي أسماء الطلاب الآخرين احترامًا للخصوصية.",
+  "leaderboard_privacy": "نعرض أسماء الطلاب بصيغة مختصرة لحماية الخصوصية، من دون بريد إلكتروني أو بيانات خاصة.",
   "active_stage_categories": "الفئات",
   "change_stage_keeps_progress": "تغيير المرحلة لا يمسح تقدمك السابق",
   "server_feature_unavailable": "الميزة غير متاحة على إصدار الخادم المتصل حاليًا. حدّث خدمة MathWorld لتتوافق مع التطبيق؛ إعادة المحاولة وحدها لن تحل المشكلة.",
