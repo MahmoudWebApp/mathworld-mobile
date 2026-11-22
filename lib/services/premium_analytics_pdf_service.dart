@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:flutter/services.dart' show rootBundle;
 
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -24,6 +25,13 @@ class PremiumAnalyticsPdfService {
     ]));
     if (fonts.length != 2) {
       throw const FormatException('Two PDF font weights are required');
+    }
+    pw.MemoryImage? brandMark;
+    try {
+      final logo = await rootBundle.load('assets/branding/mathworld-mark.png');
+      brandMark = pw.MemoryImage(logo.buffer.asUint8List());
+    } catch (_) {
+      // Printable reports remain available if an asset is unavailable.
     }
     final purple = PdfColor.fromInt(0xFF6D28D9);
     final dark = PdfColor.fromInt(0xFF1F2937);
@@ -76,6 +84,30 @@ class PremiumAnalyticsPdfService {
                 (arabic ? '    النقاط: ' : '    Points: ') +
                 c.awardedPoints.toString(),
             style: pw.TextStyle(color: dark, fontSize: 9)),
+          pw.SizedBox(height: 8),
+          pw.Row(children: [
+            pw.Container(
+              width: c.attemptedProblems == 0 ? 0 :
+                260.0 * c.solvedProblems / c.attemptedProblems,
+              height: 8,
+              decoration: pw.BoxDecoration(
+                color: purple, borderRadius: pw.BorderRadius.circular(4)),
+            ),
+            pw.Container(
+              width: c.attemptedProblems == 0 ? 260.0 :
+                260.0 * (c.attemptedProblems - c.solvedProblems) /
+                  c.attemptedProblems,
+              height: 8,
+              decoration: pw.BoxDecoration(
+                color: PdfColor.fromInt(0xFFE9DEFA),
+                borderRadius: pw.BorderRadius.circular(4)),
+            ),
+            pw.SizedBox(width: 10),
+            pw.Text(c.attemptedProblems == 0 ? '0%' :
+              '${(100 * c.solvedProblems / c.attemptedProblems).toStringAsFixed(0)}%',
+              style: pw.TextStyle(color: purple, fontSize: 9,
+                  fontWeight: pw.FontWeight.bold)),
+          ]),
         ],
       ),
     );
@@ -98,9 +130,15 @@ class PremiumAnalyticsPdfService {
         child: pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
-            pw.Text('MathWorld', textDirection: pw.TextDirection.ltr,
-              style: pw.TextStyle(fontSize: 15, color: purple,
-                  fontWeight: pw.FontWeight.bold)),
+            pw.Row(children: [
+              if (brandMark != null) ...[
+                pw.Image(brandMark, width: 28, height: 28),
+                pw.SizedBox(width: 9),
+              ],
+              pw.Text('MathWorld', textDirection: pw.TextDirection.ltr,
+                style: pw.TextStyle(fontSize: 16, color: purple,
+                    fontWeight: pw.FontWeight.bold)),
+            ]),
             pw.Text(date, textDirection: pw.TextDirection.ltr,
               style: pw.TextStyle(fontSize: 9, color: muted)),
           ],
@@ -130,6 +168,30 @@ class PremiumAnalyticsPdfService {
             success.toStringAsFixed(1) + '%'),
         metric(arabic ? 'النقاط المكتسبة' : 'Awarded points',
             report.awardedPoints.toString()),
+        pw.SizedBox(height: 14),
+        pw.Container(
+          padding: const pw.EdgeInsets.all(12),
+          decoration: pw.BoxDecoration(
+            color: light, borderRadius: pw.BorderRadius.circular(8)),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(arabic ? 'مؤشر النجاح الإجمالي' : 'Overall success rate',
+                style: pw.TextStyle(fontSize: 11,
+                  fontWeight: pw.FontWeight.bold, color: dark)),
+              pw.SizedBox(height: 7),
+              pw.Row(children: [
+                pw.Container(width: 350 * (success / 100).clamp(0, 1),
+                  height: 12, color: purple),
+                pw.Container(width: 350 * (1 - success / 100).clamp(0, 1),
+                  height: 12, color: PdfColor.fromInt(0xFFE9DEFA)),
+                pw.SizedBox(width: 8),
+                pw.Text('${success.toStringAsFixed(1)}%',
+                  style: pw.TextStyle(color: purple, fontSize: 9)),
+              ]),
+            ],
+          ),
+        ),
         pw.SizedBox(height: 12),
         pw.Text(arabic ? 'التقدم حسب الفئة' : 'Progress by category',
           style: pw.TextStyle(fontSize: 16, color: dark,
