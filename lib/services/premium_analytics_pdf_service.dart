@@ -181,9 +181,9 @@ class PremiumAnalyticsPdfService {
                   fontWeight: pw.FontWeight.bold, color: dark)),
               pw.SizedBox(height: 7),
               pw.Row(children: [
-                pw.Container(width: 350 * (success / 100).clamp(0, 1),
+                pw.Container(width: 350.0 * (success / 100).clamp(0.0, 1.0).toDouble(),
                   height: 12, color: purple),
-                pw.Container(width: 350 * (1 - success / 100).clamp(0, 1),
+                pw.Container(width: 350.0 * (1 - success / 100).clamp(0.0, 1.0).toDouble(),
                   height: 12, color: PdfColor.fromInt(0xFFE9DEFA)),
                 pw.SizedBox(width: 8),
                 pw.Text('${success.toStringAsFixed(1)}%',
