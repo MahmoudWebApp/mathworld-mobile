@@ -580,13 +580,6 @@ class _ProblemHeader extends StatelessWidget {
               ),
               color: AppColors.warning,
             ),
-            _InfoPill(
-              icon: Icons.visibility_outlined,
-              label: 'views_value'.tr(
-                namedArgs: {'count': '${problem.viewsCount}'},
-              ),
-              color: AppColors.cyan,
-            ),
           ],
         ),
       ],

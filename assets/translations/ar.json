@@ -71,7 +71,6 @@
   "add_to_favorites": "إضافة إلى المفضلة",
   "remove_from_favorites": "إزالة من المفضلة",
   "points_value": "{count} نقطة",
-  "views_value": "{count} مشاهدة",
   "points_earned_value": "النقاط المكتسبة: {count}",
   "invalid_request": "الطلب غير صالح",
   "not_found": "البيانات المطلوبة غير موجودة",
