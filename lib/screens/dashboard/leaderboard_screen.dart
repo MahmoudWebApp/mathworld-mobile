@@ -273,9 +273,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          entry.isCurrentUser
-                                              ? (isArabic ? 'أنت' : 'You')
-                                              : _peerDisplayName(entry.displayName, isArabic),
+                                          _peerDisplayName(entry.displayName, isArabic),
                                           style: TextStyle(
                                             fontWeight: entry.isCurrentUser
                                                 ? FontWeight.w800
@@ -369,16 +367,11 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     );
   }
 
-  // Older API versions returned numbered aliases such as "Learner #1".
-  // Explain anonymity rather than making real students look like fake accounts.
+  // Use the verified, privacy-shortened name returned by the authenticated
+  // leaderboard API, not a numbered or fabricated local label.
   String _peerDisplayName(String name, bool isArabic) {
-    final alias = RegExp(r'^(Learner|متعلم)\s*#\d+$', caseSensitive: false);
-    if (alias.hasMatch(name.trim())) {
-      return isArabic
-          ? 'طالب مشارك · الاسم مخفي'
-          : 'Participating learner · name hidden';
-    }
-    return name;
+    final display = name.trim();
+    return display.isNotEmpty ? display : (isArabic ? 'طالب' : 'Learner');
   }
 
   Widget _periodChip(String value, String translationKey) {

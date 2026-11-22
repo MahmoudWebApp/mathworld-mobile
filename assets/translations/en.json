@@ -182,7 +182,7 @@
   "leaderboard_first_try": "first-try correct",
   "leaderboard_previous": "Previous",
   "leaderboard_next": "Next",
-  "leaderboard_privacy": "Other learners' names are hidden to protect privacy.",
+  "leaderboard_privacy": "Students appear by shortened names to protect privacy; no email addresses or private details are shown.",
   "active_stage_categories": "Categories",
   "change_stage_keeps_progress": "Changing stage keeps your previous progress",
   "server_feature_unavailable": "This feature is not available on the connected server version. Update the MathWorld backend to match this app; retrying alone will not resolve it.",
