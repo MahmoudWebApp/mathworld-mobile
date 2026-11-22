@@ -782,45 +782,6 @@ class _AnswerResultCard extends StatelessWidget {
   }
 }
 
-String _masteryLabel(String status) {
-  switch (status.toLowerCase()) {
-    case 'needsreview':
-      return 'mastery_needs_review'.tr();
-    case 'practicing':
-      return 'mastery_practicing'.tr();
-    case 'mastered':
-      return 'mastery_mastered'.tr();
-    default:
-      return 'mastery_new'.tr();
-  }
-}
-
-Color _masteryColor(String status) {
-  switch (status.toLowerCase()) {
-    case 'needsreview':
-      return AppColors.error;
-    case 'practicing':
-      return AppColors.warning;
-    case 'mastered':
-      return AppColors.success;
-    default:
-      return AppColors.brandCyan;
-  }
-}
-
-IconData _masteryIcon(String status) {
-  switch (status.toLowerCase()) {
-    case 'needsreview':
-      return Icons.error_outline_rounded;
-    case 'practicing':
-      return Icons.model_training_rounded;
-    case 'mastered':
-      return Icons.workspace_premium_rounded;
-    default:
-      return Icons.fiber_new_rounded;
-  }
-}
-
 String _formatDuration(int seconds) {
   if (seconds < 60) {
     return 'seconds_short'.tr(namedArgs: {'count': '$seconds'});
