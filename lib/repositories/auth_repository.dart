@@ -20,6 +20,10 @@ class AuthRepository {
     try {
       final response = await _apiService.get(ApiConstants.userProfile);
       final user = User.fromJson(ApiEnvelope.map(response.data));
+      if (user.role.toLowerCase() != 'student') {
+        await clearSession();
+        return null;
+      }
       await HiveService.saveUser(user.toCacheJson());
       return user;
     } on AppException catch (error) {
@@ -30,7 +34,13 @@ class AuthRepository {
 
       if (error.canUseCachedData) {
         final cached = HiveService.getUser();
-        return cached == null ? null : User.fromJson(cached);
+        if (cached == null) return null;
+        final cachedUser = User.fromJson(cached);
+        if (cachedUser.role.toLowerCase() != 'student') {
+          await clearSession();
+          return null;
+        }
+        return cachedUser;
       }
 
       rethrow;
@@ -106,6 +116,15 @@ class AuthRepository {
   }
 
   Future<User> _saveAuthResult(AuthResult result) async {
+    // The mobile application is a learner app only. Admins use the web
+    // dashboard; reject their token BEFORE writing any mobile credentials.
+    if (result.user.role.toLowerCase() != 'student') {
+      await clearSession();
+      throw const AppException(
+        type: AppExceptionType.forbidden,
+        messageKey: 'admin_web_only',
+      );
+    }
     await _apiService.saveToken(result.token);
     try {
       await HiveService.saveUser(result.user.toCacheJson());
