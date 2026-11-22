@@ -5,6 +5,7 @@ class DailyChallenge {
   final int stageId;
   final int total;
   final int completed;
+  final int correct;
   final List<DailyChallengeProblem> problems;
 
   const DailyChallenge({
@@ -12,6 +13,7 @@ class DailyChallenge {
     required this.stageId,
     required this.total,
     required this.completed,
+    required this.correct,
     required this.problems,
   });
 
@@ -25,7 +27,8 @@ class DailyChallenge {
       dateUtc: (json['DateUtc'] ?? json['dateUtc'] ?? '').toString(),
       stageId: _int(json['StageId'] ?? json['stageId']),
       total: problems.length, // The actual server-authorized cards, never a made-up quota.
-      completed: problems.where((problem) => problem.isSolved).length,
+      completed: problems.where((problem) => problem.isAnswered).length,
+      correct: problems.where((problem) => problem.isSolved).length,
       problems: problems,
     );
   }
@@ -38,6 +41,7 @@ class DailyChallengeProblem {
   final String titleEn;
   final int points;
   final bool isSolved;
+  final bool isAnswered;
 
   const DailyChallengeProblem({
     required this.id,
@@ -46,6 +50,7 @@ class DailyChallengeProblem {
     required this.titleEn,
     required this.points,
     required this.isSolved,
+    required this.isAnswered,
   });
 
   factory DailyChallengeProblem.fromJson(Map<String, dynamic> json) =>
@@ -56,6 +61,8 @@ class DailyChallengeProblem {
         titleEn: (json['TitleEn'] ?? json['titleEn'] ?? '').toString(),
         points: _int(json['Points'] ?? json['points']),
         isSolved: (json['IsSolved'] ?? json['isSolved']) == true,
+        isAnswered: (json['IsAnswered'] ?? json['isAnswered']) == true ||
+            (json['IsSolved'] ?? json['isSolved']) == true,
       );
 
   String getName(String language) => language == 'en' ? titleEn : titleAr;
