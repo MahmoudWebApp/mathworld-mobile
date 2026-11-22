@@ -743,28 +743,16 @@ class _AnswerResultCard extends StatelessWidget {
                         color: resultColor,
                       ),
                 ),
-                if (result.attemptNumber > 0) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    result.isOfficialAttempt
-                        ? 'official_attempt_value'.tr(
-                            namedArgs: {'number': '${result.attemptNumber}'},
-                          )
-                        : 'training_attempt_value'.tr(
-                            namedArgs: {'number': '${result.attemptNumber}'},
-                          ),
-                  ),
-                ],
-                if (result.attemptTimeSeconds > 0) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'attempt_time_value'.tr(
-                      namedArgs: {
-                        'time': _formatDuration(result.attemptTimeSeconds),
-                      },
-                    ),
-                  ),
-                ],
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  result.isCorrect
+                      ? (context.locale.languageCode == 'ar'
+                          ? 'انتقلت المسألة إلى المحلولة بنجاح.'
+                          : 'This problem is now solved successfully.')
+                      : (context.locale.languageCode == 'ar'
+                          ? 'المسألة الآن في دفتر الأخطاء. يمكنك مراجعتها وحلها من هناك.'
+                          : 'This problem is in your error notebook. Review and solve it there.'),
+                ),
                 if (result.pointsEarned > 0) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(
