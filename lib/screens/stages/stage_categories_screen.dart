@@ -13,6 +13,15 @@ import '../../providers/auth_provider.dart';
 import '../../providers/stages_provider.dart';
 import '../../providers/stage_category_access_provider.dart';
 import '../../providers/learning_journey_provider.dart';
+import '../../providers/problems_provider.dart';
+import '../../providers/repositories_provider.dart';
+import '../../providers/dashboard_provider.dart';
+import '../../providers/user_lists_provider.dart';
+import '../../providers/learning_provider.dart';
+import '../../providers/daily_challenge_provider.dart';
+import '../../providers/student_badges_provider.dart';
+import '../../providers/premium_analytics_provider.dart';
+import '../../providers/leaderboard_provider.dart';
 import '../../utils/category_grid_layout.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/app_states.dart';
@@ -43,15 +52,65 @@ class StageCategoriesScreen extends ConsumerWidget {
     // Actual journey data, never a guessed learning result.
     final journey = ref.watch(learningJourneyProvider).valueOrNull;
     final solvedCounts = <int, int>{};
+    final attemptedCounts = <int, int>{};
     if (journey?.stageId == stage.id) {
       for (final result in journey!.categories) {
         solvedCounts[result.categoryId] = result.solvedProblems;
+        attemptedCounts[result.categoryId] = result.attemptedProblems;
       }
     }
     final user = ref.watch(authProvider.select((state) => state.user));
     final premiumState = user?.role == 'Student'
         ? ref.watch(studentPremiumProvider)
         : null;
+    Future<void> restartPractice({int? categoryId, required String name}) async {
+      if (user?.role != 'Student') return;
+      final ar = context.locale.languageCode == 'ar';
+      final accepted = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(ar ? 'إعادة التدريب من البداية؟' : 'Restart practice?'),
+          content: Text(ar
+            ? 'سيبدأ تدريب جديد في $name. ستعود المسائل إلى جديدة، ويُصفّر تقدم هذه الدورة ودفتر أخطائها. المفضلة محفوظة، ولا يمكن التراجع.'
+            : 'Restart all problems in $name as New. Current progress and mistakes reset; favorites stay saved. This cannot be undone.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(ar ? 'إلغاء' : 'Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(ar ? 'ابدأ دورة جديدة' : 'Start new cycle')),
+          ],
+        ),
+      );
+      if (accepted != true || !context.mounted) return;
+      try {
+        await ref.read(problemsRepositoryProvider).resetPractice(
+          stageId: stage.id, categoryId: categoryId);
+        ref.invalidate(learningJourneyProvider);
+        ref.invalidate(dashboardProvider);
+        ref.invalidate(solvedProvider);
+        ref.invalidate(errorNotebookProvider);
+        ref.invalidate(favoritesProvider);
+        ref.invalidate(problemsProvider);
+        ref.invalidate(dailyChallengeProvider);
+        ref.invalidate(studentBadgesProvider);
+        ref.invalidate(premiumAnalyticsProvider);
+        ref.invalidate(leaderboardProvider);
+        ref.invalidate(stageCategoryAccessProvider(stage.id));
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(ar ? 'تم بدء دورة تدريب جديدة في $name.' :
+              'A new practice cycle started in $name.'),
+          ));
+        }
+      } catch (error) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(localizedErrorMessage(error)),
+          ));
+        }
+      }
+    }
+
     final localeCode = context.locale.languageCode;
 
     final content = MathBackground(
@@ -168,6 +227,12 @@ class StageCategoriesScreen extends ConsumerWidget {
                           localeCode: localeCode,
                           stageId: stage.id,
                           stageOrder: stage.order,
+                          onRestart: (user?.role == 'Student' &&
+                              (hasFullAccess || access.freeCategoryIds.contains(category.id)) &&
+                              (attemptedCounts[category.id] ?? 0) > 0)
+                            ? () => restartPractice(categoryId: category.id,
+                                name: category.getName(localeCode))
+                            : null,
                           locked: !hasFullAccess &&
                             !access.freeCategoryIds.contains(category.id),
                         );
@@ -228,6 +293,21 @@ class StageCategoriesScreen extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: AppSpacing.md),
+                      if (user?.role == 'Student' &&
+                          journey?.stageId == stage.id &&
+                          (journey?.attemptedProblems ?? 0) > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                          child: Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: OutlinedButton.icon(
+                              onPressed: () => restartPractice(
+                                name: stage.getName(localeCode)),
+                              icon: const Icon(Icons.restart_alt_rounded),
+                              label: Text(ar ? 'إعادة تدريب المرحلة' : 'Restart stage'),
+                            ),
+                          ),
+                        ),
                       const CurriculumFrameworkNote(),
                       PublishedStageSkillsPanel(stageId: stage.id, categories: categories),
                       const SizedBox(height: AppSpacing.lg),
@@ -350,6 +430,7 @@ class _CategoryCard extends StatelessWidget {
   final int stageId;
   final int stageOrder;
   final bool locked;
+  final VoidCallback? onRestart;
 
   const _CategoryCard({
     required this.category,
@@ -357,6 +438,7 @@ class _CategoryCard extends StatelessWidget {
     required this.stageId,
     required this.stageOrder,
     required this.locked,
+    this.onRestart,
   });
 
   @override
@@ -413,6 +495,13 @@ class _CategoryCard extends StatelessWidget {
                 child: _categoryIcon(accent),
               ),
               const Spacer(),
+              if (onRestart != null)
+                IconButton(
+                  tooltip: localeCode == 'ar' ? 'إعادة تدريب الفئة' : 'Restart topic',
+                  onPressed: onRestart,
+                  icon: const Icon(Icons.restart_alt_rounded),
+                  color: accent, iconSize: 20,
+                ),
               if (locked)
                 Icon(Icons.lock_outline_rounded, color: mutedColor, size: 19),
             ],
