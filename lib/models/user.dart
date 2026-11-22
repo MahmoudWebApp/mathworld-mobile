@@ -23,7 +23,9 @@ class User {
       id: _asInt(json['Id'] ?? json['id']),
       fullName: _asString(json['FullName'] ?? json['fullName']),
       email: _asString(json['Email'] ?? json['email']),
-      role: _asString(json['Role'] ?? json['role'], fallback: 'Student'),
+      // A missing role must NEVER be inferred as Student on mobile:
+      // it could be an administrator or a malformed API/cache response.
+      role: _asString(json['Role'] ?? json['role']),
       subscriptionType: _asString(
         json['SubscriptionType'] ?? json['subscriptionType'],
         fallback: 'Free',
@@ -104,7 +106,9 @@ class UserProfile extends User {
       id: _asInt(json['Id'] ?? json['id']),
       fullName: _asString(json['FullName'] ?? json['fullName']),
       email: _asString(json['Email'] ?? json['email']),
-      role: _asString(json['Role'] ?? json['role'], fallback: 'Student'),
+      // A missing role must NEVER be inferred as Student on mobile:
+      // it could be an administrator or a malformed API/cache response.
+      role: _asString(json['Role'] ?? json['role']),
       subscriptionType: _asString(
         json['SubscriptionType'] ?? json['subscriptionType'],
         fallback: 'Free',
