@@ -71,7 +71,6 @@
   "add_to_favorites": "Add to favorites",
   "remove_from_favorites": "Remove from favorites",
   "points_value": "{count} points",
-  "views_value": "{count} views",
   "points_earned_value": "Points earned: {count}",
   "invalid_request": "The request is invalid",
   "not_found": "The requested data was not found",
