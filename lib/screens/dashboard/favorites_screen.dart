@@ -13,10 +13,12 @@ import '../../widgets/problem_card.dart';
 /// Displays localized favorite problems with consistent spacing.
 class FavoritesScreen extends ConsumerWidget {
   final bool embedded;
+  final VoidCallback? onOpenStages;
 
   const FavoritesScreen({
     super.key,
     this.embedded = false,
+    this.onOpenStages,
   });
 
   @override
@@ -55,7 +57,12 @@ class FavoritesScreen extends ConsumerWidget {
                     title: 'no_favorites_yet'.tr(),
                     action: FilledButton.icon(
                       onPressed: () {
-                        Navigator.pushNamed(context, AppRoutes.problems);
+                        if (onOpenStages != null) {
+                          onOpenStages!();
+                        } else {
+                          Navigator.pushNamed(context, AppRoutes.home,
+                              arguments: {'initialTab': 1});
+                        }
                       },
                       icon: const Icon(Icons.search),
                       label: Text('browse_all'.tr()),
