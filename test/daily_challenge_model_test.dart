@@ -41,6 +41,21 @@ void main() {
     expect(result.completed, 0);
   });
 
+  test('wrong answer advances challenge but remains in error notebook', () {
+    final result = DailyChallenge.fromJson({
+      'StageId': 1, 'Problems': [
+        {'Id': 8, 'TitleAr': 'مسألة', 'TitleEn': 'Problem',
+         'IsAnswered': true, 'IsSolved': false},
+        {'Id': 9, 'TitleAr': 'أخرى', 'TitleEn': 'Another',
+         'IsAnswered': false, 'IsSolved': false},
+      ],
+    });
+    expect(result.completed, 1);
+    expect(result.correct, 0);
+    expect(result.problems.first.isAnswered, true);
+    expect(result.problems.first.isSolved, false);
+  });
+
   test('missing solved flag is not interpreted as solved', () {
     final result = DailyChallenge.fromJson({
       'StageId': 1,

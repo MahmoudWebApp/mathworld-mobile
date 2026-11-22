@@ -10,7 +10,6 @@ import '../../utils/layout_utils.dart';
 import '../../core/utils/error_message.dart';
 import '../../models/problem.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/learning_provider.dart';
 import '../../providers/problem_details_provider.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
@@ -23,7 +22,7 @@ import '../../services/premium_api_service.dart';
 import '../../services/geometry_api_service.dart';
 import '../../services/api_service.dart';
 
-/// Displays one problem, its learning summary, and all recorded attempts.
+/// Displays one problem with a simple New / Needs Review / Solved journey.
 class ProblemDetailsScreen extends ConsumerStatefulWidget {
   const ProblemDetailsScreen({super.key});
 
@@ -35,10 +34,10 @@ class ProblemDetailsScreen extends ConsumerStatefulWidget {
 class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
   bool _autoRetryTriggered = false;
 
-  ({int? problemId, bool retry}) _readArguments() {
+  ({int? problemId, bool retry, bool dailyChallenge}) _readArguments() {
     final arguments = ModalRoute.of(context)?.settings.arguments;
     if (arguments is int) {
-      return (problemId: arguments, retry: false);
+      return (problemId: arguments, retry: false, dailyChallenge: false);
     }
     if (arguments is Map) {
       final rawId = arguments['problemId'] ?? arguments['id'];
@@ -46,9 +45,10 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
       return (
         problemId: id,
         retry: arguments['retry'] == true,
+        dailyChallenge: arguments['dailyChallenge'] == true,
       );
     }
-    return (problemId: null, retry: false);
+    return (problemId: null, retry: false, dailyChallenge: false);
   }
 
   @override
@@ -99,11 +99,9 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
     final state = ref.watch(problemDetailsProvider(problemId));
     final notifier = ref.read(problemDetailsProvider(problemId).notifier);
     final loadedProblem = state.problem.valueOrNull;
-    final historyState = loadedProblem?.hasAttempted == true
-        ? ref.watch(problemAttemptHistoryProvider(problemId))
-        : null;
 
     if (routeArguments.retry &&
+        loadedProblem?.isInErrorNotebook == true &&
         !_autoRetryTriggered &&
         loadedProblem?.hasAttempted == true &&
         loadedProblem?.canRetry == true) {
@@ -158,9 +156,18 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
           data: (problem) => _ProblemContent(
             problem: problem,
             state: state,
-            historyState: historyState,
+            allowNotebookRetry: routeArguments.retry,
             onOptionChanged: notifier.selectOption,
-            onSubmit: () => _runAction(context, notifier.submitAnswer),
+            onSubmit: () => _runAction(context, () async {
+              await notifier.submitAnswer();
+              // A daily question is complete on submission whether the
+              // answer is correct or wrong; the parent opens the next one.
+              if (routeArguments.dailyChallenge &&
+                  ref.read(problemDetailsProvider(problemId)).answerResult != null) {
+                await Future<void>.delayed(const Duration(milliseconds: 1450));
+                if (context.mounted) Navigator.pop(context, true);
+              }
+            }),
             onStartRetry: notifier.startRetry,
             onCancelRetry: notifier.cancelRetry,
             onToggleFavorite: () =>
@@ -191,7 +198,7 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
 class _ProblemContent extends ConsumerWidget {
   final Problem problem;
   final ProblemDetailsState state;
-  final AsyncValue<ProblemAttemptHistory>? historyState;
+  final bool allowNotebookRetry;
   final ValueChanged<int?> onOptionChanged;
   final VoidCallback onSubmit;
   final VoidCallback onStartRetry;
@@ -201,7 +208,7 @@ class _ProblemContent extends ConsumerWidget {
   const _ProblemContent({
     required this.problem,
     required this.state,
-    required this.historyState,
+    required this.allowNotebookRetry,
     required this.onOptionChanged,
     required this.onSubmit,
     required this.onStartRetry,
@@ -221,7 +228,6 @@ class _ProblemContent extends ConsumerWidget {
         : _solutionText(problem, state);
     final videoUrl = preview?.youtubeSolutionUrl ??
         state.answerResult?.youtubeSolutionUrl ?? problem.youtubeSolutionUrl;
-    final history = historyState?.valueOrNull;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -239,7 +245,7 @@ class _ProblemContent extends ConsumerWidget {
         ),
         if (problem.hasAttempted) ...[
           const SizedBox(height: AppSpacing.lg),
-          _LearningSummaryCard(problem: problem, history: history),
+          _LearningSummaryCard(problem: problem),
         ],
         if (state.isRetryMode) ...[
           const SizedBox(height: AppSpacing.lg),
@@ -323,8 +329,8 @@ class _ProblemContent extends ConsumerWidget {
             label: Text('back_to_problems'.tr()),
           ),
         ],
-        if (problem.hasAttempted &&
-            problem.canRetry &&
+        if (allowNotebookRetry && problem.hasAttempted &&
+            problem.isInErrorNotebook && problem.canRetry &&
             !state.isRetryMode &&
             !state.isSubmitting) ...[
           const SizedBox(height: AppSpacing.lg),
@@ -362,10 +368,6 @@ class _ProblemContent extends ConsumerWidget {
             icon: const Icon(Icons.play_circle_outline_rounded),
             label: Text('video_solution'.tr()),
           ),
-        ],
-        if (historyState != null) ...[
-          const SizedBox(height: AppSpacing.xxl),
-          _AttemptHistorySection(historyState: historyState!),
         ],
         if (state.answerResult == null) ...[
           const SizedBox(height: AppSpacing.lg),
@@ -449,88 +451,28 @@ class _ProblemContent extends ConsumerWidget {
 
 class _LearningSummaryCard extends StatelessWidget {
   final Problem problem;
-  final ProblemAttemptHistory? history;
-
-  const _LearningSummaryCard({required this.problem, this.history});
+  const _LearningSummaryCard({required this.problem});
 
   @override
   Widget build(BuildContext context) {
-    final status = history?.masteryStatus ?? problem.masteryStatus;
-    final statusColor = _masteryColor(status);
-    final totalAttempts = history?.totalAttempts ?? problem.attemptCount;
-    final bestTime = history?.bestTimeSeconds ?? problem.bestTimeSeconds;
-    final averageTime =
-        history?.averageTimeSeconds ?? problem.averageTimeSeconds;
-    final nextReview = history?.nextReviewAt ?? problem.nextReviewAt;
-
+    final solved = problem.isSolved;
+    final needsReview = !solved && problem.hasAttempted;
+    final color = solved ? AppColors.success :
+        needsReview ? AppColors.error : AppColors.brandPurple;
+    final ar = context.locale.languageCode == 'ar';
     return GlassCard(
-      gradient: LinearGradient(
-        colors: [
-          AppColors.brandPurple.withValues(alpha: 0.11),
-          AppColors.brandCyan.withValues(alpha: 0.07),
-        ],
-      ),
-      border: BorderSide(
-        color: AppColors.brandCyan.withValues(alpha: 0.18),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(_masteryIcon(status), color: statusColor),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  _masteryLabel(status),
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-              Text(
-                'attempts_value'.tr(
-                  namedArgs: {'count': '$totalAttempts'},
-                ),
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: [
-              if (bestTime != null)
-                _LearningPill(
-                  icon: Icons.bolt_rounded,
-                  label: 'best_time_value'.tr(
-                    namedArgs: {'time': _formatDuration(bestTime)},
-                  ),
-                  color: AppColors.success,
-                ),
-              if (averageTime != null)
-                _LearningPill(
-                  icon: Icons.timer_outlined,
-                  label: 'average_time_value'.tr(
-                    namedArgs: {'time': _formatDuration(averageTime)},
-                  ),
-                  color: AppColors.brandCyan,
-                ),
-              if (nextReview != null)
-                _LearningPill(
-                  icon: Icons.event_repeat_rounded,
-                  label: 'next_review_value'.tr(
-                    namedArgs: {
-                      'date': DateFormat.yMMMd(
-                        context.locale.toString(),
-                      ).format(nextReview.toLocal()),
-                    },
-                  ),
-                  color: AppColors.warning,
-                ),
-            ],
-          ),
-        ],
-      ),
+      child: Row(children: [
+        Icon(solved ? Icons.check_circle_outline_rounded :
+          needsReview ? Icons.error_outline_rounded : Icons.circle_outlined,
+          color: color),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(child: Text(
+          solved ? (ar ? 'محلولة بنجاح' : 'Solved successfully') :
+          needsReview ? (ar ? 'تحتاج مراجعة' : 'Needs review') :
+          (ar ? 'جديدة' : 'New'),
+          style: Theme.of(context).textTheme.titleMedium,
+        )),
+      ]),
     );
   }
 }
@@ -567,155 +509,6 @@ class _RetryModeBanner extends StatelessWidget {
             ),
           ),
           TextButton(onPressed: onCancel, child: Text('cancel'.tr())),
-        ],
-      ),
-    );
-  }
-}
-
-class _AttemptHistorySection extends StatelessWidget {
-  final AsyncValue<ProblemAttemptHistory> historyState;
-
-  const _AttemptHistorySection({required this.historyState});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'attempt_history'.tr(),
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: AppSpacing.md),
-        historyState.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => GlassCard(
-            child: Text(localizedErrorMessage(error)),
-          ),
-          data: (history) {
-            if (history.attempts.isEmpty) {
-              return GlassCard(child: Text('no_attempts_yet'.tr()));
-            }
-            return GlassCard(
-              padding: EdgeInsets.zero,
-              child: Column(
-                children: [
-                  for (var index = 0;
-                      index < history.attempts.length;
-                      index++) ...[
-                    _AttemptTile(attempt: history.attempts[index]),
-                    if (index < history.attempts.length - 1)
-                      const Divider(height: 1, indent: 20, endIndent: 20),
-                  ],
-                ],
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-}
-
-class _AttemptTile extends StatelessWidget {
-  final ProblemAttempt attempt;
-
-  const _AttemptTile({required this.attempt});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = attempt.isCorrect ? AppColors.success : AppColors.error;
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.sm,
-      ),
-      leading: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.11),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Icon(
-          attempt.isCorrect ? Icons.check_rounded : Icons.close_rounded,
-          color: color,
-        ),
-      ),
-      title: Text(
-        attempt.isOfficial
-            ? 'official_attempt_value'.tr(
-                namedArgs: {'number': '${attempt.attemptNumber}'},
-              )
-            : 'training_attempt_value'.tr(
-                namedArgs: {'number': '${attempt.attemptNumber}'},
-              ),
-      ),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: AppSpacing.xs),
-        child: RichMathText(
-          text: attempt.selectedOptionText,
-          inline: true,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      ),
-      trailing: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 54, maxWidth: 76),
-        child: Text(
-          _formatDuration(attempt.timeSpentSeconds),
-          textDirection: ui.TextDirection.ltr,
-          maxLines: 1,
-          softWrap: false,
-          textAlign: TextAlign.end,
-          overflow: TextOverflow.visible,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            fontFeatures: const [ui.FontFeature.tabularFigures()],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LearningPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  const _LearningPill({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.09),
-        borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: color.withValues(alpha: 0.20)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 6),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 220),
-            child: Text(
-              label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-          ),
         ],
       ),
     );
@@ -986,45 +779,6 @@ class _AnswerResultCard extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-String _masteryLabel(String status) {
-  switch (status.toLowerCase()) {
-    case 'needsreview':
-      return 'mastery_needs_review'.tr();
-    case 'practicing':
-      return 'mastery_practicing'.tr();
-    case 'mastered':
-      return 'mastery_mastered'.tr();
-    default:
-      return 'mastery_new'.tr();
-  }
-}
-
-Color _masteryColor(String status) {
-  switch (status.toLowerCase()) {
-    case 'needsreview':
-      return AppColors.error;
-    case 'practicing':
-      return AppColors.warning;
-    case 'mastered':
-      return AppColors.success;
-    default:
-      return AppColors.brandCyan;
-  }
-}
-
-IconData _masteryIcon(String status) {
-  switch (status.toLowerCase()) {
-    case 'needsreview':
-      return Icons.error_outline_rounded;
-    case 'practicing':
-      return Icons.model_training_rounded;
-    case 'mastered':
-      return Icons.workspace_premium_rounded;
-    default:
-      return Icons.fiber_new_rounded;
   }
 }
 

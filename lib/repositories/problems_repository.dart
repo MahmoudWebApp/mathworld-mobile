@@ -115,6 +115,19 @@ class ProblemsRepository {
     );
   }
 
+  /// Restart the active training cycle in one stage or one of its topics.
+  /// The backend preserves favorites and immutable audit entries.
+  Future<void> resetPractice({required int stageId, int? categoryId}) async {
+    final response = await _apiService.post(
+      '/users/practice/reset',
+      data: {
+        'StageId': stageId,
+        if (categoryId != null) 'CategoryId': categoryId,
+      },
+    );
+    ApiEnvelope.map(response.data);
+  }
+
   /// Loads all recorded attempts for one problem.
   Future<ProblemAttemptHistory> getAttemptHistory(int problemId) async {
     final response = await _apiService.get(

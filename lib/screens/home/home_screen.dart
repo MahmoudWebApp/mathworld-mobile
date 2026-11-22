@@ -247,15 +247,27 @@ class HomeScreen extends ConsumerWidget {
                             child: _DailyPracticeCard(
                               challenge: challenge,
                               onOpen: (problemId) async {
-                                await Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.problemDetails,
-                                  arguments: problemId,
-                                );
-                                if (!context.mounted) return;
+                                var nextId = problemId;
+                                for (var step = 0; step < 5; step++) {
+                                  final submitted = await Navigator.pushNamed(
+                                    context, AppRoutes.problemDetails,
+                                    arguments: {
+                                      'problemId': nextId,
+                                      'dailyChallenge': true,
+                                    },
+                                  );
+                                  if (!context.mounted) return;
+                                  ref.invalidate(dailyChallengeProvider);
+                                  ref.invalidate(dashboardProvider);
+                                  ref.invalidate(learningJourneyProvider);
+                                  if (submitted != true) break;
+                                  final latest = await ref.read(dailyChallengeProvider.future);
+                                  if (!context.mounted || latest == null) return;
+                                  final waiting = latest.problems.where((p) => !p.isAnswered);
+                                  if (waiting.isEmpty) break;
+                                  nextId = waiting.first.id;
+                                }
                                 ref.invalidate(dailyChallengeProvider);
-                                ref.invalidate(dashboardProvider);
-                                ref.invalidate(learningJourneyProvider);
                               },
                             ),
                           ),
@@ -439,37 +451,44 @@ class _DailyPracticeCard extends StatelessWidget {
           ],
           const SizedBox(height: AppSpacing.md),
           if (challenge.problems.isEmpty)
-            Text(ar
-              ? 'ما في مسائل منشورة ضمن فئاتك المفتوحة حالياً.'
-              : 'No published questions in your unlocked categories yet.')
+            Text(ar ? 'لا توجد مسائل جديدة لتحدي اليوم.' :
+              'No new challenge questions are available today.')
+          else if (challenge.problems.every((problem) => problem.isAnswered))
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.emoji_events_outlined,
+                  size: 34, color: AppColors.success),
+                const SizedBox(height: AppSpacing.sm),
+                Text(ar ? 'أكملت تحدي اليوم!' : 'Daily challenge complete!',
+                  style: Theme.of(context).textTheme.titleMedium),
+                Text(ar
+                  ? '${challenge.correct} صحيحة · ${challenge.completed - challenge.correct} تحتاج مراجعة'
+                  : '${challenge.correct} correct · ${challenge.completed - challenge.correct} to review'),
+              ],
+            )
           else
-            ...challenge.problems.map((problem) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: ListTile(
+            Builder(builder: (context) {
+              final waiting = challenge.problems.where((p) => !p.isAnswered).first;
+              final index = challenge.problems.indexWhere((p) => p.id == waiting.id);
+              return ListTile(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md),
                   side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
                 ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md, vertical: AppSpacing.xs),
                 title: RichMathText(
-                  text: problem.getName(context.locale.languageCode),
-                  isArabic: ar,
-                  inline: true,
-                  maxLines: 2,
+                  text: waiting.getName(context.locale.languageCode),
+                  isArabic: ar, inline: true, maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-                subtitle: Text(problem.isSolved
-                  ? (ar ? 'تم حلّها' : 'Solved')
-                  : (ar ? 'اضغط للتدرّب' : 'Tap to practice')),
-                trailing: problem.isSolved
-                  ? const Icon(Icons.check_circle_outline_rounded,
-                      color: AppColors.success)
-                  : LayoutUtils.forwardIcon(context, color: color),
-                onTap: () => onOpen(problem.id),
-              ),
-            )),
+                subtitle: Text(ar
+                  ? 'المسألة ${index + 1} من ${challenge.total} · ابدأ التحدي'
+                  : 'Problem ${index + 1} of ${challenge.total} · Start challenge'),
+                trailing: LayoutUtils.forwardIcon(context, color: color),
+                onTap: () => onOpen(waiting.id),
+              );
+            }),
         ],
       ),
     );
