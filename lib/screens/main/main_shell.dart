@@ -131,7 +131,7 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
   late final List<Widget> _pages = [
     HomeScreen(onOpenStages: () => setState(() => _selectedIndex = 1)),
     const CurrentStageCategoriesScreen(),
-    const FavoritesScreen(embedded: true),
+    FavoritesScreen(embedded: true, onOpenStages: () => setState(() => _selectedIndex = 1)),
     const SettingsScreen(embedded: true),
   ];
 
