@@ -770,21 +770,6 @@ class _AnswerResultCard extends StatelessWidget {
   }
 }
 
-String _formatDuration(int seconds) {
-  if (seconds < 60) {
-    return 'seconds_short'.tr(namedArgs: {'count': '$seconds'});
-  }
-  final minutes = seconds ~/ 60;
-  final remaining = seconds % 60;
-  if (remaining == 0) {
-    return 'minutes_short'.tr(namedArgs: {'count': '$minutes'});
-  }
-  return 'minutes_seconds_short'.tr(
-    namedArgs: {'minutes': '$minutes', 'seconds': '$remaining'},
-  );
-}
-
-
 /// Diagram is loaded separately so older problem payloads remain compatible.
 class _OptionalProblemDiagram extends StatefulWidget {
   const _OptionalProblemDiagram({required this.problemId, required this.isArabic});
