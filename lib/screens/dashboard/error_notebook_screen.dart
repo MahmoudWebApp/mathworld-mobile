@@ -7,6 +7,7 @@ import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
 import '../../models/problem.dart';
 import '../../providers/learning_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
@@ -22,7 +23,6 @@ class ErrorNotebookScreen extends ConsumerStatefulWidget {
 }
 
 class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
-  int _selectedStageId = 0;
   bool _dueOnly = false;
 
   bool _isDue(ErrorNotebookProblem problem, DateTime now) =>
@@ -33,6 +33,7 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(errorNotebookProvider);
     final notifier = ref.read(errorNotebookProvider.notifier);
+    final stageId = ref.watch(authProvider.select((state) => state.user?.currentStageId));
 
     return Scaffold(
       appBar: AppBar(title: Text('error_notebook'.tr())),
@@ -74,19 +75,12 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
                   ),
                   data: (problems) {
                     final now = DateTime.now();
-                    final stages = <int, String>{
-                      for (final problem in problems)
-                        problem.stageId: problem.stageName,
-                    }.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
-                    final stageId = stages.any((stage) => stage.key == _selectedStageId)
-                        ? _selectedStageId
-                        : 0;
                     final dueCount = problems.where((problem) =>
                         !problem.isArchived &&
-                        (stageId == 0 || problem.stageId == stageId) &&
+                        (stageId != null && problem.stageId == stageId) &&
                         _isDue(problem, now)).length;
                     final visible = problems.where((problem) =>
-                        (stageId == 0 || problem.stageId == stageId) &&
+                        (stageId != null && problem.stageId == stageId) &&
                         (!_dueOnly || _isDue(problem, now))).toList()
                       ..sort((a, b) {
                         final first = a.nextReviewAt?.millisecondsSinceEpoch ??
@@ -97,7 +91,7 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
                         if (dateOrder != 0) return dateOrder;
                         return a.id.compareTo(b.id);
                       });
-                    final hasFilter = stageId != 0 || _dueOnly;
+                    final hasFilter = _dueOnly;
 
                     return Column(
                       children: [
@@ -115,25 +109,6 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
                               spacing: AppSpacing.sm,
                               runSpacing: AppSpacing.sm,
                               children: [
-                                DropdownButton<int>(
-                                  value: stageId,
-                                  underline: const SizedBox.shrink(),
-                                  items: [
-                                    DropdownMenuItem<int>(
-                                      value: 0,
-                                      child: Text(context.locale.languageCode == 'ar'
-                                          ? 'جميع المراحل' : 'All stages'),
-                                    ),
-                                    ...stages.map((stage) => DropdownMenuItem<int>(
-                                      value: stage.key,
-                                      child: Text(stage.value,
-                                          overflow: TextOverflow.ellipsis),
-                                    )),
-                                  ],
-                                  onChanged: (value) => setState(() {
-                                    _selectedStageId = value ?? 0;
-                                  }),
-                                ),
                                 FilterChip(
                                   selected: _dueOnly,
                                   onSelected: (value) => setState(() {
@@ -148,7 +123,6 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
                                 if (hasFilter)
                                   TextButton(
                                     onPressed: () => setState(() {
-                                      _selectedStageId = 0;
                                       _dueOnly = false;
                                     }),
                                     child: Text(context.locale.languageCode == 'ar'
