@@ -96,7 +96,6 @@ final problemDetailsProvider = StateNotifierProvider.autoDispose
         ref.invalidate(studentBadgesProvider);
         ref.invalidate(premiumAnalyticsProvider);
         ref.invalidate(problemsProvider);
-        ref.invalidate(problemAttemptHistoryProvider(problemId));
         ref.invalidate(errorNotebookProvider);
       },
       onFavoriteChanged: () {
