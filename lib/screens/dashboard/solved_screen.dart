@@ -39,7 +39,8 @@ class SolvedScreen extends ConsumerWidget {
                       title: 'no_solved_yet'.tr(),
                       action: FilledButton.icon(
                         onPressed: () {
-                          Navigator.pushNamed(context, AppRoutes.problems);
+                          Navigator.pushNamed(context, AppRoutes.home,
+                            arguments: {'initialTab': 1});
                         },
                         icon: const Icon(Icons.play_arrow_rounded),
                         label: Text('start_solving'.tr()),
