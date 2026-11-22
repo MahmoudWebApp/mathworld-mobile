@@ -201,48 +201,123 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                           ),
-                        ...leaderboard.entries.map((entry) => Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                          child: GlassCard(
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  child: Text('${entry.rank}'),
-                                ),
-                                const SizedBox(width: AppSpacing.md),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        entry.isCurrentUser
-                                            ? (isArabic ? 'أنت' : 'You')
-                                            : _peerDisplayName(entry.displayName, isArabic),
-                                        style: TextStyle(
-                                          fontWeight: entry.isCurrentUser
-                                              ? FontWeight.w800
-                                              : FontWeight.w600,
-                                        ),
-                                      ),
-                                      Text(
-                                        '${entry.solvedProblems} ${'leaderboard_solved'.tr()} · '
-                                        '${entry.points} ${'leaderboard_points'.tr()}',
-                                        style: Theme.of(context).textTheme.bodySmall,
-                                      ),
-                                      Text(
-                                        '${entry.firstTryCorrect} ${'leaderboard_first_try'.tr()}',
-                                        style: Theme.of(context).textTheme.bodySmall,
-                                      ),
-                                    ],
+                        ...leaderboard.entries.map((entry) {
+                          final theme = Theme.of(context);
+                          final scheme = theme.colorScheme;
+                          final dark = theme.brightness == Brightness.dark;
+                          // Medal colors depend on the actual global rank,
+                          // not on this page's position in the result list.
+                          final Color? medalColor = switch (entry.rank) {
+                            1 => const Color(0xFFD4A017), // Gold
+                            2 => const Color(0xFF8491A3), // Silver
+                            3 => const Color(0xFFB87333), // Bronze
+                            _ => null,
+                          };
+                          final cardBackground = entry.isCurrentUser
+                              ? (dark
+                                  ? const Color(0xFF34234A)
+                                  : const Color(0xFFF0E8FF))
+                              : medalColor == null
+                                  ? scheme.surface
+                                  : Color.alphaBlend(
+                                      medalColor.withValues(alpha: dark ? 0.18 : 0.14),
+                                      scheme.surface,
+                                    );
+                          final cardBorder = entry.isCurrentUser
+                              ? BorderSide(
+                                  color: dark
+                                      ? const Color(0xFFC5A4FF)
+                                      : AppColors.brandPurple,
+                                  width: 1.8,
+                                )
+                              : BorderSide(
+                                  color: medalColor?.withValues(alpha: 0.70) ??
+                                      scheme.outline.withValues(alpha: 0.65),
+                                );
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                            child: GlassCard(
+                              color: cardBackground,
+                              border: cardBorder,
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 25,
+                                    backgroundColor: medalColor == null
+                                        ? scheme.surfaceContainerHighest
+                                        : medalColor.withValues(alpha: dark ? 0.32 : 0.26),
+                                    foregroundColor: medalColor == null
+                                        ? scheme.onSurface
+                                        : (dark
+                                            ? scheme.onSurface
+                                            : const Color(0xFF332018)),
+                                    child: medalColor == null
+                                        ? Text('${entry.rank}',
+                                            style: const TextStyle(fontWeight: FontWeight.w800))
+                                        : Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(Icons.workspace_premium_rounded,
+                                                  size: 20, color: medalColor),
+                                              Text('${entry.rank}',
+                                                  style: const TextStyle(
+                                                      fontWeight: FontWeight.w800,
+                                                      fontSize: 12,
+                                                      height: 1.0)),
+                                            ],
+                                          ),
                                   ),
-                                ),
-                                if (entry.isCurrentUser)
-                                  Icon(Icons.verified_rounded,
-                                      color: Theme.of(context).colorScheme.primary),
-                              ],
+                                  const SizedBox(width: AppSpacing.md),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          entry.isCurrentUser
+                                              ? (isArabic ? 'أنت' : 'You')
+                                              : _peerDisplayName(entry.displayName, isArabic),
+                                          style: TextStyle(
+                                            fontWeight: entry.isCurrentUser
+                                                ? FontWeight.w800
+                                                : FontWeight.w600,
+                                          ),
+                                        ),
+                                        if (entry.isCurrentUser)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 4),
+                                            child: Text(
+                                              isArabic ? 'هذا ترتيبك' : 'Your ranking',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w800,
+                                                color: dark
+                                                    ? const Color(0xFFD8C0FF)
+                                                    : AppColors.brandPurple,
+                                              ),
+                                            ),
+                                          ),
+                                        Text(
+                                          '${entry.solvedProblems} ${'leaderboard_solved'.tr()} · '
+                                          '${entry.points} ${'leaderboard_points'.tr()}',
+                                          style: theme.textTheme.bodySmall,
+                                        ),
+                                        Text(
+                                          '${entry.firstTryCorrect} ${'leaderboard_first_try'.tr()}',
+                                          style: theme.textTheme.bodySmall,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (entry.isCurrentUser)
+                                    Icon(Icons.verified_rounded,
+                                        color: dark
+                                            ? const Color(0xFFD8C0FF)
+                                            : AppColors.brandPurple),
+                                ],
+                              ),
                             ),
-                          ),
-                        )),
+                          );
+                        }),
                         const SizedBox(height: AppSpacing.md),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
