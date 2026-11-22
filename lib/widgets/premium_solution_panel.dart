@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../config/app_routes.dart';
+
 import '../services/premium_api_service.dart';
 import '../models/problem.dart';
 import 'rich_math_text.dart';
@@ -79,9 +81,55 @@ class _PremiumSolutionPanelState extends State<PremiumSolutionPanel> {
     return FutureBuilder<StudentEntitlement>(
       future: _entitlement,
       builder: (context, snapshot) {
-        if (!snapshot.hasData ||
-            snapshot.data?.canRevealSolutionBeforeAnswer != true) {
-          return const SizedBox.shrink();
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: LinearProgressIndicator(minHeight: 2),
+          );
+        }
+        if (snapshot.hasError) {
+          return OutlinedButton.icon(
+            onPressed: () => setState(() {
+              _entitlement = widget.service.getEntitlement();
+            }),
+            icon: const Icon(Icons.refresh_rounded),
+            label: Text(widget.isArabic ? 'تعذّر تحميل صلاحيات الحساب' : 'Retry account access'),
+          );
+        }
+        if (snapshot.data?.canRevealSolutionBeforeAnswer != true) {
+          return OutlinedButton.icon(
+            onPressed: () => showModalBottomSheet<void>(
+              context: context,
+              showDragHandle: true,
+              builder: (sheetContext) => SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(22),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(widget.isArabic ? 'طريقة الحل' : 'Solution method',
+                        style: Theme.of(sheetContext).textTheme.titleLarge),
+                      const SizedBox(height: 10),
+                      Text(widget.isArabic
+                        ? 'طريقة الحل ميزة من حساب Premium. يمكنك متابعة حل المسائل المفتوحة بحساب Free.'
+                        : 'Solution methods are a Premium benefit. You can continue practicing Free topics.'),
+                      const SizedBox(height: 18),
+                      FilledButton(
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          Navigator.pushNamed(context, AppRoutes.premiumBenefits);
+                        },
+                        child: Text(widget.isArabic ? 'مميزات الحساب' : 'Account benefits'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            icon: const Icon(Icons.lock_outline_rounded),
+            label: Text(widget.isArabic ? 'طريقة الحل' : 'Solution method'),
+          );
         }
         final solution = _solution;
         Option? correctOption;
@@ -109,8 +157,8 @@ class _PremiumSolutionPanelState extends State<PremiumSolutionPanel> {
                         )
                       : const Icon(Icons.visibility_outlined),
                   label: Text(widget.isArabic
-                      ? 'عرض الحل مسبقاً — Premium'
-                      : 'Reveal solution early — Premium'),
+                      ? 'طريقة الحل'
+                      : 'Solution method'),
                 ),
                 if (_error != null)
                   Padding(

@@ -9,6 +9,7 @@ import '../../config/design_tokens.dart';
 import '../../core/errors/app_exception.dart';
 import '../../core/utils/error_message.dart';
 import '../../providers/problems_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/math_background.dart';
@@ -87,10 +88,13 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final learnerStageId = ref.watch(authProvider.select((state) =>
+      state.user?.role == 'Student' ? state.user?.currentStageId : null));
+    final effectiveStageId = learnerStageId ?? _stageId;
     final parameters = ProblemSearchParams(
       query: _query,
       categoryId: _categoryId,
-      stageId: _stageId,
+      stageId: effectiveStageId,
       hideSolved: _hideSolved,
       page: _page,
     );

@@ -163,7 +163,7 @@ class HomeScreen extends ConsumerWidget {
                         ]),
                         const SizedBox(height: AppSpacing.sm),
                         Text(context.locale.languageCode == 'ar'
-                          ? 'افتح جميع فئات مرحلتك وشاهد الحل قبل الإجابة واحصل على تقارير شخصية. التفعيل حالياً بكود من الإدارة، دون عرض أسعار.'
+                          ? 'افتح جميع فئات مرحلتك وطريقة الحل والتقارير الشخصية. التفعيل حالياً بكود من الإدارة، دون عرض أسعار.'
                           : 'Unlock all topics in your stage, preview solutions and access personal reports. Activation uses an admin-issued code; no prices are shown.',
                           style: Theme.of(context).textTheme.bodyMedium),
                         const SizedBox(height: AppSpacing.md),
@@ -421,7 +421,7 @@ class _DailyPracticeCard extends StatelessWidget {
             Icon(Icons.today_outlined, color: color),
             const SizedBox(width: AppSpacing.sm),
             Expanded(child: Text(
-              ar ? 'تحدّي اليوم الاختياري' : 'Optional daily practice',
+              ar ? 'تحدي اليوم' : 'Daily challenge',
               style: Theme.of(context).textTheme.titleLarge,
             )),
             Text('${challenge.completed}/${challenge.total}',
@@ -429,8 +429,8 @@ class _DailyPracticeCard extends StatelessWidget {
           ]),
           const SizedBox(height: AppSpacing.xs),
           Text(ar
-            ? 'حتى خمس مسائل من فئاتك المفتوحة؛ هذا مو حد يومي للحل.'
-            : 'Up to five questions from unlocked topics, not a daily solving limit.',
+            ? 'خمس مسائل متنوعة من فئات مرحلتك تتجدد كل يوم بتوقيت UTC. التدريب العادي غير محدود.'
+            : 'Five questions across your stage, refreshed daily at UTC midnight. Regular practice remains unlimited.',
             style: Theme.of(context).textTheme.bodySmall),
           if (challenge.dateUtc.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xs),

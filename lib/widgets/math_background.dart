@@ -57,7 +57,7 @@ class MathBackground extends StatelessWidget {
           CustomPaint(
             painter: _MathGridPainter(
               color: AppColors.brandCyan.withValues(
-                alpha: isDark ? 0.012 : 0.008,
+                alpha: isDark ? 0.012 : 0.023,
               ),
             ),
           ),
@@ -102,7 +102,7 @@ class _AmbientSymbolLayer extends StatelessWidget {
             child: _Symbol(
               'π',
               AppColors.brandPurple.withValues(
-                alpha: isDark ? 0.050 : 0.038,
+                alpha: isDark ? 0.050 : 0.055,
               ),
               30,
               -0.10,
