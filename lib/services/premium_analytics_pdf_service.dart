@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:pdf/pdf.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
@@ -25,10 +26,21 @@ class PremiumAnalyticsPdfService {
     if (fonts.length != 2) {
       throw const FormatException('Two PDF font weights are required');
     }
+    // Reuse the approved MathWorld identity that ships inside the app.
+    // Exports remain usable offline even if an older app package omits it.
+    pw.ImageProvider? brandMark;
+    try {
+      final asset = await rootBundle.load('assets/branding/mathworld-mark.png');
+      brandMark = pw.MemoryImage(asset.buffer.asUint8List());
+    } catch (_) {
+      // The MathWorld wordmark still identifies the report.
+    }
     final purple = PdfColor.fromInt(0xFF6D28D9);
     final dark = PdfColor.fromInt(0xFF1F2937);
     final muted = PdfColor.fromInt(0xFF475569);
     final light = PdfColor.fromInt(0xFFF7F3FF);
+    final pink = PdfColor.fromInt(0xFFDC41A6);
+    final track = PdfColor.fromInt(0xFFEDE7F5);
     final date = report.generatedAtUtc.toUtc().toIso8601String().split('T').first;
     final success = report.attempts == 0
         ? 0.0 : 100 * report.correctAttempts / report.attempts;
@@ -50,6 +62,50 @@ class PremiumAnalyticsPdfService {
         ],
       ),
     );
+
+    // A compact data-backed chart; use no invented or cached values.
+    pw.Widget categoryBar(PremiumCategoryStatistics c) {
+      final proportion = c.attemptedProblems <= 0
+          ? 0.0
+          : (c.solvedProblems / c.attemptedProblems).clamp(0.0, 1.0);
+      return pw.Padding(
+        padding: const pw.EdgeInsets.symmetric(vertical: 5),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Expanded(child: pw.Text(
+                  arabic ? c.categoryNameAr : c.categoryNameEn,
+                  style: pw.TextStyle(fontSize: 10, color: dark))),
+                pw.SizedBox(width: 8),
+                pw.Text('${(proportion * 100).round()}%',
+                  textDirection: pw.TextDirection.ltr,
+                  style: pw.TextStyle(fontSize: 9, color: purple,
+                    fontWeight: pw.FontWeight.bold)),
+              ],
+            ),
+            pw.SizedBox(height: 4),
+            pw.Container(
+              height: 8,
+              decoration: pw.BoxDecoration(color: track,
+                borderRadius: pw.BorderRadius.circular(4)),
+              child: pw.Row(children: [
+                if (proportion > 0)
+                  pw.Expanded(flex: (proportion * 1000).round(),
+                    child: pw.Container(decoration: pw.BoxDecoration(
+                      color: purple,
+                      borderRadius: pw.BorderRadius.circular(4)))),
+                if (proportion < 1)
+                  pw.Expanded(flex: ((1 - proportion) * 1000).round(),
+                    child: pw.SizedBox()),
+              ]),
+            ),
+          ],
+        ),
+      );
+    }
 
     pw.Widget category(PremiumCategoryStatistics c) => pw.Container(
       margin: const pw.EdgeInsets.only(bottom: 7),
@@ -98,9 +154,23 @@ class PremiumAnalyticsPdfService {
         child: pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
-            pw.Text('MathWorld', textDirection: pw.TextDirection.ltr,
-              style: pw.TextStyle(fontSize: 15, color: purple,
-                  fontWeight: pw.FontWeight.bold)),
+            pw.Row(
+              children: [
+                if (brandMark != null) ...[
+                  pw.Container(width: 30, height: 30,
+                    child: pw.Image(brandMark, fit: pw.BoxFit.contain)),
+                  pw.SizedBox(width: 9),
+                ],
+                pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('MathWorld', textDirection: pw.TextDirection.ltr,
+                      style: pw.TextStyle(fontSize: 15, color: purple,
+                        fontWeight: pw.FontWeight.bold)),
+                    pw.Text(arabic ? 'منصة الرياضيات التفاعلية' : 'Interactive mathematics learning',
+                      style: pw.TextStyle(fontSize: 8, color: pink)),
+                  ]),
+              ],
+            ),
             pw.Text(date, textDirection: pw.TextDirection.ltr,
               style: pw.TextStyle(fontSize: 9, color: muted)),
           ],
@@ -130,6 +200,28 @@ class PremiumAnalyticsPdfService {
             success.toStringAsFixed(1) + '%'),
         metric(arabic ? 'النقاط المكتسبة' : 'Awarded points',
             report.awardedPoints.toString()),
+        if (report.categories.isNotEmpty) ...[
+          pw.SizedBox(height: 15),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(13),
+            decoration: pw.BoxDecoration(
+              color: light, borderRadius: pw.BorderRadius.circular(9)),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(arabic ? 'مخطط إنجاز الفئات' : 'Topic completion chart',
+                  style: pw.TextStyle(fontSize: 13, color: dark,
+                    fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 8),
+                ...report.categories.take(10).map(categoryBar),
+                if (report.categories.length > 10)
+                  pw.Text(arabic ? 'أول 10 فئات، والتفاصيل الكاملة أدناه.'
+                      : 'First 10 topics; full details below.',
+                    style: pw.TextStyle(fontSize: 8, color: muted)),
+              ],
+            ),
+          ),
+        ],
         pw.SizedBox(height: 12),
         pw.Text(arabic ? 'التقدم حسب الفئة' : 'Progress by category',
           style: pw.TextStyle(fontSize: 16, color: dark,
