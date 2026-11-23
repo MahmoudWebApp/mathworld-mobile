@@ -39,7 +39,10 @@ Future<void> showCategorySkillsDialog(
                     fontWeight: FontWeight.bold,
                   )),
                 const SizedBox(height: 12),
-                Flexible(
+                // AlertDialog content receives intrinsic/unbounded height.
+                // Never place Flexible here; constrain the scrolling list.
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 340),
                   child: skills.when(
                     loading: () => const Center(
                       child: Padding(padding: EdgeInsets.all(24),
