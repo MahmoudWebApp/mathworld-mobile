@@ -1,4 +1,6 @@
 import 'dart:ui' as ui;
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,6 +35,24 @@ class ProblemDetailsScreen extends ConsumerStatefulWidget {
 
 class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
   bool _autoRetryTriggered = false;
+  bool _challengeAdvancePaused = false;
+  Timer? _challengeAdvanceTimer;
+
+  @override
+  void dispose() {
+    _challengeAdvanceTimer?.cancel();
+    super.dispose();
+  }
+
+  void _continueChallenge() {
+    _challengeAdvanceTimer?.cancel();
+    if (mounted) Navigator.pop(context, true);
+  }
+
+  void _pauseChallengeAdvance() {
+    _challengeAdvanceTimer?.cancel();
+    if (mounted) setState(() => _challengeAdvancePaused = true);
+  }
 
   ({int? problemId, bool retry, bool dailyChallenge}) _readArguments() {
     final arguments = ModalRoute.of(context)?.settings.arguments;
@@ -158,14 +178,24 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
             state: state,
             allowNotebookRetry: routeArguments.retry,
             onOptionChanged: notifier.selectOption,
+            isDailyChallenge: routeArguments.dailyChallenge,
+            challengeAdvancePaused: _challengeAdvancePaused,
+            onPauseChallengeAdvance: _pauseChallengeAdvance,
+            onContinueChallenge: _continueChallenge,
             onSubmit: () => _runAction(context, () async {
               await notifier.submitAnswer();
-              // A daily question is complete on submission whether the
-              // answer is correct or wrong; the parent opens the next one.
-              if (routeArguments.dailyChallenge &&
-                  ref.read(problemDetailsProvider(problemId)).answerResult != null) {
-                await Future<void>.delayed(const Duration(milliseconds: 1450));
-                if (context.mounted) Navigator.pop(context, true);
+              if (!mounted || !routeArguments.dailyChallenge) return;
+              // Count a correct or incorrect submission as a completed daily
+              // question. Give students time to read the mathematical rule
+              // and explanation; the skip/pause controls remain available.
+              if (ref.read(problemDetailsProvider(problemId)).answerResult != null) {
+                _challengeAdvanceTimer?.cancel();
+                if (!_challengeAdvancePaused) {
+                  _challengeAdvanceTimer = Timer(
+                    const Duration(seconds: 8),
+                    _continueChallenge,
+                  );
+                }
               }
             }),
             onStartRetry: notifier.startRetry,
@@ -199,6 +229,10 @@ class _ProblemContent extends ConsumerWidget {
   final Problem problem;
   final ProblemDetailsState state;
   final bool allowNotebookRetry;
+  final bool isDailyChallenge;
+  final bool challengeAdvancePaused;
+  final VoidCallback onPauseChallengeAdvance;
+  final VoidCallback onContinueChallenge;
   final ValueChanged<int?> onOptionChanged;
   final VoidCallback onSubmit;
   final VoidCallback onStartRetry;
@@ -209,6 +243,10 @@ class _ProblemContent extends ConsumerWidget {
     required this.problem,
     required this.state,
     required this.allowNotebookRetry,
+    required this.isDailyChallenge,
+    required this.challengeAdvancePaused,
+    required this.onPauseChallengeAdvance,
+    required this.onContinueChallenge,
     required this.onOptionChanged,
     required this.onSubmit,
     required this.onStartRetry,
@@ -321,13 +359,51 @@ class _ProblemContent extends ConsumerWidget {
           const SizedBox(height: AppSpacing.xl),
           _AnswerResultCard(result: state.answerResult!),
           const SizedBox(height: AppSpacing.md),
-          // The next action belongs immediately after the answer result,
-          // not hidden below long explanations and attempt history.
-          FilledButton.icon(
-            onPressed: () => Navigator.maybePop(context),
-            icon: const Icon(Icons.list_alt_rounded),
-            label: Text('back_to_problems'.tr()),
-          ),
+          // In the guided challenge, going back to the list must not
+          // silently interrupt the five-question sequence.
+          if (isDailyChallenge) ...[
+            GlassCard(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    challengeAdvancePaused
+                        ? (isArabic
+                            ? 'الانتقال التلقائي متوقف حتى تنتهي من قراءة الحل.'
+                            : 'Auto-advance paused while you review the solution.')
+                        : (isArabic
+                            ? 'السؤال التالي تلقائياً بعد 8 ثوانٍ. يمكنك قراءة القانون والحل أو الانتقال الآن.'
+                            : 'Next question automatically after 8 seconds. Review the rule and solution or continue now.'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: [
+                      if (!challengeAdvancePaused)
+                        OutlinedButton.icon(
+                          onPressed: onPauseChallengeAdvance,
+                          icon: const Icon(Icons.pause_circle_outline_rounded),
+                          label: Text(isArabic ? 'أحتاج وقتاً للحل' : 'Pause for review'),
+                        ),
+                      FilledButton.icon(
+                        onPressed: onContinueChallenge,
+                        icon: LayoutUtils.forwardIcon(context),
+                        label: Text(isArabic ? 'متابعة التحدي' : 'Continue challenge'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ] else
+            FilledButton.icon(
+              onPressed: () => Navigator.maybePop(context),
+              icon: const Icon(Icons.list_alt_rounded),
+              label: Text('back_to_problems'.tr()),
+            ),
         ],
         if (allowNotebookRetry && problem.hasAttempted &&
             problem.isInErrorNotebook && problem.canRetry &&
