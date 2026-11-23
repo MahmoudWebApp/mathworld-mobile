@@ -464,7 +464,15 @@ class _CategoryCard extends StatelessWidget {
       // One single membership page is offered below the topic sections.
       // Unlocked topics have two buttons at the bottom of this same card.
       // Locked topics retain their existing Premium explanation.
-      onTap: locked ? () => _showPremiumLockedSheet(context, title) : null,
+      onTap: noPublishedProblems
+          ? () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(localeCode == 'ar'
+                  ? 'هذه الفئة لا تحتوي على مسائل منشورة بعد.'
+                  : 'This category has no published problems yet.'),
+            ))
+          : locked
+              ? () => _showPremiumLockedSheet(context, title)
+              : null,
       color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
       border: BorderSide(
         color: accent.withValues(alpha: isDark ? 0.27 : 0.18),
