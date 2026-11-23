@@ -9,6 +9,7 @@ import '../../providers/user_lists_provider.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/problem_card.dart';
+import '../../widgets/compact_problem_count.dart';
 
 /// Displays localized solved problems with consistent spacing.
 class SolvedScreen extends ConsumerWidget {
@@ -60,11 +61,20 @@ class SolvedScreen extends ConsumerWidget {
                     AppSpacing.lg,
                     AppSpacing.xxl,
                   ),
-                  itemCount: items.length,
+                  itemCount: items.length + 1,
                   separatorBuilder: (_, __) =>
                       const SizedBox(height: AppSpacing.lg),
                   itemBuilder: (context, index) {
-                    final problem = items[index];
+                    if (index == 0) {
+                      return CompactProblemCount(
+                        count: items.length,
+                        label: Localizations.localeOf(context).languageCode == 'ar'
+                            ? 'إجمالي المحلولة' : 'Solved questions',
+                        icon: Icons.check_circle_outline_rounded,
+                        accent: AppColors.success,
+                      );
+                    }
+                    final problem = items[index - 1];
                     return ProblemCard(
                       problem: problem,
                       onTap: () {
