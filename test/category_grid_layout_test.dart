@@ -89,9 +89,9 @@ void main() {
 
   test('accessibility text size prevents multi-column clipping', () {
     expect(StageCategoryGridLayout.columns(1180, textScale: 1.4), 1);
-    expect(StageCategoryGridLayout.cardExtent(1, textScale: 1.4), 206);
-    expect(StageCategoryGridLayout.cardExtent(1, textScale: 1.3), 188);
-    expect(StageCategoryGridLayout.cardExtent(2, textScale: 1.3), 242);
+    expect(StageCategoryGridLayout.cardExtent(1, textScale: 1.4), 360);
+    expect(StageCategoryGridLayout.cardExtent(1, textScale: 1.3), 320);
+    expect(StageCategoryGridLayout.cardExtent(2, textScale: 1.3), 368);
     expect(StageCategoryGridLayout.columns(-10), 1);
   });
 }
