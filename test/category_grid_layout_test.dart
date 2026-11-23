@@ -8,7 +8,7 @@ void main() {
     expect(StageCategoryGridLayout.columns(320), 2);
     expect(StageCategoryGridLayout.columns(390), 2);
     expect(StageCategoryGridLayout.columns(430), 2);
-    expect(StageCategoryGridLayout.cardExtent(2), 224);
+    expect(StageCategoryGridLayout.cardExtent(2), 328);
   });
 
   test('larger layouts increase columns without overcrowding', () {
