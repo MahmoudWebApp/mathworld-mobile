@@ -448,12 +448,22 @@ class _CategoryCard extends StatelessWidget {
     final title = category.getName(localeCode);
     final mutedColor = isDark ? AppColors.darkMuted : AppColors.lightMuted;
     final noPublishedProblems = category.problemsCount == 0;
+    void openQuestions() {
+      if (noPublishedProblems) return;
+      Navigator.pushNamed(context, AppRoutes.problems, arguments: {
+        'categoryId': category.id,
+        'stageId': stageId,
+        'title': title,
+      });
+    }
 
     return GlassCard(
       // The API now returns a real per-stage count. Never navigate into a
       // category known to have zero questions and then show a dead-end page.
       // Unavailable topics never route to a paywall or empty question list.
       // One single membership page is offered below the topic sections.
+      // Unlocked topics have two buttons at the bottom of this same card.
+      // Locked topics retain their existing Premium explanation.
       onTap: noPublishedProblems
           ? () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text(localeCode == 'ar'
@@ -462,15 +472,7 @@ class _CategoryCard extends StatelessWidget {
             ))
           : locked
               ? () => _showPremiumLockedSheet(context, title)
-              : () => Navigator.pushNamed(
-                    context,
-                    AppRoutes.problems,
-                    arguments: {
-                      'categoryId': category.id,
-                      'stageId': stageId,
-                      'title': title,
-                    },
-                  ),
+              : null,
       color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
       border: BorderSide(
         color: accent.withValues(alpha: isDark ? 0.27 : 0.18),
@@ -495,13 +497,6 @@ class _CategoryCard extends StatelessWidget {
                 child: _categoryIcon(accent),
               ),
               const Spacer(),
-              if (onRestart != null)
-                IconButton(
-                  tooltip: localeCode == 'ar' ? 'إعادة تدريب الفئة' : 'Restart topic',
-                  onPressed: onRestart,
-                  icon: const Icon(Icons.restart_alt_rounded),
-                  color: accent, iconSize: 20,
-                ),
               if (locked)
                 Icon(Icons.lock_outline_rounded, color: mutedColor, size: 19),
             ],
@@ -556,6 +551,42 @@ class _CategoryCard extends StatelessWidget {
                   backgroundColor: mutedColor.withValues(alpha: 0.18),
                   valueColor: const AlwaysStoppedAnimation<Color>(AppColors.success),
                 ),
+              ),
+            ),
+          ],
+          if (!locked) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Divider(height: 1, color: mutedColor.withValues(alpha: 0.25)),
+            const SizedBox(height: AppSpacing.sm),
+            // Two explicit actions inside the connected topic card.
+            // They are stacked to preserve the two-column phone layout.
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: noPublishedProblems ? null : openQuestions,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(0, 36),
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  visualDensity: VisualDensity.compact,
+                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                ),
+                child: Text(localeCode == 'ar' ? 'عرض المسائل' : 'View questions',
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+            ),
+            const SizedBox(height: 6),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: onRestart,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 36),
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  visualDensity: VisualDensity.compact,
+                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                ),
+                child: Text(localeCode == 'ar' ? 'إعادة التدريب' : 'Restart practice',
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
               ),
             ),
           ],

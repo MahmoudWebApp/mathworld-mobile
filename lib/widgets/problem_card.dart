@@ -62,32 +62,45 @@ class ProblemCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
+              // Points star and View action remain at the top corner in
+              // RTL and LTR, including small phones (not below the badges).
               Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star_rounded,
+                        size: 17, color: AppColors.warning),
+                      const SizedBox(width: 3),
+                      Text('${problem.points}',
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: AppColors.warning, fontWeight: FontWeight.w800)),
+                    ],
+                  ),
                   if (problem.isSolved)
-                    const Icon(
-                      Icons.check_circle_rounded,
-                      color: AppColors.success,
-                      size: 20,
+                    const Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: Icon(Icons.check_circle_rounded,
+                        color: AppColors.success, size: 18),
                     ),
                   if (problem.isFavorite)
                     const Padding(
-                      padding: EdgeInsets.only(top: AppSpacing.xs),
-                      child: Icon(
-                        Icons.favorite_rounded,
-                        color: AppColors.error,
-                        size: 19,
-                      ),
+                      padding: EdgeInsets.only(top: 4),
+                      child: Icon(Icons.favorite_rounded,
+                        color: AppColors.error, size: 18),
                     ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: AppSpacing.xs),
-                    child: LayoutUtils.forwardIcon(
-                      context,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.58),
-                    ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(context.locale.languageCode == 'ar' ? 'عرض' : 'View',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: stageAccent, fontWeight: FontWeight.w800)),
+                      const SizedBox(width: 3),
+                      LayoutUtils.forwardIcon(context,
+                        size: 17, color: stageAccent),
+                    ],
                   ),
                 ],
               ),
@@ -118,13 +131,7 @@ class ProblemCard extends StatelessWidget {
                 label: problem.categoryName,
                 color: stageAccent,
               ),
-              _MetaPill(
-                icon: Icons.star_rounded,
-                label: 'points_value'.tr(
-                  namedArgs: {'count': '${problem.points}'},
-                ),
-                color: AppColors.warning,
-              ),
+
             ],
           ),
         ],

@@ -446,8 +446,68 @@ class _DailyPracticeCard extends StatelessWidget {
             style: Theme.of(context).textTheme.bodySmall),
           if (challenge.dateUtc.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xs),
-            Text('${challenge.dateUtc} UTC',
-              style: Theme.of(context).textTheme.labelSmall),
+            Text(
+              DateTime.tryParse(challenge.dateUtc) == null
+                  ? challenge.dateUtc
+                  : MaterialLocalizations.of(context).formatMediumDate(
+                      DateTime.parse(challenge.dateUtc)),
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ],
+          if (challenge.problems.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            // Five stable progress indicators: correct, wrong, current or
+            // upcoming. These are statuses, not links to skip questions.
+            Row(children: [
+              for (var index = 0; index < challenge.problems.length; index++) ...[
+                if (index > 0) const SizedBox(width: 6),
+                Expanded(
+                  child: Semantics(
+                    label: ar
+                        ? 'المسألة ${index + 1}: ${challenge.problems[index].isAnswered ? (challenge.problems[index].isSolved ? 'صحيحة' : 'تحتاج مراجعة') : (index == challenge.completed ? 'الحالية' : 'قادمة')}'
+                        : 'Question ${index + 1}: ${challenge.problems[index].isAnswered ? (challenge.problems[index].isSolved ? 'Correct' : 'Needs review') : (index == challenge.completed ? 'Current' : 'Upcoming')}',
+                    child: Container(
+                      height: 46,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: challenge.problems[index].isAnswered
+                            ? (challenge.problems[index].isSolved
+                                ? AppColors.success.withValues(alpha: 0.12)
+                                : AppColors.warning.withValues(alpha: 0.12))
+                            : index == challenge.completed
+                                ? color.withValues(alpha: 0.13)
+                                : Theme.of(context).colorScheme.surfaceContainerHighest,
+                        border: Border.all(
+                          color: challenge.problems[index].isAnswered
+                              ? (challenge.problems[index].isSolved
+                                  ? AppColors.success : AppColors.warning)
+                              : index == challenge.completed
+                                  ? color
+                                  : Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('${index + 1}',
+                            style: Theme.of(context).textTheme.labelSmall),
+                          if (challenge.problems[index].isAnswered)
+                            Icon(
+                              challenge.problems[index].isSolved
+                                  ? Icons.check_circle_outline_rounded
+                                  : Icons.error_outline_rounded,
+                              size: 16,
+                              color: challenge.problems[index].isSolved
+                                  ? AppColors.success : AppColors.warning,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ]),
           ],
           const SizedBox(height: AppSpacing.md),
           if (challenge.problems.isEmpty)
