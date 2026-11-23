@@ -15,7 +15,7 @@ void main() {
     expect(StageCategoryGridLayout.columns(440), 2);
     expect(StageCategoryGridLayout.columns(740), 3);
     expect(StageCategoryGridLayout.columns(1000), 4);
-    expect(StageCategoryGridLayout.cardExtent(3), 224);
+    expect(StageCategoryGridLayout.cardExtent(3), 308);
   });
 
   test('published curriculum skills parse both API JSON casing styles', () {
