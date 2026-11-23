@@ -39,7 +39,10 @@ Future<void> showCategorySkillsDialog(
                     fontWeight: FontWeight.bold,
                   )),
                 const SizedBox(height: 12),
-                Flexible(
+                // AlertDialog content receives intrinsic/unbounded height.
+                // Never place Flexible here; constrain the scrolling list.
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 340),
                   child: skills.when(
                     loading: () => const Center(
                       child: Padding(padding: EdgeInsets.all(24),
@@ -89,9 +92,14 @@ Future<void> showCategorySkillsDialog(
                                   ),
                                   title: Text(own[index].localizedName(ar ? 'ar' : 'en'),
                                     style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: own[index]
-                                      .localizedDescription(ar ? 'ar' : 'en')
-                                      .trim().isEmpty
+                                  // Existing published records often copy
+                                  // the title into Description; don't show it twice.
+                                  subtitle: own[index].localizedDescription(
+                                        ar ? 'ar' : 'en').trim().isEmpty ||
+                                      own[index].localizedDescription(
+                                        ar ? 'ar' : 'en').trim() ==
+                                      own[index].localizedName(
+                                        ar ? 'ar' : 'en').trim()
                                     ? null
                                     : Text(own[index].localizedDescription(
                                         ar ? 'ar' : 'en')),
