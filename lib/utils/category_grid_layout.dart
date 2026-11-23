@@ -15,10 +15,10 @@ class StageCategoryGridLayout {
   static double cardExtent(int columns, {double textScale = 1}) {
     // Stage topic cards now stack the icon, topic and count for readable
     // two-column layouts on phones without truncating Arabic labels.
-    // Two compact 36px footer actions are now INSIDE each topic card.
+    // Questions, restart and public learning-skills actions stay INSIDE each card.
     // Extra height avoids truncating Arabic 3-line titles and solved status.
-    if (textScale > 1.35) return 360;
-    if (textScale > 1.2) return columns == 1 ? 320 : 368;
-    return columns == 1 ? 280 : columns == 2 ? 328 : 308;
+    if (textScale > 1.35) return 405;
+    if (textScale > 1.2) return columns == 1 ? 367 : 415;
+    return columns == 1 ? 325 : columns == 2 ? 378 : 355;
   }
 }

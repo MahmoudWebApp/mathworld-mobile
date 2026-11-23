@@ -9,6 +9,7 @@ import '../../providers/user_lists_provider.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/problem_card.dart';
+import '../../widgets/compact_problem_count.dart';
 
 /// Displays localized favorite problems with consistent spacing.
 class FavoritesScreen extends ConsumerWidget {
@@ -72,7 +73,7 @@ class FavoritesScreen extends ConsumerWidget {
               );
             }
 
-            final headerOffset = embedded ? 1 : 0;
+            final headerOffset = embedded ? 2 : 1;
 
             return RefreshIndicator(
               onRefresh: () => ref.refresh(favoritesProvider.future),
@@ -98,6 +99,15 @@ class FavoritesScreen extends ConsumerWidget {
                     );
                   }
 
+                  if (index == (embedded ? 1 : 0)) {
+                    return CompactProblemCount(
+                      count: items.length,
+                      label: context.locale.languageCode == 'ar'
+                          ? 'إجمالي المفضلة' : 'Favorites',
+                      icon: Icons.favorite_rounded,
+                      accent: AppColors.error,
+                    );
+                  }
                   final problem = items[index - headerOffset];
                   return ProblemCard(
                     problem: problem,

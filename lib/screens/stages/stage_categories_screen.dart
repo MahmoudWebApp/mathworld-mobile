@@ -30,6 +30,7 @@ import '../../widgets/math_background.dart';
 import '../../widgets/stage_math_glyph.dart';
 import '../../widgets/curriculum_framework_note.dart';
 import '../../widgets/published_stage_skills_panel.dart';
+import '../../widgets/category_skills_dialog.dart';
 
 /// Displays localized categories for the selected educational stage.
 class StageCategoriesScreen extends ConsumerWidget {
@@ -258,6 +259,8 @@ class StageCategoriesScreen extends ConsumerWidget {
                           localeCode: localeCode,
                           stageId: stage.id,
                           stageOrder: stage.order,
+                          onShowSkills: () => showCategorySkillsDialog(context,
+                            category: category, stageId: stage.id, stageOrder: stage.order),
                           onRestart: (user?.role == 'Student' &&
                               (hasFullAccess || access.freeCategoryIds.contains(category.id)) &&
                               (attemptedCounts[category.id] ?? 0) > 0)
@@ -462,6 +465,7 @@ class _CategoryCard extends StatelessWidget {
   final int stageOrder;
   final bool locked;
   final VoidCallback? onRestart;
+  final VoidCallback onShowSkills;
 
   const _CategoryCard({
     required this.category,
@@ -470,6 +474,7 @@ class _CategoryCard extends StatelessWidget {
     required this.stageOrder,
     required this.locked,
     this.onRestart,
+    required this.onShowSkills,
   });
 
   @override
@@ -554,8 +559,8 @@ class _CategoryCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: mutedColor,
-              fontWeight: FontWeight.w600,
+              color: noPublishedProblems ? mutedColor : accent,
+              fontWeight: FontWeight.w800,
             ),
           ),
           if (category.solvedCount != null && category.solvedCount! > 0) ...[
@@ -585,6 +590,24 @@ class _CategoryCard extends StatelessWidget {
               ),
             ),
           ],
+          // Category objectives are public even when solving is Premium-only.
+          const SizedBox(height: 6),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onShowSkills,
+              icon: const Icon(Icons.fact_check_outlined, size: 15),
+              label: Text(localeCode == 'ar' ? 'عرض المهارات' : 'View skills',
+                maxLines: 1, overflow: TextOverflow.ellipsis),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, 35),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                visualDensity: VisualDensity.compact,
+                textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                foregroundColor: accent,
+              ),
+            ),
+          ),
           if (!locked) ...[
             const SizedBox(height: AppSpacing.sm),
             Divider(height: 1, color: mutedColor.withValues(alpha: 0.25)),
