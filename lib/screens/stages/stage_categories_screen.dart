@@ -69,15 +69,46 @@ class StageCategoriesScreen extends ConsumerWidget {
       final accepted = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: Text(ar ? 'إعادة التدريب من البداية؟' : 'Restart practice?'),
-          content: Text(ar
-            ? 'سيبدأ تدريب جديد في $name. ستعود المسائل إلى جديدة، ويُصفّر تقدم هذه الدورة ودفتر أخطائها. المفضلة محفوظة، ولا يمكن التراجع.'
-            : 'Restart all problems in $name as New. Current progress and mistakes reset; favorites stay saved. This cannot be undone.'),
+          title: Row(
+            children: [
+              const Icon(Icons.restart_alt_rounded, color: Colors.orange),
+              const SizedBox(width: 8),
+              Expanded(child: Text(ar ? 'تأكيد إعادة التدريب' : 'Confirm practice restart')),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  categoryId == null
+                      ? (ar ? 'رح تعيد تدريب المرحلة كاملة:' : 'You are restarting the entire stage:')
+                      : (ar ? 'رح تعيد تدريب الفئة التالية:' : 'You are restarting this category:'),
+                ),
+                const SizedBox(height: 8),
+                Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                Text(ar ? 'شو رح يصير بعد الموافقة؟' : 'What happens after confirming?',
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 6),
+                Text(ar
+                    ? '• المسائل اللي جرّبتها ضمن هذا النطاق بترجع جديدة وغير محلولة.\n'
+                      '• تقدم التدريب الحالي ودفتر أخطائه ضمن النطاق بيتصفّروا.\n'
+                      '• المراحل والفئات خارج هذا النطاق ما بتتأثر.\n'
+                      '• المفضلة بتضل محفوظة، وما في تراجع عن التصفير.'
+                    : '• Attempted questions in this scope become new and unsolved.\n'
+                      '• Current practice and error-notebook entries for this scope are reset.\n'
+                      '• Other stages and categories outside this scope are not affected.\n'
+                      '• Favorites remain saved; this reset cannot be undone.'),
+              ],
+            ),
+          ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(dialogContext, false),
               child: Text(ar ? 'إلغاء' : 'Cancel')),
             FilledButton(onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text(ar ? 'ابدأ دورة جديدة' : 'Start new cycle')),
+              child: Text(ar ? 'موافق' : 'Confirm')),
           ],
         ),
       );
