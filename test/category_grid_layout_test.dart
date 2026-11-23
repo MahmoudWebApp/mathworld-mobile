@@ -9,6 +9,11 @@ void main() {
     expect(StageCategoryGridLayout.columns(390), 2);
     expect(StageCategoryGridLayout.columns(430), 2);
     expect(StageCategoryGridLayout.cardExtent(2), 328);
+    // Footer buttons must stay inside each card even with larger text.
+    expect(StageCategoryGridLayout.cardExtent(2, textScale: 1.30),
+        greaterThan(StageCategoryGridLayout.cardExtent(2)));
+    expect(StageCategoryGridLayout.cardExtent(1, textScale: 1.40),
+        greaterThan(StageCategoryGridLayout.cardExtent(1)));
   });
 
   test('larger layouts increase columns without overcrowding', () {
