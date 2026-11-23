@@ -8,14 +8,19 @@ void main() {
     expect(StageCategoryGridLayout.columns(320), 2);
     expect(StageCategoryGridLayout.columns(390), 2);
     expect(StageCategoryGridLayout.columns(430), 2);
-    expect(StageCategoryGridLayout.cardExtent(2), 224);
+    expect(StageCategoryGridLayout.cardExtent(2), 328);
+    // Footer buttons must stay inside each card even with larger text.
+    expect(StageCategoryGridLayout.cardExtent(2, textScale: 1.30),
+        greaterThan(StageCategoryGridLayout.cardExtent(2)));
+    expect(StageCategoryGridLayout.cardExtent(1, textScale: 1.40),
+        greaterThan(StageCategoryGridLayout.cardExtent(1)));
   });
 
   test('larger layouts increase columns without overcrowding', () {
     expect(StageCategoryGridLayout.columns(440), 2);
     expect(StageCategoryGridLayout.columns(740), 3);
     expect(StageCategoryGridLayout.columns(1000), 4);
-    expect(StageCategoryGridLayout.cardExtent(3), 224);
+    expect(StageCategoryGridLayout.cardExtent(3), 308);
   });
 
   test('published curriculum skills parse both API JSON casing styles', () {
@@ -84,9 +89,9 @@ void main() {
 
   test('accessibility text size prevents multi-column clipping', () {
     expect(StageCategoryGridLayout.columns(1180, textScale: 1.4), 1);
-    expect(StageCategoryGridLayout.cardExtent(1, textScale: 1.4), 206);
-    expect(StageCategoryGridLayout.cardExtent(1, textScale: 1.3), 188);
-    expect(StageCategoryGridLayout.cardExtent(2, textScale: 1.3), 242);
+    expect(StageCategoryGridLayout.cardExtent(1, textScale: 1.4), 360);
+    expect(StageCategoryGridLayout.cardExtent(1, textScale: 1.3), 320);
+    expect(StageCategoryGridLayout.cardExtent(2, textScale: 1.3), 368);
     expect(StageCategoryGridLayout.columns(-10), 1);
   });
 }
