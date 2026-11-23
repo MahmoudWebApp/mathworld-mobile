@@ -92,9 +92,14 @@ Future<void> showCategorySkillsDialog(
                                   ),
                                   title: Text(own[index].localizedName(ar ? 'ar' : 'en'),
                                     style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  subtitle: own[index]
-                                      .localizedDescription(ar ? 'ar' : 'en')
-                                      .trim().isEmpty
+                                  // Existing published records often copy
+                                  // the title into Description; don't show it twice.
+                                  subtitle: own[index].localizedDescription(
+                                        ar ? 'ar' : 'en').trim().isEmpty ||
+                                      own[index].localizedDescription(
+                                        ar ? 'ar' : 'en').trim() ==
+                                      own[index].localizedName(
+                                        ar ? 'ar' : 'en').trim()
                                     ? null
                                     : Text(own[index].localizedDescription(
                                         ar ? 'ar' : 'en')),
