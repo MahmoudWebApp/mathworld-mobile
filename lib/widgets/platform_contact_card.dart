@@ -1,4 +1,4 @@
-import 'package:easy_localization/easy_localization.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -25,7 +25,7 @@ class PlatformContactCard extends ConsumerWidget {
     final brand = ref.watch(platformContactProvider);
     return brand.when(
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
       data: (p) {
         final address = ar ? p.addressAr : p.addressEn;
         return GlassCard(padding: EdgeInsets.zero, child: Column(
