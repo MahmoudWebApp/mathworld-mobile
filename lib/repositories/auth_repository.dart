@@ -57,6 +57,20 @@ class AuthRepository {
     return _parseAndSaveAuthResult(response.data);
   }
 
+  Future<void> changePassword(String current, String password, String confirmation) async {
+    final response = await _apiService.post(ApiConstants.changePassword, data: {
+      'CurrentPassword': current,
+      'NewPassword': password,
+      'ConfirmPassword': confirmation,
+    });
+    final data = ApiEnvelope.map(response.data);
+    if (data['RequiresSignIn'] != true && data['requiresSignIn'] != true) {
+      throw const AppException(
+        type: AppExceptionType.invalidResponse, messageKey: 'invalid_response',
+      );
+    }
+  }
+
   Future<User> register(
     String fullName,
     String email,

@@ -23,6 +23,8 @@ class ApiConstants {
   }
 
   static const String login = '/auth/login';
+  static const String changePassword = '/auth/change-password';
+  static const String platformBrand = '/platform/brand';
   static const String register = '/auth/register';
   static const String socialGoogle = '/auth/social/google';
   static const String socialLinkGoogle = '/auth/social/link/google';

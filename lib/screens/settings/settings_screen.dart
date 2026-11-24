@@ -15,6 +15,8 @@ import '../../core/errors/app_exception.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
+import '../../widgets/account_password_dialog.dart';
+import '../../widgets/platform_contact_card.dart';
 
 /// Displays appearance, language, legal, and account preferences.
 class SettingsScreen extends ConsumerWidget {
@@ -280,6 +282,32 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.xl),
             ],
+            if (currentUser?.role == 'Student') ...[
+              _SectionTitle(title: context.locale.languageCode == 'ar' ? 'أمان الحساب' : 'Account security'),
+              const SizedBox(height: 10),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: ListTile(
+                  leading: const Icon(Icons.lock_outline_rounded),
+                  title: Text(context.locale.languageCode == 'ar' ? 'تغيير كلمة المرور' : 'Change password'),
+                  trailing: LayoutUtils.forwardIcon(context),
+                  onTap: () async {
+                    final changed = await showDialog<bool>(
+                      context: context, barrierDismissible: false,
+                      builder: (_) => const AccountPasswordDialog(),
+                    );
+                    if (changed != true || !context.mounted) return;
+                    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(
+                      context.locale.languageCode == 'ar'
+                        ? 'تم تغيير كلمة المرور. سجّل الدخول مجدداً.'
+                        : 'Password changed. Please sign in again.',
+                    )));
+                  },
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+            ],
             _SectionTitle(title: 'about_and_legal'.tr()),
             const SizedBox(height: 10),
             GlassCard(
@@ -307,6 +335,8 @@ class SettingsScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            const SizedBox(height: AppSpacing.md),
+            const PlatformContactCard(),
             const SizedBox(height: 24),
             GlassCard(
               gradient: LinearGradient(

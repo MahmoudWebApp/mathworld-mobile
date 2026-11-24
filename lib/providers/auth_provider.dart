@@ -331,6 +331,25 @@ class AuthNotifier extends StateNotifier<AuthState>
     }
   }
 
+  Future<void> changePassword(String current, String password, String confirmation) async {
+    if (!state.isAuthenticated) throw StateError('Sign in before changing a password.');
+    final actorId = state.user?.id;
+    await _repository.changePassword(current, password, confirmation);
+    // The server already revoked the old token. Do not send an explicit
+    // sign-out using it, and do not clear a different account after a race.
+    if (!mounted || state.user?.id != actorId) return;
+    _resetAccountScopedState();
+    try {
+      await _repository.clearSession();
+      await GoogleIdentityService.signOutIfInitialized();
+    } finally {
+      if (mounted) {
+        _resetAccountScopedState();
+        state = const AuthState(status: AuthStatus.unauthenticated);
+      }
+    }
+  }
+
   Future<void> logout() async {
     // Only explicit logout is logged; session expiry/device termination
     // must never be labelled as a confirmed sign-out.
