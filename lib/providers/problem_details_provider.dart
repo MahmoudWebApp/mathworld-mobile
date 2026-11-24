@@ -149,6 +149,7 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
               selectedOptionId: problem.selectedOptionId,
               correctOptionId: problem.correctOptionId,
               detailedSolution: problem.detailedSolution ?? '',
+              solutionStructure:problem.solutionStructure,
               youtubeSolutionUrl: problem.youtubeSolutionUrl,
               attemptNumber: 1,
               isOfficialAttempt: true,
@@ -231,6 +232,7 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
         selectedOptionId: problem.selectedOptionId,
         correctOptionId: problem.correctOptionId,
         detailedSolution: problem.detailedSolution ?? '',
+              solutionStructure:problem.solutionStructure,
         youtubeSolutionUrl: problem.youtubeSolutionUrl,
         attemptNumber: 1,
         isOfficialAttempt: true,
@@ -284,10 +286,9 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
       final updatedProblem = problem.copyWith(
         isSolved: result.isSolved,
         hasAttempted: true,
-        wasCorrect: result.firstAttemptCorrect ?? problem.wasCorrect,
-        selectedOptionId: result.isOfficialAttempt
-            ? (result.selectedOptionId ?? selectedOptionId)
-            : problem.selectedOptionId,
+        wasCorrect: result.isCorrect,
+        selectedOptionId: result.selectedOptionId ?? selectedOptionId,
+        solutionStructure:result.solutionStructure,
         correctOptionId: result.correctOptionId ?? problem.correctOptionId,
         attemptCount: result.totalAttempts,
         firstAttemptCorrect:

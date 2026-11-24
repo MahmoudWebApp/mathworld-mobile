@@ -260,6 +260,7 @@ class _ProblemContent extends ConsumerWidget {
     final canSelect = state.answerResult == null &&
         (!problem.hasAttempted || state.isRetryMode);
     final solution = _solutionText(problem, state);
+    final structure = !state.isRetryMode&&(state.answerResult?.isCorrect??problem.isSolved)?state.answerResult?.solutionStructure??problem.solutionStructure:null;
     final solved=state.answerResult?.isCorrect ?? problem.isSolved;
     final videoUrl = solved && !state.isRetryMode
         ? state.answerResult?.youtubeSolutionUrl ?? problem.youtubeSolutionUrl
@@ -403,7 +404,7 @@ class _ProblemContent extends ConsumerWidget {
               label: Text('back_to_problems'.tr()),
             ),
         ],
-        if (allowNotebookRetry && problem.hasAttempted &&
+        if ((allowNotebookRetry || !isDailyChallenge) && problem.hasAttempted &&
             problem.isInErrorNotebook && problem.canRetry &&
             !state.isRetryMode &&
             !state.isSubmitting) ...[
@@ -428,11 +429,22 @@ class _ProblemContent extends ConsumerWidget {
               color:
                   Theme.of(context).colorScheme.primary.withValues(alpha: 0.24),
             ),
-            child: RichMathText(
+            child: structure==null?RichMathText(
               text: solution,
               isArabic: isArabic,
               style: Theme.of(context).textTheme.bodyLarge,
-            ),
+            ):Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+              Text(isArabic?'الفكرة والقانون':'Idea and formula',style:Theme.of(context).textTheme.titleMedium),
+              RichMathText(text:structure.idea,isArabic:isArabic),
+              RichMathText(text:structure.formulaLatex,isArabic:isArabic,inline:true),
+              const SizedBox(height:12),
+              Text(isArabic?'خطوات الحل':'Solution steps',style:Theme.of(context).textTheme.titleMedium),
+              for(var i=0;i<structure.steps.length;i++) Padding(padding:const EdgeInsets.only(top:6),child:RichMathText(text:'${i+1}. ${structure.steps[i]}',isArabic:isArabic)),
+              for(final entry in <(String,String)>[(isArabic?'التعويض':'Substitution',structure.substitution),(isArabic?'النتيجة والوحدة':'Result and unit','${structure.result} ${structure.unit}'),(isArabic?'التحقق':'Verification',structure.verification),(isArabic?'الخطأ الشائع':'Common error',structure.commonError)])...[
+                const SizedBox(height:12),Text(entry.$1,style:Theme.of(context).textTheme.titleMedium),
+                RichMathText(text:entry.$2,isArabic:isArabic),
+              ],
+            ]),
           ),
         ],
         if (videoUrl?.trim().isNotEmpty == true && !state.isRetryMode) ...[
@@ -491,6 +503,7 @@ class _ProblemContent extends ConsumerWidget {
     if (state.isRetryMode && state.answerResult == null) {
       return '';
     }
+    if(!(state.answerResult?.isCorrect??problem.isSolved))return '';
     final resultSolution = state.answerResult?.detailedSolution.trim() ?? '';
     if (resultSolution.isNotEmpty) {
       return resultSolution;
