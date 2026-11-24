@@ -12,6 +12,7 @@ class SolutionStructure {
 /// Represents a complete localized math problem.
 class Problem {
   final int id;
+  final int? practiceScopeId;
   final String title;
   final String questionText;
   final int stageId;
@@ -43,6 +44,7 @@ class Problem {
 
   const Problem({
     required this.id,
+    this.practiceScopeId,
     required this.title,
     required this.questionText,
     required this.stageId,
@@ -86,6 +88,7 @@ class Problem {
 
     return Problem(
       id: _int(json['Id'] ?? json['id']),
+      practiceScopeId:_nullableInt(json['PracticeScopeId']??json['practiceScopeId']),
       title: localizedString(
         json,
         languageCode: languageCode,
@@ -195,6 +198,7 @@ class Problem {
   }) {
     return Problem(
       id: id,
+      practiceScopeId:practiceScopeId,
       title: title,
       questionText: questionText,
       stageId: stageId,

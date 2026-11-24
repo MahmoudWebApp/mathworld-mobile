@@ -96,11 +96,11 @@ class PremiumApiService {
     );
   }
 
-  Future<ProblemHints> getHints(int problemId,{int? level}) async {
+  Future<ProblemHints> getHints(int problemId,{int? level,int? practiceScopeId}) async {
     if(problemId<=0 || (level!=null && level!=1 && level!=2))throw ArgumentError('Invalid hint request');
     final response=level==null
-        ?await _api.get('/problems/$problemId/hints')
-        :await _api.post('/problems/$problemId/hints',data:{'Level':level});
+        ?await _api.get('/problems/$problemId/hints',queryParameters:{if(practiceScopeId!=null)'practiceScopeId':practiceScopeId})
+        :await _api.post('/problems/$problemId/hints',data:{'Level':level,if(practiceScopeId!=null)'PracticeScopeId':practiceScopeId});
     return ProblemHints.fromJson(Map<String,dynamic>.from(response.data as Map));
   }
 

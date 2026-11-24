@@ -274,6 +274,7 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
     try {
       final result = await _repository.submitAnswer(
         problemId: problem.id,
+        practiceScopeId:problem.practiceScopeId,
         selectedOptionId: selectedOptionId,
         timeSpentSeconds: DateTime.now()
             .difference(startedAt)

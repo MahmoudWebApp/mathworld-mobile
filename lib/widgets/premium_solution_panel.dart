@@ -6,9 +6,10 @@ import 'rich_math_text.dart';
 /// The server controls both entitlement and progression. No solution preview.
 class PremiumHintPanel extends StatefulWidget {
   final int problemId;
+  final int? practiceScopeId;
   final PremiumApiService service;
   final bool isArabic;
-  const PremiumHintPanel({super.key,required this.problemId,required this.service,required this.isArabic});
+  const PremiumHintPanel({super.key,required this.problemId,this.practiceScopeId,required this.service,required this.isArabic});
   @override State<PremiumHintPanel> createState()=>_PremiumHintPanelState();
 }
 class _PremiumHintPanelState extends State<PremiumHintPanel>{
@@ -20,7 +21,7 @@ class _PremiumHintPanelState extends State<PremiumHintPanel>{
   @override void initState(){super.initState();_load();}
   @override void didUpdateWidget(covariant PremiumHintPanel oldWidget){
     super.didUpdateWidget(oldWidget);
-    if(oldWidget.problemId!=widget.problemId||oldWidget.isArabic!=widget.isArabic){_load();}
+    if(oldWidget.problemId!=widget.problemId||oldWidget.isArabic!=widget.isArabic||oldWidget.practiceScopeId!=widget.practiceScopeId){_load();}
   }
   Future<void> _load({int? level}) async{
     final generation=++_generation;
@@ -28,7 +29,7 @@ class _PremiumHintPanelState extends State<PremiumHintPanel>{
     try{
       final entitlement=await widget.service.getEntitlement();
       if(!mounted||generation!=_generation)return;
-      final hints=entitlement.isPremium?await widget.service.getHints(widget.problemId,level:level):null;
+      final hints=entitlement.isPremium?await widget.service.getHints(widget.problemId,level:level,practiceScopeId:widget.practiceScopeId):null;
       if(!mounted||generation!=_generation)return;
       setState((){_entitlement=entitlement;_hints=hints?.problemId==widget.problemId?hints:null;});
     }catch(_){if(mounted&&generation==_generation)setState(()=>_error=true);}

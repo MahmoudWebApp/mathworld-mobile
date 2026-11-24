@@ -304,8 +304,9 @@ class _ProblemContent extends ConsumerWidget {
         if (!solved) ...[
           const SizedBox(height: AppSpacing.md),
           PremiumHintPanel(
-            key:ValueKey(problem.id),
+            key:ValueKey((problem.id,problem.practiceScopeId)),
             problemId: problem.id,
+            practiceScopeId:problem.practiceScopeId,
             service: PremiumApiService(ApiService()),
             isArabic: isArabic,
           ),

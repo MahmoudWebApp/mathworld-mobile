@@ -92,6 +92,7 @@ class ProblemsRepository {
   /// Submits one answer and parses the server-validated result.
   Future<AnswerResult> submitAnswer({
     required int problemId,
+    int? practiceScopeId,
     required int selectedOptionId,
     required int timeSpentSeconds,
     required String languageCode,
@@ -100,6 +101,7 @@ class ProblemsRepository {
       ApiConstants.submitAnswer,
       data: {
         'ProblemId': problemId,
+        if(practiceScopeId!=null)'PracticeScopeId':practiceScopeId,
         'SelectedOptionId': selectedOptionId,
         'TimeSpentSeconds': timeSpentSeconds.clamp(1, 86400).toInt(),
       },
