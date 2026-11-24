@@ -1,87 +1,47 @@
-# MathWorld Mobile — Final Updated Flutter Package
+# MathWorld Mobile
 
-MathWorld is a bilingual Flutter application for browsing and solving mathematical problems. It supports Arabic RTL and English LTR, rendered LaTeX, educational stages and categories, progress, favorites, solved problems, light and dark themes, and secure JWT authentication.
+Flutter student application for MathWorld. The app uses Arabic (RTL) and English (LTR), Riverpod, Dio, Flutter Secure Storage, and Math/LaTeX rendering. The ASP.NET backend is the authority for account roles, problem access, progress, and Premium entitlements.
 
-## Included files
+## Project layout
 
-```text
-lib/
-assets/translations/
-android/app/src/main/AndroidManifest.xml
-test/
-pubspec.yaml
-analysis_options.yaml
-.env
-.env.example
-CURRENT_BACKEND_COMPATIBILITY.md
-CHANGELOG.md
-```
+- `lib/screens/` — student flows (auth, stages, home, problems, favorites, error notebook, reports and settings)
+- `lib/providers/`, `lib/repositories/`, `lib/services/` — app state, API calls and session management
+- `assets/translations/` and `assets/branding/` — localization and approved branding
+- `test/` — Flutter tests
+- `.env.example` — versioned configuration example; local `.env` is intentionally ignored and must be created for local builds
 
-## Main architecture
+## Setup (from this repository; do not replace folders manually)
 
-- Riverpod state management.
-- Repository layer between providers and network transport.
-- Centralized Dio API client and API-envelope parsing.
-- Typed application errors.
-- JWT stored only in Flutter Secure Storage.
-- Startup session validation through `/users/profile`.
-- Automatic session clearing and login redirection after HTTP 401.
-- Hive fallback cache for stages and categories.
-- Arabic and English request headers.
+Requires Flutter/Dart versions compatible with `pubspec.yaml` and an approved MathWorld API for the environment being tested.
 
-## Current backend integration
-
-- Unified search through `/problems/search`.
-- MeiliSearch enabled by default through `SEARCH_ENGINE=meilisearch`.
-- PostgreSQL can be selected through `SEARCH_ENGINE=postgresql`.
-- Favorite updates send `ProblemId` and the requested `IsFavorite` value.
-- Answer submission supports the one-attempt backend rule.
-- Correct answer highlighting supports `CorrectOptionId` and `CorrectOptionText`.
-- Authentication supports the current flat `AuthResponseDto` format.
-
-## User experience improvements
-
-- Responsive stages, categories, problem cards, and answer options.
-- Reduced-motion-aware animations.
-- Real glass blur.
-- Localized relative dates.
-- Safe LaTeX rendering fallback.
-- External video solution launching.
-- Correct and incorrect option highlighting after server validation.
-- Light and dark themes.
-
-## Installation
-
-1. Back up the current Flutter project.
-2. Replace the existing `lib` folder with the included `lib` folder.
-3. Replace the Arabic and English translation files.
-4. Merge the Android manifest permissions.
-5. Replace or merge `pubspec.yaml`.
-6. Copy `.env` and update `API_BASE_URL` when required.
-
-Run:
-
-```powershell
-flutter clean
+```sh
+git clone https://github.com/MahmoudWebApp/mathworld-mobile.git
+cd mathworld-mobile
+cp .env.example .env
 flutter pub get
-dart format lib test
 flutter analyze
 flutter test
 flutter run
 ```
 
-## Environment
+On PowerShell, use `Copy-Item .env.example .env` instead of `cp`.
 
-```env
-API_BASE_URL=https://mathwordbackend.onrender.com/api
-SEARCH_ENGINE=meilisearch
-ENABLE_HTTP_LOGS=false
-```
+Configure the local `API_BASE_URL` to the **intended authorized backend** before running. The versioned `.env.example` may contain a live URL; never interpret it as authorization to submit test answers, change subscription settings, or publish content on production. Use a separately verified test API/database for write testing. Do not commit any `.env` overrides or put JWT signing keys, SMTP/provider secrets, Google OAuth client secrets or database credentials in Flutter assets.
 
-Never put JWT signing keys, database passwords, MeiliSearch administration keys, ImgBB keys, Google secrets, or Facebook secrets inside the Flutter application.
+## Architecture and API contracts
 
-## Android builds with GitHub Actions
+- Riverpod providers orchestrate screen state and repository/API communication.
+- Dio handles requests; session tokens are stored using secure storage.
+- Server-owned progress, favorites, Premium entitlements and correct answers must not be inferred or fabricated in the UI.
+- The current `main` branch is an **implementation snapshot**, not proof that every planned flow is finished. In particular, the current product specification requires wrong-answer retries, full solutions only after correct answers, and Premium-only progressive hints. Review the backend/Flutter implementation together before release; do not assume an older one-attempt flow or solution-preview flow is the intended contract.
+- For current feature requirements and tracked gaps, see the [active MathWorld execution plan](https://github.com/MahmoudWebApp/MathWordBackEnd/issues/17).
 
-Development changes are pushed to the feature branch and validated by the existing GitHub Actions workflows, including Flutter analysis, bilingual navigation, and Android test APK builds. The standard debug-signed release-mode QA artifact is available under **Artifacts** in the [Flutter Free-access and Android build workflow](https://github.com/MahmoudWebApp/mathworld-mobile/actions/workflows/stage-daily-quota-mobile-ci.yml).
+## Android CI and release safety
 
-That existing build uses the repository's example environment and the default live Render API. Treat it as a **layout and launcher-icon inspection artifact** only until a separate, explicitly approved test backend exists; avoid submitting answers or changing real accounts. It is not Google Play signed, and installing it can replace an existing MathWorld installation because it keeps the same application ID. Do not activate live payments, ads or social sign-in from CI.
+Review [GitHub Actions](https://github.com/MahmoudWebApp/mathworld-mobile/actions) for Flutter analyze/test results and Android build artifacts. A successful Android CI run proves that the configured build completed; it does **not** prove that the APK is release-signed for distribution, that Google login works on a specific device, or that the latest UX matches the approved screenshots.
+
+Validate the installed build on a device (including launcher icon, Google sign-in, Arabic/English, dark/light, Premium access, and problem navigation). A production release also requires controlled signing, API compatibility and real-device acceptance checks. Avoid using a production-connected test APK for destructive or write-based QA.
+
+## Safe-change rule
+
+Keep this repository's single official student app. Do not alter live credentials, production users, subscriptions, problem content or app signing while doing read-only QA and cleanup. Make reviewed incremental changes, run CI, and track deployment evidence separately from Git commits.
