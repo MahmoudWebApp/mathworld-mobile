@@ -108,6 +108,9 @@ class AppConstants {
   const AppConstants._();
 
   static const String appName = 'MathWorld';
+  static const String officialWebsite = 'https://math-world-frontend.vercel.app';
+  static Uri passwordRecoveryUrl(String language) =>
+      Uri.parse('$officialWebsite/${language == 'en' ? 'en' : 'ar'}/forgot-password');
   static const String appVersion = '1.3.0';
   static const String defaultLanguage = 'ar';
   static const String tokenKey = 'auth_token';

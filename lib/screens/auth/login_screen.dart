@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../config/constants.dart';
 import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
@@ -62,6 +64,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } finally {
       if (mounted) setState(() => _passwordSubmitting = false);
     }
+  }
+
+  Future<void> _recoverPassword() async {
+    final ar = context.locale.languageCode == 'ar';
+    // Only the official website handles recovery secrets; no arbitrary links,
+    // WebView, browser credentials or reset token are passed from the app.
+    try {
+      if (await launchUrl(AppConstants.passwordRecoveryUrl(ar ? 'ar' : 'en'),
+          mode: LaunchMode.externalApplication)) return;
+    } catch (_) {}
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(
+      ar ? 'تعذّر فتح صفحة الاستعادة.' : 'Could not open the recovery page.',
+    )));
   }
 
   @override
@@ -145,7 +161,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ? null
                               : 'password_required'.tr(),
                         ),
-                        const SizedBox(height: AppSpacing.xl),
+                        Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: TextButton(
+                            onPressed: isLoading ? null : _recoverPassword,
+                            child: Text(context.locale.languageCode == 'ar'
+                                ? 'نسيت كلمة المرور؟' : 'Forgot password?'),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
                         PremiumButton(
                           onPressed: isLoading ? null : _submit,
                           label: 'login'.tr(),
