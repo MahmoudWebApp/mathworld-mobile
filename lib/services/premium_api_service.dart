@@ -35,6 +35,18 @@ class StudentEntitlement {
       );
 }
 
+class ProblemHints {
+  final int problemId, revealedCount;
+  final bool available;
+  final List<String> hints;
+  const ProblemHints({required this.problemId,required this.revealedCount,required this.available,required this.hints});
+  factory ProblemHints.fromJson(Map<String,dynamic> json)=>ProblemHints(
+    problemId:json['ProblemId'] as int,
+    revealedCount:json['RevealedCount'] as int? ?? 0,
+    available:json['Available']==true,
+    hints:(json['Hints'] as List? ?? []).whereType<Map>().map((h)=>h['Text'].toString()).toList(),
+  );
+}
 class PremiumSolution {
   const PremiumSolution({
     required this.problemId,
@@ -82,6 +94,14 @@ class PremiumApiService {
     return PremiumSolution.fromJson(
       Map<String, dynamic>.from(envelope['Data'] as Map),
     );
+  }
+
+  Future<ProblemHints> getHints(int problemId,{int? level}) async {
+    if(problemId<=0 || (level!=null && level!=1 && level!=2))throw ArgumentError('Invalid hint request');
+    final response=level==null
+        ?await _api.get('/problems/$problemId/hints')
+        :await _api.post('/problems/$problemId/hints',data:{'Level':level});
+    return ProblemHints.fromJson(Map<String,dynamic>.from(response.data as Map));
   }
 
   Future<Map<String, bool>> getLaunchFeatures() async {

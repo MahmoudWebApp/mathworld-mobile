@@ -259,13 +259,11 @@ class _ProblemContent extends ConsumerWidget {
     final isArabic = context.locale.languageCode == 'ar';
     final canSelect = state.answerResult == null &&
         (!problem.hasAttempted || state.isRetryMode);
-    final preview = state.solutionPreview;
-    final previewSolution = preview?.detailedSolution.trim() ?? '';
-    final solution = previewSolution.isNotEmpty
-        ? previewSolution
-        : _solutionText(problem, state);
-    final videoUrl = preview?.youtubeSolutionUrl ??
-        state.answerResult?.youtubeSolutionUrl ?? problem.youtubeSolutionUrl;
+    final solution = _solutionText(problem, state);
+    final solved=state.answerResult?.isCorrect ?? problem.isSolved;
+    final videoUrl = solved && !state.isRetryMode
+        ? state.answerResult?.youtubeSolutionUrl ?? problem.youtubeSolutionUrl
+        : null;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -302,13 +300,13 @@ class _ProblemContent extends ConsumerWidget {
           ),
         ),
         _OptionalProblemDiagram(problemId: problem.id, isArabic: isArabic),
-        if (!problem.hasAttempted && !state.isRetryMode) ...[
+        if (!solved) ...[
           const SizedBox(height: AppSpacing.md),
-          PremiumSolutionPanel(
+          PremiumHintPanel(
+            key:ValueKey(problem.id),
             problemId: problem.id,
             service: PremiumApiService(ApiService()),
             isArabic: isArabic,
-            options: problem.options,
           ),
         ],
         const SizedBox(height: AppSpacing.xl),
@@ -497,7 +495,7 @@ class _ProblemContent extends ConsumerWidget {
     if (resultSolution.isNotEmpty) {
       return resultSolution;
     }
-    if (problem.hasAttempted) {
+    if (problem.isSolved) {
       return problem.detailedSolution?.trim() ?? '';
     }
     return '';
