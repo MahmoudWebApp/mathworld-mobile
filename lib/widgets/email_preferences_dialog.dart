@@ -16,7 +16,8 @@ class _EmailPreferencesDialogState extends ConsumerState<EmailPreferencesDialog>
   static const _route = '/users/email-preferences';
   static const _keys = ['EmailLearningUpdates', 'EmailSubscriptionUpdates', 'EmailImportantAnnouncements'];
   Map<String, dynamic>? _value;
-  bool _busy = true, _failed = false, _saved = false;
+  bool _busy = true, _failed = false, _saved = false, _queued = false;
+  String? _verificationError;
   bool get _sameUser => ref.read(authProvider).user?.id == widget.userId;
 
   @override
@@ -27,7 +28,7 @@ class _EmailPreferencesDialogState extends ConsumerState<EmailPreferencesDialog>
 
   Future<void> _load() async {
     if (!mounted || !_sameUser) return;
-    setState(() { _busy = true; _failed = false; _saved = false; });
+    setState(() { _busy = true; _failed = false; _saved = false; _queued = false; _verificationError = null; });
     try {
       final response = await ref.read(apiClientProvider).get(_route);
       if (!mounted || !_sameUser) return;
@@ -62,6 +63,31 @@ class _EmailPreferencesDialogState extends ConsumerState<EmailPreferencesDialog>
     }
   }
 
+  Future<void> _requestVerification(bool ar) async {
+    if (_busy || !_sameUser || _value?['EmailVerified'] == true ||
+        _value?['VerificationAvailable'] != true) return;
+    setState(() { _busy = true; _queued = false; _failed = false; _saved = false; _verificationError = null; });
+    try {
+      final response = await ref.read(apiClientProvider).post('/auth/email-verification/request',
+          data: {'Language': ar ? 'ar' : 'en'});
+      if (!mounted || !_sameUser) return;
+      final data = ApiEnvelope.map(response.data);
+      if (data['AlreadyVerified'] == true) {
+        await _load();
+      } else if (data['Queued'] == true) {
+        setState(() { _queued = true; _busy = false; });
+      } else {
+        throw const FormatException('Invalid verification response');
+      }
+    } catch (_) {
+      if (mounted && _sameUser) {
+        setState(() { _busy = false; _verificationError = ar
+            ? 'تعذّر طلب رسالة التأكيد. انتظر قليلاً قبل إعادة المحاولة.'
+            : 'Could not request verification. Wait before retrying.'; });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ar = context.locale.languageCode == 'ar';
@@ -75,7 +101,16 @@ class _EmailPreferencesDialogState extends ConsumerState<EmailPreferencesDialog>
         Text(ar ? 'تظل إشعارات المنصة ورسائل الأمان مستقلة عن هذه الخيارات.' : 'In-app notifications and security messages are independent of these preferences.'),
         if (_busy) const LinearProgressIndicator(),
         if (value != null) ...[
-          if (value['EmailVerified'] != true) Text(ar ? 'يلزم تأكيد بريد الحساب أولاً.' : 'Verify your account email first.'),
+          Text(value['EmailVerified'] == true
+              ? (ar ? 'بريد الحساب مؤكّد.' : 'Account email verified.')
+              : (ar ? 'يلزم تأكيد بريد الحساب أولاً.' : 'Verify your account email first.')),
+          if (value['EmailVerified'] != true && value['VerificationAvailable'] == true)
+            OutlinedButton(
+              onPressed: _busy ? null : () => _requestVerification(ar),
+              child: Text(ar ? 'إرسال رابط التأكيد' : 'Send verification link'),
+            ),
+          if (value['EmailVerified'] != true && value['VerificationAvailable'] != true)
+            Text(ar ? 'إرسال رابط التأكيد غير متاح حالياً.' : 'Email verification is currently unavailable.'),
           if (value['OptionalDeliveryEnabled'] != true) Text(ar ? 'الإرسال الاختياري غير مفعّل حالياً.' : 'Optional delivery is currently disabled.'),
           for (var i = 0; i < _keys.length; i++)
             CheckboxListTile(
@@ -94,11 +129,16 @@ class _EmailPreferencesDialogState extends ConsumerState<EmailPreferencesDialog>
         ],
         if (_failed) Text(ar ? 'تعذّر تحميل أو حفظ التفضيلات.' : 'Could not load or save preferences.',style:TextStyle(color:Theme.of(context).colorScheme.error)),
         if (_saved) Text(ar ? 'تم حفظ التفضيلات.' : 'Preferences saved.'),
+        if (_queued) Text(ar
+            ? 'أضيفت رسالة التأكيد إلى الطابور. افتح الرابط عند وصوله، ثم حدّث التفضيلات.'
+            : 'Verification email queued. Open its link when received, then refresh preferences.'),
+        if (_verificationError != null)
+          Text(_verificationError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
       ])),
       actions: [
         TextButton(onPressed: () => Navigator.of(context).pop(), child:Text(ar?'إغلاق':'Close')),
-        if (value == null && !_busy && current == widget.userId)
-          TextButton(onPressed:_load,child:Text(ar?'إعادة المحاولة':'Retry')),
+        if (!_busy && current == widget.userId)
+          TextButton(onPressed:_load,child:Text(value == null ? (ar?'إعادة المحاولة':'Retry') : (ar?'تحديث':'Refresh'))),
         if (value != null)
           FilledButton(onPressed:_busy?null:_save,child:Text(ar?'حفظ':'Save')),
       ],
