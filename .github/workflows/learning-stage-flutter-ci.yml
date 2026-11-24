@@ -1,9 +1,6 @@
 name: Flutter learning stage analyze
 
 on:
-  push:
-    branches:
-      - feature/student-learning-stage-journey-flutter-v1
   pull_request:
     paths:
       - 'lib/**'
