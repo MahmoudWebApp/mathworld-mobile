@@ -25,7 +25,7 @@ class PlatformContactCard extends ConsumerWidget {
     final brand = ref.watch(platformContactProvider);
     return brand.when(
       loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (error, stackTrace) => const SizedBox.shrink(),
       data: (p) {
         final address = ar ? p.addressAr : p.addressEn;
         return GlassCard(padding: EdgeInsets.zero, child: Column(
