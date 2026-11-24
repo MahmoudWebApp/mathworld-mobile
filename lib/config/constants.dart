@@ -23,6 +23,8 @@ class ApiConstants {
   }
 
   static const String login = '/auth/login';
+  static const String changePassword = '/auth/change-password';
+  static const String platformBrand = '/platform/brand';
   static const String register = '/auth/register';
   static const String socialGoogle = '/auth/social/google';
   static const String socialLinkGoogle = '/auth/social/link/google';
@@ -106,6 +108,9 @@ class AppConstants {
   const AppConstants._();
 
   static const String appName = 'MathWorld';
+  static const String officialWebsite = 'https://math-world-frontend.vercel.app';
+  static Uri passwordRecoveryUrl(String language) =>
+      Uri.parse('$officialWebsite/${language == 'en' ? 'en' : 'ar'}/forgot-password');
   static const String appVersion = '1.3.0';
   static const String defaultLanguage = 'ar';
   static const String tokenKey = 'auth_token';

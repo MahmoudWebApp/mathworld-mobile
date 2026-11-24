@@ -185,10 +185,9 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
             onSubmit: () => _runAction(context, () async {
               await notifier.submitAnswer();
               if (!mounted || !routeArguments.dailyChallenge) return;
-              // Count a correct or incorrect submission as a completed daily
-              // question. Give students time to read the mathematical rule
-              // and explanation; the skip/pause controls remain available.
-              if (ref.read(problemDetailsProvider(problemId)).answerResult != null) {
+              // An incorrect answer must never advance the challenge.
+              // Let the learner read the solution only after a correct answer.
+              if (ref.read(problemDetailsProvider(problemId)).answerResult?.isCorrect == true) {
                 _challengeAdvanceTimer?.cancel();
                 if (!_challengeAdvancePaused) {
                   _challengeAdvanceTimer = Timer(
@@ -259,13 +258,12 @@ class _ProblemContent extends ConsumerWidget {
     final isArabic = context.locale.languageCode == 'ar';
     final canSelect = state.answerResult == null &&
         (!problem.hasAttempted || state.isRetryMode);
-    final preview = state.solutionPreview;
-    final previewSolution = preview?.detailedSolution.trim() ?? '';
-    final solution = previewSolution.isNotEmpty
-        ? previewSolution
-        : _solutionText(problem, state);
-    final videoUrl = preview?.youtubeSolutionUrl ??
-        state.answerResult?.youtubeSolutionUrl ?? problem.youtubeSolutionUrl;
+    final solution = _solutionText(problem, state);
+    final structure = !state.isRetryMode&&(state.answerResult?.isCorrect??problem.isSolved)?state.answerResult?.solutionStructure??problem.solutionStructure:null;
+    final solved=state.answerResult?.isCorrect ?? problem.isSolved;
+    final videoUrl = solved && !state.isRetryMode
+        ? state.answerResult?.youtubeSolutionUrl ?? problem.youtubeSolutionUrl
+        : null;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -302,13 +300,14 @@ class _ProblemContent extends ConsumerWidget {
           ),
         ),
         _OptionalProblemDiagram(problemId: problem.id, isArabic: isArabic),
-        if (!problem.hasAttempted && !state.isRetryMode) ...[
+        if (!solved) ...[
           const SizedBox(height: AppSpacing.md),
-          PremiumSolutionPanel(
+          PremiumHintPanel(
+            key:ValueKey((problem.id,problem.practiceScopeId)),
             problemId: problem.id,
+            practiceScopeId:problem.practiceScopeId,
             service: PremiumApiService(ApiService()),
             isArabic: isArabic,
-            options: problem.options,
           ),
         ],
         const SizedBox(height: AppSpacing.xl),
@@ -361,7 +360,7 @@ class _ProblemContent extends ConsumerWidget {
           const SizedBox(height: AppSpacing.md),
           // In the guided challenge, going back to the list must not
           // silently interrupt the five-question sequence.
-          if (isDailyChallenge) ...[
+          if (isDailyChallenge && state.answerResult!.isCorrect) ...[
             GlassCard(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
@@ -405,7 +404,7 @@ class _ProblemContent extends ConsumerWidget {
               label: Text('back_to_problems'.tr()),
             ),
         ],
-        if (allowNotebookRetry && problem.hasAttempted &&
+        if ((allowNotebookRetry || !isDailyChallenge || state.answerResult?.isCorrect == false) && problem.hasAttempted &&
             problem.isInErrorNotebook && problem.canRetry &&
             !state.isRetryMode &&
             !state.isSubmitting) ...[
@@ -430,11 +429,22 @@ class _ProblemContent extends ConsumerWidget {
               color:
                   Theme.of(context).colorScheme.primary.withValues(alpha: 0.24),
             ),
-            child: RichMathText(
+            child: structure==null?RichMathText(
               text: solution,
               isArabic: isArabic,
               style: Theme.of(context).textTheme.bodyLarge,
-            ),
+            ):Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+              Text(isArabic?'الفكرة والقانون':'Idea and formula',style:Theme.of(context).textTheme.titleMedium),
+              RichMathText(text:structure.idea,isArabic:isArabic),
+              RichMathText(text:structure.formulaLatex,isArabic:isArabic,inline:true),
+              const SizedBox(height:12),
+              Text(isArabic?'خطوات الحل':'Solution steps',style:Theme.of(context).textTheme.titleMedium),
+              for(var i=0;i<structure.steps.length;i++) Padding(padding:const EdgeInsets.only(top:6),child:RichMathText(text:'${i+1}. ${structure.steps[i]}',isArabic:isArabic)),
+              for(final entry in <(String,String)>[(isArabic?'التعويض':'Substitution',structure.substitution),(isArabic?'النتيجة والوحدة':'Result and unit','${structure.result} ${structure.unit}'),(isArabic?'التحقق':'Verification',structure.verification),(isArabic?'الخطأ الشائع':'Common error',structure.commonError)])...[
+                const SizedBox(height:12),Text(entry.$1,style:Theme.of(context).textTheme.titleMedium),
+                RichMathText(text:entry.$2,isArabic:isArabic),
+              ],
+            ]),
           ),
         ],
         if (videoUrl?.trim().isNotEmpty == true && !state.isRetryMode) ...[
@@ -493,11 +503,12 @@ class _ProblemContent extends ConsumerWidget {
     if (state.isRetryMode && state.answerResult == null) {
       return '';
     }
+    if(!(state.answerResult?.isCorrect??problem.isSolved))return '';
     final resultSolution = state.answerResult?.detailedSolution.trim() ?? '';
     if (resultSolution.isNotEmpty) {
       return resultSolution;
     }
-    if (problem.hasAttempted) {
+    if (problem.isSolved) {
       return problem.detailedSolution?.trim() ?? '';
     }
     return '';

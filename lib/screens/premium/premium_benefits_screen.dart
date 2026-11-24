@@ -86,7 +86,7 @@ class _PremiumBenefitsScreenState
                 features: [
                   ar ? 'كل فئات المرحلة التعليمية المختارة' : 'Every topic in your selected stage',
                   ar ? 'حل عدد غير محدود من المسائل' : 'Unlimited problem solving',
-                  ar ? 'عرض الحل قبل إرسال الإجابة' : 'See the solution before answering',
+                  ar ? 'تلميحان متدرجان قبل الحل' : 'Two progressive hints before solving',
                   ar ? 'تقارير تقدم تفصيلية وإحصائيات خاصة' : 'Detailed private progress analytics',
                   ar ? 'تصدير نتائجك PDF أو CSV المتوافق مع Excel'
                      : 'Export results to PDF or Excel-compatible CSV',

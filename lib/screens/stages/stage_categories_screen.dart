@@ -31,6 +31,8 @@ import '../../widgets/stage_math_glyph.dart';
 import '../../widgets/curriculum_framework_note.dart';
 import '../../widgets/published_stage_skills_panel.dart';
 import '../../widgets/category_skills_dialog.dart';
+import '../../widgets/learning_track_workspace.dart';
+import '../../providers/learning_tracks_provider.dart';
 
 /// Displays localized categories for the selected educational stage.
 class StageCategoriesScreen extends ConsumerWidget {
@@ -126,6 +128,7 @@ class StageCategoriesScreen extends ConsumerWidget {
         ref.invalidate(dailyChallengeProvider);
         ref.invalidate(studentBadgesProvider);
         ref.invalidate(premiumAnalyticsProvider);
+        ref.invalidate(filteredPremiumAnalyticsProvider);
         ref.invalidate(leaderboardProvider);
         ref.invalidate(stageCategoryAccessProvider(stage.id));
         if (context.mounted) {
@@ -415,6 +418,20 @@ class CurrentStageCategoriesScreen extends ConsumerWidget {
           ),
         ),
       );
+    }
+
+    final trackCatalog = ref.watch(publishedTracksProvider(stageId));
+    // An explicit disabled/legacy API response preserves existing stage UI.
+    // A temporary failure must not silently switch a selected track to a stage.
+    if (trackCatalog.isLoading && !trackCatalog.hasValue) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (trackCatalog.hasError) {
+      return AppErrorView(onRetry: () => ref.invalidate(publishedTracksProvider(stageId)));
+    }
+    final catalog = trackCatalog.valueOrNull;
+    if (catalog != null && catalog.enabled && catalog.items.isNotEmpty) {
+      return LearningTrackWorkspace(key: ValueKey('tracks-${user!.id}-$stageId'), stageId: stageId, catalog: catalog);
     }
 
     return ref.watch(stagesProvider).when(

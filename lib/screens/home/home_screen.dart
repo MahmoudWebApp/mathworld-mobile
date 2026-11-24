@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
+import '../../core/network/api_envelope.dart';
 import '../../core/errors/app_exception.dart';
 import '../../core/utils/relative_time.dart';
 import '../../models/dashboard_stats.dart';
@@ -26,6 +27,8 @@ import '../../widgets/premium_button.dart';
 import '../../widgets/student_badges_card.dart';
 import '../../widgets/rich_math_text.dart';
 import '../../widgets/stage_math_glyph.dart';
+import '../../widgets/learning_session_cards.dart';
+import '../certificates/certificates_screen.dart';
 
 /// Displays the user dashboard, progress summary, and learning shortcuts.
 class HomeScreen extends ConsumerWidget {
@@ -63,6 +66,27 @@ class HomeScreen extends ConsumerWidget {
         return;
       }
       try {
+        // Read the selected journey first; an active track never falls back
+        // to the whole-stage search if resume is temporarily unavailable.
+        final journey = await ref.read(learningJourneyProvider.future);
+        if (!context.mounted) return;
+        if (journey == null) { onOpenStages(); return; }
+        if (journey.trackId != null) {
+          final response = await ref.read(apiClientProvider).get('/users/learning-tracks/continue');
+          final payload = ApiEnvelope.map(response.data);
+          if (!context.mounted) return;
+          if (payload['TrackId'] != journey.trackId || payload['Problem'] is! Map) {
+            onOpenStages(); return;
+          }
+          final id = (payload['Problem'] as Map)['Id'];
+          if (id is! int || id <= 0) { onOpenStages(); return; }
+          await Navigator.pushNamed(context, AppRoutes.problemDetails, arguments: id);
+          if (context.mounted) {
+            ref.invalidate(dashboardProvider);
+            ref.invalidate(learningJourneyProvider);
+          }
+          return;
+        }
         // The server excludes solved work before pagination.
         final result = await ref.read(problemsRepositoryProvider).search(
           ProblemSearchParams(stageId: stageId, hideSolved: true, pageSize: 1),
@@ -238,6 +262,16 @@ class HomeScreen extends ConsumerWidget {
                     child: _JourneyStatusCard(isLoading: true),
                   ),
                 ),
+                if (learningJourney.valueOrNull?.learningSessionsEnabled == true)
+                  LearningSessionCards(journey: learningJourney.valueOrNull!),
+                if (learningJourney.valueOrNull?.certificatesEnabled == true)
+                  Card(child:ListTile(
+                    leading:const Icon(Icons.workspace_premium_outlined),
+                    title:Text(context.locale.languageCode=='ar'?'شهاداتي التعليمية':'My learning certificates'),
+                    onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>CertificatesScreen(journey:learningJourney.valueOrNull!))),
+                    trailing:const Icon(Icons.arrow_forward_ios,size:16),
+                  )),
+                if (learningJourney.valueOrNull?.learningSessionsEnabled != true)
                 dailyPractice.when(
                   data: (challenge) => challenge == null
                       ? const SizedBox.shrink()
@@ -730,7 +764,7 @@ class _StatsGrid extends StatelessWidget {
       ),
       _StatData(
         Icons.auto_awesome_rounded,
-        '${journey.totalPoints}',
+        '${journey.displayedPoints}',
         'stage_points'.tr(),
         AppColors.warning,
       ),
@@ -962,7 +996,7 @@ class _LearningJourneyCard extends StatelessWidget {
               ),
               _StageStat(
                 title: 'stage_points'.tr(),
-                value: '${journey.totalPoints}',
+                value: '${journey.displayedPoints}',
               ),
             ],
           ),

@@ -1,6 +1,7 @@
 /// Stage-scoped progress as reported by MathWorld's backend.
 class LearningJourney {
   final int stageId;
+  final int? trackId;
   final String nameAr;
   final String nameEn;
   final int totalProblems;
@@ -9,11 +10,18 @@ class LearningJourney {
   final int firstTryCorrect;
   final int masteredProblems;
   final int totalPoints;
+  final bool learningSessionsEnabled;
+  final bool certificatesEnabled;
+  final bool trackPracticeIsolationEnabled;
+  final int? permanentPoints;
+  final int? permanentSolvedProblems;
+  int get displayedPoints => learningSessionsEnabled ? (permanentPoints ?? totalPoints) : totalPoints;
   final int completionPercent;
   final List<LearningJourneyCategory> categories;
 
   const LearningJourney({
     required this.stageId,
+    this.trackId,
     required this.nameAr,
     required this.nameEn,
     required this.totalProblems,
@@ -22,6 +30,11 @@ class LearningJourney {
     required this.firstTryCorrect,
     required this.masteredProblems,
     required this.totalPoints,
+    this.learningSessionsEnabled = false,
+    this.certificatesEnabled = false,
+    this.trackPracticeIsolationEnabled = false,
+    this.permanentPoints,
+    this.permanentSolvedProblems,
     required this.completionPercent,
     required this.categories,
   });
@@ -30,6 +43,7 @@ class LearningJourney {
     final raw = data['Categories'] ?? data['categories'];
     return LearningJourney(
       stageId: _integer(data['StageId'] ?? data['stageId']),
+      trackId: _integer(data['TrackId'] ?? data['trackId']) > 0 ? _integer(data['TrackId'] ?? data['trackId']) : null,
       nameAr: _string(data['NameAr'] ?? data['nameAr']),
       nameEn: _string(data['NameEn'] ?? data['nameEn']),
       totalProblems: _integer(data['TotalProblems'] ?? data['totalProblems']),
@@ -42,6 +56,11 @@ class LearningJourney {
         data['MasteredProblems'] ?? data['masteredProblems'],
       ),
       totalPoints: _integer(data['TotalPoints'] ?? data['totalPoints']),
+      learningSessionsEnabled: data['LearningSessionsEnabled']==true,
+      certificatesEnabled: data['CertificatesEnabled']==true,
+      trackPracticeIsolationEnabled: data['TrackPracticeIsolationEnabled']==true,
+      permanentPoints: data['PermanentPoints'] is num ? _integer(data['PermanentPoints']) : null,
+      permanentSolvedProblems: data['PermanentSolvedProblems'] is num ? _integer(data['PermanentSolvedProblems']) : null,
       completionPercent: _integer(
         data['CompletionPercent'] ?? data['completionPercent'],
       ),

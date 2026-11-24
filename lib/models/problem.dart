@@ -1,6 +1,18 @@
+class SolutionStructure {
+  final String idea,formulaLatex,substitution,result,unit,verification,commonError;
+  final List<String> steps;
+  const SolutionStructure({required this.idea,required this.formulaLatex,required this.steps,required this.substitution,required this.result,required this.unit,required this.verification,required this.commonError});
+  static SolutionStructure? parse(dynamic raw){
+    if(raw is! Map)return null;
+    String value(String key)=>(raw[key]??'').toString();
+    return SolutionStructure(idea:value('Idea'),formulaLatex:value('FormulaLatex'),steps:(raw['Steps'] as List? ?? []).map((s)=>s.toString()).toList(),substitution:value('Substitution'),result:value('Result'),unit:value('Unit'),verification:value('Verification'),commonError:value('CommonError'));
+  }
+}
+
 /// Represents a complete localized math problem.
 class Problem {
   final int id;
+  final int? practiceScopeId;
   final String title;
   final String questionText;
   final int stageId;
@@ -27,10 +39,12 @@ class Problem {
   final DateTime? nextReviewAt;
   final List<Option> options;
   final String? detailedSolution;
+  final SolutionStructure? solutionStructure;
   final String? youtubeSolutionUrl;
 
   const Problem({
     required this.id,
+    this.practiceScopeId,
     required this.title,
     required this.questionText,
     required this.stageId,
@@ -57,6 +71,7 @@ class Problem {
     this.nextReviewAt,
     required this.options,
     this.detailedSolution,
+    this.solutionStructure,
     this.youtubeSolutionUrl,
   });
 
@@ -73,6 +88,7 @@ class Problem {
 
     return Problem(
       id: _int(json['Id'] ?? json['id']),
+      practiceScopeId:_nullableInt(json['PracticeScopeId']??json['practiceScopeId']),
       title: localizedString(
         json,
         languageCode: languageCode,
@@ -144,6 +160,7 @@ class Problem {
           .map((item) => Option.fromJson(_map(item)))
           .toList()
         ..sort((a, b) => a.order.compareTo(b.order)),
+      solutionStructure: isSolved?SolutionStructure.parse(json['SolutionStructure']):null,
       detailedSolution: localizedNullableString(
         json,
         languageCode: languageCode,
@@ -175,11 +192,13 @@ class Problem {
     DateTime? nextReviewAt,
     bool clearNextReviewAt = false,
     String? detailedSolution,
+    SolutionStructure? solutionStructure,
     String? youtubeSolutionUrl,
     int? viewsCount,
   }) {
     return Problem(
       id: id,
+      practiceScopeId:practiceScopeId,
       title: title,
       questionText: questionText,
       stageId: stageId,
@@ -208,6 +227,7 @@ class Problem {
           clearNextReviewAt ? null : (nextReviewAt ?? this.nextReviewAt),
       options: options,
       detailedSolution: detailedSolution ?? this.detailedSolution,
+      solutionStructure: (isSolved??this.isSolved)?solutionStructure??this.solutionStructure:null,
       youtubeSolutionUrl: youtubeSolutionUrl ?? this.youtubeSolutionUrl,
     );
   }
@@ -312,6 +332,8 @@ class AnswerResult {
   final int? correctOptionId;
   final String? correctOptionText;
   final String detailedSolution;
+  final SolutionStructure? solutionStructure;
+  final bool usedHint;
   final String? youtubeSolutionUrl;
   final int attemptId;
   final int attemptNumber;
@@ -333,6 +355,8 @@ class AnswerResult {
     this.correctOptionId,
     this.correctOptionText,
     required this.detailedSolution,
+    this.solutionStructure,
+    this.usedHint=false,
     this.youtubeSolutionUrl,
     this.attemptId = 0,
     this.attemptNumber = 0,
@@ -368,6 +392,8 @@ class AnswerResult {
       correctOptionText: _nullableString(
         json['CorrectOptionText'] ?? json['correctOptionText'],
       ),
+      solutionStructure:isCorrect?SolutionStructure.parse(json['SolutionStructure']):null,
+      usedHint:_bool(json['UsedHint']),
       detailedSolution: localizedString(
         json,
         languageCode: languageCode,
@@ -412,6 +438,8 @@ class AnswerResult {
     int? correctOptionId,
     String? correctOptionText,
     String? detailedSolution,
+    SolutionStructure? solutionStructure,
+    bool? usedHint,
     String? youtubeSolutionUrl,
     int? attemptId,
     int? attemptNumber,
@@ -433,6 +461,8 @@ class AnswerResult {
       correctOptionId: correctOptionId ?? this.correctOptionId,
       correctOptionText: correctOptionText ?? this.correctOptionText,
       detailedSolution: detailedSolution ?? this.detailedSolution,
+      solutionStructure: (isCorrect??this.isCorrect)?solutionStructure??this.solutionStructure:null,
+      usedHint:usedHint??this.usedHint,
       youtubeSolutionUrl: youtubeSolutionUrl ?? this.youtubeSolutionUrl,
       attemptId: attemptId ?? this.attemptId,
       attemptNumber: attemptNumber ?? this.attemptNumber,

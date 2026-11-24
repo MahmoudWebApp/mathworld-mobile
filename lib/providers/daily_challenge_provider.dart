@@ -4,6 +4,7 @@ import '../models/daily_challenge.dart';
 import 'auth_provider.dart';
 import 'repositories_provider.dart';
 import 'stage_category_access_provider.dart';
+import 'learning_journey_provider.dart';
 
 /// Recreates the daily-practice request after login or stage switching.
 /// The server decides which published, currently unlocked problems are safe.
@@ -18,5 +19,7 @@ final dailyChallengeProvider = FutureProvider.autoDispose<DailyChallenge?>((ref)
   // in the two categories selected for their stage.
   final membership = ref.watch(studentPremiumProvider);
   if (membership.valueOrNull != true) return null;
+  final journey=await ref.watch(learningJourneyProvider.future);
+  if(journey?.learningSessionsEnabled==true)return null;
   return ref.watch(dashboardRepositoryProvider).getDailyChallenge(stageId);
 });
