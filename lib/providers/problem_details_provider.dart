@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/problem.dart';
+import '../core/errors/app_exception.dart';
+import 'learning_tracks_provider.dart';
 import '../models/solution_preview.dart';
 import '../repositories/problems_repository.dart';
 import 'dashboard_provider.dart';
@@ -78,6 +80,8 @@ final problemDetailsProvider = StateNotifierProvider.autoDispose
       settingsProvider.select((settings) => settings.languageCode),
     );
 
+    // Recreate question interaction state when a local track switch is observed.
+    ref.watch(trackSelectionProvider.select((value)=>value.valueOrNull?['TrackId']));
     return ProblemDetailsNotifier(
       repository: ref.watch(problemsRepositoryProvider),
       problemId: problemId,
@@ -97,6 +101,8 @@ final problemDetailsProvider = StateNotifierProvider.autoDispose
         ref.invalidate(premiumAnalyticsProvider);
         ref.invalidate(problemsProvider);
         ref.invalidate(errorNotebookProvider);
+        ref.invalidate(trackProgressProvider);
+        ref.invalidate(trackPracticeProvider);
       },
       onFavoriteChanged: () {
         ref.invalidate(favoritesProvider);
@@ -139,6 +145,7 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
     );
     try {
       final problem = await _repository.getProblem(_problemId, _languageCode);
+      if (!mounted) return;
       final restoredResult = problem.hasAttempted
           ? AnswerResult(
               isCorrect: problem.wasCorrect ??
@@ -173,6 +180,7 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
         isRetryMode: false,
       );
     } catch (error, stackTrace) {
+      if (!mounted) return;
       state = state.copyWith(
         problem: AsyncValue.error(error, stackTrace),
       );
@@ -284,6 +292,7 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
         languageCode: _languageCode,
       );
 
+      if (!mounted) return;
       final updatedProblem = problem.copyWith(
         isSolved: result.isSolved,
         hasAttempted: true,
@@ -315,7 +324,18 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
         isRetryMode: false,
       );
       _onAttemptCompleted();
+    } on AppException catch (error) {
+      if (!mounted) return;
+      state = state.copyWith(isSubmitting: false);
+      if (error.statusCode == 409) {
+        // A different device may have switched the learner's practice scope.
+        // Reload server-authoritative progress, never silently replay the answer.
+        state = state.copyWith(clearSelectedOption: true, clearAnswerResult: true, isRetryMode: false);
+        await load();
+      }
+      rethrow;
     } catch (_) {
+      if (!mounted) return;
       state = state.copyWith(isSubmitting: false);
       rethrow;
     }
@@ -336,6 +356,7 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
         isFavorite: requestedValue,
       );
 
+      if (!mounted) return;
       final updated = problem.copyWith(isFavorite: serverValue);
       state = state.copyWith(
         problem: AsyncValue.data(updated),
@@ -343,6 +364,7 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
       );
       _onFavoriteChanged();
     } catch (_) {
+      if (!mounted) return;
       state = state.copyWith(isFavoriteBusy: false);
       rethrow;
     }

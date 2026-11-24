@@ -185,10 +185,9 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
             onSubmit: () => _runAction(context, () async {
               await notifier.submitAnswer();
               if (!mounted || !routeArguments.dailyChallenge) return;
-              // Count a correct or incorrect submission as a completed daily
-              // question. Give students time to read the mathematical rule
-              // and explanation; the skip/pause controls remain available.
-              if (ref.read(problemDetailsProvider(problemId)).answerResult != null) {
+              // An incorrect answer must never advance the challenge.
+              // Let the learner read the solution only after a correct answer.
+              if (ref.read(problemDetailsProvider(problemId)).answerResult?.isCorrect == true) {
                 _challengeAdvanceTimer?.cancel();
                 if (!_challengeAdvancePaused) {
                   _challengeAdvanceTimer = Timer(
@@ -361,7 +360,7 @@ class _ProblemContent extends ConsumerWidget {
           const SizedBox(height: AppSpacing.md),
           // In the guided challenge, going back to the list must not
           // silently interrupt the five-question sequence.
-          if (isDailyChallenge) ...[
+          if (isDailyChallenge && state.answerResult!.isCorrect) ...[
             GlassCard(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
@@ -405,7 +404,7 @@ class _ProblemContent extends ConsumerWidget {
               label: Text('back_to_problems'.tr()),
             ),
         ],
-        if ((allowNotebookRetry || !isDailyChallenge) && problem.hasAttempted &&
+        if ((allowNotebookRetry || !isDailyChallenge || state.answerResult?.isCorrect == false) && problem.hasAttempted &&
             problem.isInErrorNotebook && problem.canRetry &&
             !state.isRetryMode &&
             !state.isSubmitting) ...[
