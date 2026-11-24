@@ -5,6 +5,10 @@ import '../config/app_routes.dart';
 import '../core/network/api_envelope.dart';
 import '../core/utils/error_message.dart';
 import '../providers/auth_provider.dart';
+import '../providers/dashboard_provider.dart';
+import '../providers/learning_journey_provider.dart';
+import '../providers/daily_challenge_provider.dart';
+import '../providers/premium_analytics_provider.dart';
 import '../providers/learning_tracks_provider.dart';
 import '../providers/repositories_provider.dart';
 
@@ -30,6 +34,10 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
       if(!mounted||ref.read(authProvider).user?.id!=actor)return;
       ref.invalidate(trackSelectionProvider);
       ref.invalidate(trackProgressProvider);
+      ref.invalidate(dashboardProvider);
+      ref.invalidate(learningJourneyProvider);
+      ref.invalidate(dailyChallengeProvider);
+      ref.invalidate(premiumAnalyticsProvider);
       setState(()=>_changing=false);
     }catch(error){
       if(mounted)setState(()=>_error=localizedErrorMessage(error));
@@ -118,7 +126,7 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
     return Scaffold(appBar:AppBar(title:Text(widget.name)),body:state.hasError?Center(child:TextButton(onPressed:()=>ref.invalidate(trackPracticeProvider(key)),child:Text(ar?'إعادة المحاولة':'Retry'))):data==null?const Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.all(12),children:[
       for(final problem in trackRows(data['Items'])) Card(child:ListTile(title:Text(trackText(problem,'Title',ar)),subtitle:Text(problem['IsSolved']==true?(ar?'محلولة':'Solved'):(ar?'غير محلولة':'Unsolved')),onTap:()async{
         await Navigator.pushNamed(context,AppRoutes.problemDetails,arguments:trackNumber(problem['Id']));
-        if(mounted){ref.invalidate(trackPracticeProvider(key));ref.invalidate(trackProgressProvider(widget.id));}
+        if(mounted){ref.invalidate(trackPracticeProvider(key));ref.invalidate(trackProgressProvider(widget.id));ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}
       })),
       Row(mainAxisAlignment:MainAxisAlignment.center,children:[
         TextButton(onPressed:_page<=1?null:()=>setState(()=>_page--),child:Text(ar?'السابق':'Previous')),

@@ -1,6 +1,7 @@
 /// Stage-scoped progress as reported by MathWorld's backend.
 class LearningJourney {
   final int stageId;
+  final int? trackId;
   final String nameAr;
   final String nameEn;
   final int totalProblems;
@@ -14,6 +15,7 @@ class LearningJourney {
 
   const LearningJourney({
     required this.stageId,
+    this.trackId,
     required this.nameAr,
     required this.nameEn,
     required this.totalProblems,
@@ -30,6 +32,7 @@ class LearningJourney {
     final raw = data['Categories'] ?? data['categories'];
     return LearningJourney(
       stageId: _integer(data['StageId'] ?? data['stageId']),
+      trackId: _integer(data['TrackId'] ?? data['trackId']) > 0 ? _integer(data['TrackId'] ?? data['trackId']) : null,
       nameAr: _string(data['NameAr'] ?? data['nameAr']),
       nameEn: _string(data['NameEn'] ?? data['nameEn']),
       totalProblems: _integer(data['TotalProblems'] ?? data['totalProblems']),

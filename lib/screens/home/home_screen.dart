@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
+import '../../core/network/api_envelope.dart';
 import '../../core/errors/app_exception.dart';
 import '../../core/utils/relative_time.dart';
 import '../../models/dashboard_stats.dart';
@@ -63,6 +64,27 @@ class HomeScreen extends ConsumerWidget {
         return;
       }
       try {
+        // Read the selected journey first; an active track never falls back
+        // to the whole-stage search if resume is temporarily unavailable.
+        final journey = await ref.read(learningJourneyProvider.future);
+        if (!context.mounted) return;
+        if (journey == null) { onOpenStages(); return; }
+        if (journey.trackId != null) {
+          final response = await ref.read(apiClientProvider).get('/users/learning-tracks/continue');
+          final payload = ApiEnvelope.map(response.data);
+          if (!context.mounted) return;
+          if (payload['TrackId'] != journey.trackId || payload['Problem'] is! Map) {
+            onOpenStages(); return;
+          }
+          final id = (payload['Problem'] as Map)['Id'];
+          if (id is! int || id <= 0) { onOpenStages(); return; }
+          await Navigator.pushNamed(context, AppRoutes.problemDetails, arguments: id);
+          if (context.mounted) {
+            ref.invalidate(dashboardProvider);
+            ref.invalidate(learningJourneyProvider);
+          }
+          return;
+        }
         // The server excludes solved work before pagination.
         final result = await ref.read(problemsRepositoryProvider).search(
           ProblemSearchParams(stageId: stageId, hideSolved: true, pageSize: 1),
