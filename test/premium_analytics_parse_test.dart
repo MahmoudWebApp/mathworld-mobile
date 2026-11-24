@@ -60,6 +60,18 @@ void main() {
     expect(parsed.categories.single.firstTryCorrect, 3);
   });
 
+  test('scope parameters and returned report metadata match',(){
+    const AnalyticsFilter filter=(stageId:1,categoryId:4,trackId:2,days:30);
+    expect(analyticsParams(filter),{'stageId':1,'categoryId':4,'trackId':2,'days':30});
+    expect(analyticsParams(allAnalytics),isEmpty);
+    final parsed=PremiumAnalyticsReport.fromJson(report()..addAll({
+      'ScoreBasis':'PermanentAchievements','FilterStageId':1,'FilterCategoryId':4,'FilterTrackId':2,'WindowDays':30
+    }));
+    expect(parsed.filter,filter);
+    expect(parsed.scoreBasis,'PermanentAchievements');
+    expect(PremiumAnalyticsReport.fromJson(report()).filter,allAnalytics);
+  });
+
   test('valid zero-activity Premium report remains possible', () {
     final empty = report();
     for (final name in [

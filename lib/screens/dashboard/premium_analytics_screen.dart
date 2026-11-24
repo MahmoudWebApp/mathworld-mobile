@@ -1,7 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:cross_file/cross_file.dart';
 import 'package:flutter/services.dart';
@@ -13,18 +12,29 @@ import '../../core/utils/error_message.dart';
 import '../../providers/premium_analytics_provider.dart';
 import '../../providers/stage_category_access_provider.dart';
 import '../../services/premium_analytics_service.dart';
-import '../../services/premium_analytics_pdf_service.dart';
+import '../../providers/learning_journey_provider.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 
-class PremiumAnalyticsScreen extends ConsumerWidget {
+class PremiumAnalyticsScreen extends ConsumerStatefulWidget {
   const PremiumAnalyticsScreen({super.key});
-
+  @override ConsumerState<PremiumAnalyticsScreen> createState()=>_PremiumAnalyticsScreenState();
+}
+class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen>{
+  String _scope='all';
+  int _days=0;
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final ar = context.locale.languageCode == 'ar';
     final entitlement = ref.watch(studentPremiumProvider);
+    final j=entitlement.valueOrNull==true?ref.watch(learningJourneyProvider).valueOrNull:null;
+    final enabled=j?.learningSessionsEnabled==true;
+    final category=_scope.startsWith('category:')?int.tryParse(_scope.substring(9)):null;
+    final validCategory=enabled&&j!.categories.any((c)=>c.categoryId==category)?category:null;
+    final scope=enabled?(_scope=='stage'||(_scope=='track'&&j!.trackId!=null)||validCategory!=null?_scope:'all'):'all';
+    final AnalyticsFilter filter=enabled?(stageId:scope=='all'?null:j!.stageId,categoryId:validCategory,trackId:scope=='track'||validCategory!=null?j!.trackId:null,days:_days==0?null:_days):allAnalytics;
+    final reportProvider=filter==allAnalytics?premiumAnalyticsProvider:filteredPremiumAnalyticsProvider(filter);
 
     return Scaffold(
       appBar: AppBar(
@@ -34,7 +44,7 @@ class PremiumAnalyticsScreen extends ConsumerWidget {
             tooltip: ar ? 'تحديث التقرير' : 'Refresh report',
             onPressed: () {
               ref.invalidate(studentPremiumProvider);
-              ref.invalidate(premiumAnalyticsProvider);
+              ref.invalidate(reportProvider);
             },
             icon: const Icon(Icons.refresh_rounded),
           ),
@@ -47,14 +57,27 @@ class PremiumAnalyticsScreen extends ConsumerWidget {
           onRetry: () => ref.invalidate(studentPremiumProvider),
         ),
         data: (premium) => premium
-            ? ref.watch(premiumAnalyticsProvider).when(
+            ? Column(children:[
+                if(enabled&&j!=null)Padding(padding:const EdgeInsets.symmetric(horizontal:16,vertical:8),child:Column(children:[
+                  DropdownButton<String>(isExpanded:true,value:scope,onChanged:(v)=>setState(()=>_scope=v??'all'),items:[
+                    DropdownMenuItem(value:'all',child:Text(ar?'جميع المراحل':'All stages')),
+                    DropdownMenuItem(value:'stage',child:Text(ar?'المرحلة الحالية':'Current stage')),
+                    if(j.trackId!=null)DropdownMenuItem(value:'track',child:Text(ar?'الصف أو المساق الحالي':'Current grade or course')),
+                    for(final c in j.categories)DropdownMenuItem(value:'category:'+c.categoryId.toString(),child:Text(c.getName(context.locale.languageCode),overflow:TextOverflow.ellipsis)),
+                  ]),
+                  DropdownButton<int>(isExpanded:true,value:_days,onChanged:(v)=>setState(()=>_days=v??0),items:[
+                    DropdownMenuItem(value:0,child:Text(ar?'كل الوقت':'All time')),
+                    for(final d in [7,30,90,365])DropdownMenuItem(value:d,child:Text(ar?'آخر $d يوم':'Last $d days')),
+                  ]),
+                ])),
+                Expanded(child:ref.watch(reportProvider).when(skipLoadingOnRefresh:false,skipLoadingOnReload:false,
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => AppErrorView(
                   message: localizedErrorMessage(error),
-                  onRetry: () => ref.invalidate(premiumAnalyticsProvider),
+                  onRetry: () => ref.invalidate(reportProvider),
                 ),
-                data: (report) => _ReportBody(report: report),
-              )
+                data: (report) => _ReportBody(key:ValueKey(filter),report: report,onRefresh:()=>ref.refresh(reportProvider.future).then((_){})),
+              )),])
             : Center(
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.xl),
@@ -96,42 +119,10 @@ class PremiumAnalyticsScreen extends ConsumerWidget {
 }
 
 class _ReportBody extends ConsumerWidget {
-  const _ReportBody({required this.report});
+  const _ReportBody({super.key,required this.report,required this.onRefresh});
 
   final PremiumAnalyticsReport report;
-
-  static String _csvCell(Object? value) {
-    var text = (value ?? '').toString();
-    if (RegExp(r'^\s*[=+\-@]').hasMatch(text)) text = "'$text";
-    return '"${text.replaceAll('"', '""').replaceAll(RegExp(r'[\r\n]'), ' ')}"';
-  }
-
-  String _csv() {
-    final rows = <List<Object?>>[
-      [
-        'StageId', 'CategoryId', 'StageAr', 'StageEn', 'CategoryAr',
-        'CategoryEn', 'Attempted', 'Solved', 'Errors', 'Attempts',
-        'Correct', 'Incorrect', 'FirstTryCorrect', 'Points', 'Seconds',
-      ],
-      for (final c in report.categories)
-        [
-          c.stageId, c.categoryId, c.stageNameAr, c.stageNameEn,
-          c.categoryNameAr, c.categoryNameEn, c.attemptedProblems,
-          c.solvedProblems, c.errorNotebookProblems, c.attempts,
-          c.correctAttempts, c.incorrectAttempts, c.firstTryCorrect,
-          c.awardedPoints, c.timeSpentSeconds,
-        ],
-    ];
-    final total = <Object?>[
-      'TOTAL', '', '', '', '', '',
-      report.attemptedProblems, report.solvedProblems,
-      report.categories.fold<int>(0, (sum, c) => sum + c.errorNotebookProblems),
-      report.attempts, report.correctAttempts, report.incorrectAttempts,
-      report.firstTryCorrect, report.awardedPoints, report.timeSpentSeconds,
-    ];
-    rows.add(total);
-    return rows.map((row) => row.map(_csvCell).join(',')).join('\r\n') + '\r\n';
-  }
+  final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -166,7 +157,7 @@ class _ReportBody extends ConsumerWidget {
 
     return MathBackground(
       child: RefreshIndicator(
-        onRefresh: () => ref.refresh(premiumAnalyticsProvider.future).then((_) {}),
+        onRefresh: onRefresh,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -188,6 +179,7 @@ class _ReportBody extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.sm),
                   Text(ar ? 'البيانات من محاولاتك المحفوظة، وليست أرقاماً تقديرية.'
                       : 'Stats are calculated from saved attempts, not estimates.'),
+                  if(report.scoreBasis=='PermanentAchievements')Text(ar?'النقاط حسب تاريخ اكتسابها، ودفتر الأخطاء يعرض الحالة الحالية. زمن الجلسات الموجهة غير مقاس.':'Points follow original earn dates; review errors show current state. Guided-session time is not measured.'),
                   const SizedBox(height: AppSpacing.md),
                   Text(
                     ar ? 'دقة المحاولات: ${correctness.toStringAsFixed(1)}%'
@@ -274,10 +266,9 @@ class _ReportBody extends ConsumerWidget {
             const SizedBox(height: AppSpacing.sm),
             OutlinedButton.icon(
               onPressed: () async {
-                final bytes = Uint8List.fromList([
-                  0xEF, 0xBB, 0xBF, ...utf8.encode(_csv()),
-                ]);
                 try {
+                  final bytes=await ref.read(premiumAnalyticsServiceProvider).exportCsv(language:ar?'ar':'en',filter:report.filter);
+                  if(!context.mounted)return;
                   final origin = context.findRenderObject() as RenderBox?;
                   await SharePlus.instance.share(
                     ShareParams(
@@ -304,11 +295,15 @@ class _ReportBody extends ConsumerWidget {
               label: Text(ar ? 'مشاركة ملف CSV / Excel' : 'Share Excel-ready CSV file'),
             ),
             const SizedBox(height: AppSpacing.sm),
-            const _XlsxDownloadButton(),
+            _XlsxDownloadButton(filter:report.filter),
             const SizedBox(height: AppSpacing.sm),
             OutlinedButton.icon(
               onPressed: () async {
-                await Clipboard.setData(ClipboardData(text: _csv()));
+                try {
+                  final bytes=await ref.read(premiumAnalyticsServiceProvider).exportCsv(language:ar?'ar':'en',filter:report.filter);
+                  if(!context.mounted)return;
+                  await Clipboard.setData(ClipboardData(text:utf8.decode(bytes.sublist(3))));
+                }catch(_){if(context.mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(ar?'تعذّر تحميل التقرير':'Could not load report')));return;}
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text(ar
@@ -323,8 +318,8 @@ class _ReportBody extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Text(
                 ar
-                    ? 'يمكنك مشاركة تقرير PDF عربي أو إنكليزي، وملف Excel بصيغة XLSX أو CSV. قد تحتاج اتصالاً بالإنترنت عند إنشاء أول PDF لتحميل الخط.'
-                    : 'Share a native PDF in Arabic or English, as well as XLSX or CSV. First PDF export may require internet access to fetch the embedded font.',
+                    ? 'يمكنك مشاركة PDF وExcel وCSV باللغة الحالية وبنفس فلاتر التقرير من الخادم.'
+                    : 'Share PDF, Excel and CSV in the current language using the same server report filters.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
@@ -337,7 +332,8 @@ class _ReportBody extends ConsumerWidget {
 }
 
 class _XlsxDownloadButton extends ConsumerStatefulWidget {
-  const _XlsxDownloadButton();
+  const _XlsxDownloadButton({required this.filter});
+  final AnalyticsFilter filter;
 
   @override
   ConsumerState<_XlsxDownloadButton> createState() =>
@@ -353,7 +349,7 @@ class _XlsxDownloadButtonState extends ConsumerState<_XlsxDownloadButton> {
     final ar = context.locale.languageCode == 'ar';
     try {
       final bytes = await ref.read(premiumAnalyticsServiceProvider)
-          .exportXlsx(language: ar ? 'ar' : 'en');
+          .exportXlsx(language: ar ? 'ar' : 'en',filter:widget.filter);
       if (!mounted) return;
       final origin = context.findRenderObject() as RenderBox?;
       await SharePlus.instance.share(ShareParams(
@@ -404,15 +400,15 @@ class _XlsxDownloadButtonState extends ConsumerState<_XlsxDownloadButton> {
 
 /// Kept separate from the report view so export progress does not rebuild
 /// the entire analytics page. The source report is already Premium-gated.
-class _PdfShareButton extends StatefulWidget {
+class _PdfShareButton extends ConsumerStatefulWidget {
   const _PdfShareButton({required this.report});
   final PremiumAnalyticsReport report;
 
   @override
-  State<_PdfShareButton> createState() => _PdfShareButtonState();
+  ConsumerState<_PdfShareButton> createState() => _PdfShareButtonState();
 }
 
-class _PdfShareButtonState extends State<_PdfShareButton> {
+class _PdfShareButtonState extends ConsumerState<_PdfShareButton> {
   bool _sharing = false;
 
   Future<void> _sharePdf() async {
@@ -420,9 +416,7 @@ class _PdfShareButtonState extends State<_PdfShareButton> {
     setState(() => _sharing = true);
     final ar = context.locale.languageCode == 'ar';
     try {
-      final bytes = await const PremiumAnalyticsPdfService().export(
-        widget.report, arabic: ar,
-      );
+      final bytes = await ref.read(premiumAnalyticsServiceProvider).exportPdf(language:ar?'ar':'en',filter:widget.report.filter);
       if (!mounted) return;
       final origin = context.findRenderObject() as RenderBox?;
       await SharePlus.instance.share(ShareParams(

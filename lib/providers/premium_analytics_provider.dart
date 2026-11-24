@@ -10,3 +10,5 @@ final premiumAnalyticsServiceProvider = Provider<PremiumAnalyticsService>(
 final premiumAnalyticsProvider = FutureProvider.autoDispose<PremiumAnalyticsReport>(
   (ref) => ref.watch(premiumAnalyticsServiceProvider).getReport(),
 );
+
+final filteredPremiumAnalyticsProvider=FutureProvider.autoDispose.family<PremiumAnalyticsReport,AnalyticsFilter>((ref,filter)=>ref.watch(premiumAnalyticsServiceProvider).getReport(filter:filter));
