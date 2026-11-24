@@ -16,6 +16,7 @@ import '../../utils/layout_utils.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/account_password_dialog.dart';
+import '../../widgets/email_preferences_dialog.dart';
 import '../../widgets/platform_contact_card.dart';
 
 /// Displays appearance, language, legal, and account preferences.
@@ -304,6 +305,21 @@ class SettingsScreen extends ConsumerWidget {
                         : 'Password changed. Please sign in again.',
                     )));
                   },
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+            ],
+            if (currentUser?.role == 'Student') ...[
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: ListTile(
+                  leading: const Icon(Icons.email_outlined),
+                  title: Text(context.locale.languageCode == 'ar' ? 'تفضيلات البريد الإلكتروني' : 'Email preferences'),
+                  trailing: LayoutUtils.forwardIcon(context),
+                  onTap: () => showDialog<void>(
+                    context: context,
+                    builder: (_) => EmailPreferencesDialog(userId: currentUser!.id),
+                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
