@@ -1,9 +1,6 @@
 name: Mobile social auth Android build
 
 on:
-  push:
-    branches:
-      - feature/social-google-mobile-auth-v1
   pull_request:
     paths:
       - 'lib/**'
