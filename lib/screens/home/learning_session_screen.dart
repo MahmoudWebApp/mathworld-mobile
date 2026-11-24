@@ -18,6 +18,7 @@ class _LearningSessionScreenState extends ConsumerState<LearningSessionScreen>{
   int _count=5;
   int? _selected;
   bool _busy=true,_loadFailed=false,_error=false;
+  String? _notice;
   late final int? _userId;
   LearningSessionApi get _api=>LearningSessionApi(ref.read(apiClientProvider));
   bool get ar=>context.locale.languageCode=='ar';
@@ -65,6 +66,27 @@ class _LearningSessionScreenState extends ConsumerState<LearningSessionScreen>{
     catch(_){if(mounted&&_sameUser)setState(()=>_error=true);}
     finally{if(mounted)setState(()=>_busy=false);}
   }
+  Future<void> _restartScope() async {
+    if(_busy||_pending!=null||_startId!=null)return;
+    setState((){_busy=true;_error=false;_notice=null;});
+    try{
+      final preview=await _api.previewRestart(widget.scope.categoryId);
+      if(!mounted||!_sameUser)return;
+      if(preview['StageId']!=widget.scope.stageId||preview['TrackId']!=widget.scope.trackId||preview['CategoryId']!=widget.scope.categoryId||
+          preview['SessionIds'] is! List)throw const AppException(type:AppExceptionType.invalidResponse,messageKey:'invalid_response');
+      final count=(preview['SessionIds'] as List).length;
+      if(count==0){setState(()=>_notice=tr('لا توجد جلسات مفتوحة ضمن هذا النطاق.','No open sessions in this scope.'));return;}
+      final accepted=await showDialog<bool>(context:context,builder:(dialog)=>AlertDialog(
+        title:Text(tr('إعادة بدء الجلسات المفتوحة','Restart open sessions')),
+        content:Text(tr('سيتم إنهاء $count جلسة مفتوحة في النطاق المحدد فقط. نقاطك وإنجازاتك ومحاولاتك محفوظة.','End $count open sessions in this scope only. Points, achievements and previous attempts remain.')),
+        actions:[TextButton(onPressed:()=>Navigator.pop(dialog,false),child:Text(tr('إلغاء','Cancel'))),
+          FilledButton(onPressed:()=>Navigator.pop(dialog,true),child:Text(tr('تأكيد','Confirm')))]));
+      if(accepted!=true||!mounted||!_sameUser)return;
+      await _api.restart(preview);
+      if(mounted&&_sameUser)setState((){_session=null;_loadFailed=false;_clear();_notice=tr('تم إنهاء الجلسات المفتوحة. إنجازاتك محفوظة.','Open sessions ended. Achievements preserved.');});
+    }catch(_){if(mounted&&_sameUser)setState(()=>_error=true);}
+    finally{if(mounted)setState(()=>_busy=false);}
+  }
   @override Widget build(BuildContext context){
     final user=ref.watch(authProvider.select((s)=>s.user));
     if(user?.id!=_userId||user?.role!='Student')return Scaffold(appBar:AppBar(),body:Center(child:Text(tr('سجّل الدخول مجدداً','Sign in again'))));
@@ -75,6 +97,8 @@ class _LearningSessionScreenState extends ConsumerState<LearningSessionScreen>{
     return Scaffold(appBar:AppBar(title:Text(practice?tr('جلسة تدريب','Practice session'):tr('تحدي اليوم','Daily challenge'))),
       body:SafeArea(child:ListView(padding:const EdgeInsets.all(16),children:[
         if(_busy)const LinearProgressIndicator(),
+        if(practice)OutlinedButton.icon(onPressed:_busy||_pending!=null||_startId!=null?null:_restartScope,icon:const Icon(Icons.restart_alt),label:Text(tr('إعادة بدء الجلسات المفتوحة','Restart open sessions'))),
+        if(_notice!=null)Text(_notice!),
         if(_error)Card(child:ListTile(title:Text(tr('تعذّر إكمال الطلب. أعد المحاولة أو حدّث الجلسة.','Could not complete the request. Retry or reload the session.')),
           trailing:IconButton(onPressed:_busy?null:_load,icon:const Icon(Icons.refresh)))),
         if(s==null&&!_loadFailed&&!_busy)...[

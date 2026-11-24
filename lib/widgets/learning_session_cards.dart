@@ -30,7 +30,20 @@ class LearningSessionCards extends ConsumerWidget{
     final daily=premium?ref.watch(_dailySessionProvider(key)):null;
     final achievements=ref.watch(_sessionAchievementsProvider(user.id));
     Future<void> open(String kind) async {
-      await Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>LearningSessionScreen(scope:SessionScope(kind:kind,stageId:journey.stageId,trackId:journey.trackId))));
+      int? category;
+      if(kind=='practice'){
+        final available=journey.categories.where((c)=>c.accessVerified&&!c.isLocked&&c.totalProblems>=5).toList();
+        final choice=await showDialog<int>(context:context,builder:(dialog)=>SimpleDialog(
+          title:Text(ar?'نطاق التدريب':'Practice scope'),
+          children:[
+            SimpleDialogOption(onPressed:()=>Navigator.pop(dialog,0),child:Text(ar?'كل الفئات المتاحة':'All available topics')),
+            for(final item in available)SimpleDialogOption(onPressed:()=>Navigator.pop(dialog,item.categoryId),child:Text(ar?item.nameAr:item.nameEn)),
+          ]));
+        if(choice==null||!context.mounted)return;
+        category=choice==0?null:choice;
+      }
+      if(!context.mounted)return;
+      await Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>LearningSessionScreen(scope:SessionScope(kind:kind,stageId:journey.stageId,trackId:journey.trackId,categoryId:category))));
       if(!context.mounted)return;
       ref.invalidate(_dailySessionProvider(key));ref.invalidate(_sessionAchievementsProvider(user.id));
       ref.invalidate(learningJourneyProvider);ref.invalidate(dashboardProvider);ref.invalidate(leaderboardProvider);
