@@ -6,6 +6,8 @@ void main(){
     final old=LearningJourney.fromJson({'StageId':1,'TotalPoints':12});
     expect(old.learningSessionsEnabled,isFalse);expect(old.displayedPoints,12);
     expect(old.certificatesEnabled,isFalse);
+    expect(old.trackPracticeIsolationEnabled,isFalse);
+    expect(LearningJourney.fromJson({'TrackPracticeIsolationEnabled':true}).trackPracticeIsolationEnabled,isTrue);
     expect(LearningJourney.fromJson({'CertificatesEnabled':true}).certificatesEnabled,isTrue);
     final next=LearningJourney.fromJson({'StageId':1,'TotalPoints':0,'PermanentPoints':12,'LearningSessionsEnabled':true});
     expect(next.learningSessionsEnabled,isTrue);expect(next.displayedPoints,12);

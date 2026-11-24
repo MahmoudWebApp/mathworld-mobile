@@ -128,6 +128,7 @@ class StageCategoriesScreen extends ConsumerWidget {
         ref.invalidate(dailyChallengeProvider);
         ref.invalidate(studentBadgesProvider);
         ref.invalidate(premiumAnalyticsProvider);
+        ref.invalidate(filteredPremiumAnalyticsProvider);
         ref.invalidate(leaderboardProvider);
         ref.invalidate(stageCategoryAccessProvider(stage.id));
         if (context.mounted) {

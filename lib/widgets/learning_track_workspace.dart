@@ -11,6 +11,11 @@ import '../providers/daily_challenge_provider.dart';
 import '../providers/premium_analytics_provider.dart';
 import '../providers/learning_tracks_provider.dart';
 import '../providers/repositories_provider.dart';
+import '../providers/user_lists_provider.dart';
+import '../providers/learning_provider.dart';
+import '../providers/problems_provider.dart';
+import '../providers/student_badges_provider.dart';
+import '../providers/leaderboard_provider.dart';
 
 class LearningTrackWorkspace extends ConsumerStatefulWidget {
   final int stageId;
@@ -74,11 +79,43 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
   }
 }
 
-class _TrackContent extends ConsumerWidget{
+class _TrackContent extends ConsumerStatefulWidget{
   final int id;final VoidCallback onChange;
   const _TrackContent({super.key,required this.id,required this.onChange});
   @override
-  Widget build(BuildContext context,WidgetRef ref){
+  ConsumerState<_TrackContent> createState()=>_TrackContentState();
+}
+class _TrackContentState extends ConsumerState<_TrackContent>{
+  int get id=>widget.id;
+  bool _resetting=false;
+  Future<void> _reset(int stageId,String name,{int? categoryId}) async{
+    if(_resetting)return;
+    final actor=ref.read(authProvider).user?.id;
+    if(actor==null)return;
+    final ar=context.locale.languageCode=='ar';
+    setState(()=>_resetting=true);
+    try{
+      final accepted=await showDialog<bool>(context:context,builder:(dialog)=>AlertDialog(
+        title:Text(ar?'تأكيد إعادة التدريب':'Confirm practice restart'),
+        content:Text('$name\n\n'+(ar?'يعود تقدم التدريب ودفتر الأخطاء في هذا النطاق فقط إلى البداية. النقاط الدائمة والمفضلة والشهادات وتقدم الصفوف الأخرى محفوظة.':'Only practice progress and review errors in this scope reset. Lifetime points, favorites, certificates and other tracks remain.')),
+        actions:[TextButton(onPressed:()=>Navigator.pop(dialog,false),child:Text(ar?'إلغاء':'Cancel')),FilledButton(onPressed:()=>Navigator.pop(dialog,true),child:Text(ar?'تأكيد':'Confirm'))]));
+      if(accepted!=true||!mounted||ref.read(authProvider).user?.id!=actor)return;
+      final selection=ref.read(trackSelectionProvider).valueOrNull;
+      if(selection?['StageId']!=stageId||selection?['TrackId']!=id)throw StateError('Practice scope changed');
+      await ref.read(apiClientProvider).post('/users/practice/reset',data:{'StageId':stageId,'TrackId':id,if(categoryId!=null)'CategoryId':categoryId});
+      if(!mounted||ref.read(authProvider).user?.id!=actor)return;
+      ref.invalidate(trackProgressProvider(id));ref.invalidate(trackPracticeProvider);
+      ref.invalidate(learningJourneyProvider);ref.invalidate(dashboardProvider);
+      ref.invalidate(solvedProvider);ref.invalidate(errorNotebookProvider);ref.invalidate(favoritesProvider);
+      ref.invalidate(problemsProvider);ref.invalidate(dailyChallengeProvider);ref.invalidate(studentBadgesProvider);
+      ref.invalidate(premiumAnalyticsProvider);ref.invalidate(filteredPremiumAnalyticsProvider);ref.invalidate(leaderboardProvider);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(ar?'بدأ تدريب جديد ضمن النطاق المحدد.':'A new practice cycle has started in the selected scope.')));
+    }catch(error){
+      if(mounted&&ref.read(authProvider).user?.id==actor)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(localizedErrorMessage(error))));
+    }finally{if(mounted)setState(()=>_resetting=false);}
+  }
+  @override
+  Widget build(BuildContext context){
     final ar=context.locale.languageCode=='ar';
     final detail=ref.watch(trackDetailsProvider(id));final progress=ref.watch(trackProgressProvider(id));
     void reload(){ref.invalidate(trackDetailsProvider(id));ref.invalidate(trackProgressProvider(id));}
@@ -89,10 +126,12 @@ class _TrackContent extends ConsumerWidget{
     final stats={for(final c in trackRows(p['Categories']))trackNumber(c['CategoryId']):c};
     final percent=(p['CompletionPercent'] as num?)?.toDouble()??0;
     return RefreshIndicator(onRefresh:()async{reload();await ref.read(trackProgressProvider(id).future);},child:ListView(padding:const EdgeInsets.all(16),children:[
-      Row(children:[Expanded(child:Text(trackText(track,'Name',ar),style:Theme.of(context).textTheme.headlineSmall)),TextButton(onPressed:onChange,child:Text(ar?'تغيير':'Change'))]),
+      Row(children:[Expanded(child:Text(trackText(track,'Name',ar),style:Theme.of(context).textTheme.headlineSmall)),TextButton(onPressed:_resetting?null:widget.onChange,child:Text(ar?'تغيير':'Change'))]),
       Text('${ar?'التقدم':'Progress'}: ${trackNumber(p['Solved'])}/${trackNumber(p['ProblemsCount'])} · ${percent.toStringAsFixed(1)}%'),
       const SizedBox(height:8),
       LinearProgressIndicator(value:(percent/100).clamp(0.0,1.0).toDouble()),
+      if(p['TrackPracticeIsolationEnabled']==true&&stats.values.any((c)=>trackNumber(c['Attempted'])>0))
+        OutlinedButton.icon(onPressed:_resetting?null:()=>_reset(trackNumber(p['StageId']),trackText(track,'Name',ar)),icon:const Icon(Icons.restart_alt),label:Text(ar?'إعادة تدريب الصف أو المساق':'Restart grade or course')),
       const SizedBox(height:16),
       for(final c in trackRows(d['Categories'])) Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         Row(children:[Expanded(child:Text(trackText(c,'Name',ar),style:Theme.of(context).textTheme.titleMedium)),Text('${trackNumber(c['ProblemsCount'])} ${ar?'مسألة':'problems'}')]),
@@ -105,6 +144,8 @@ class _TrackContent extends ConsumerWidget{
           if(stats[trackNumber(c['Id'])]?['IsLocked']==false)
             FilledButton(onPressed:()async{await Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>_TrackPractice(id:id,categoryId:trackNumber(c['Id']),name:trackText(c,'Name',ar))));if(context.mounted)ref.invalidate(trackProgressProvider(id));},child:Text(ar?'عرض المسائل':'View problems'))
           else TextButton(onPressed:()=>Navigator.pushNamed(context,AppRoutes.premiumBenefits),child:Text(ar?'ترقية الحساب':'Upgrade account')),
+          if(p['TrackPracticeIsolationEnabled']==true&&stats[trackNumber(c['Id'])]?['IsLocked']==false&&trackNumber(stats[trackNumber(c['Id'])]?['Attempted'])>0)
+            OutlinedButton(onPressed:_resetting?null:()=>_reset(trackNumber(p['StageId']),trackText(c,'Name',ar),categoryId:trackNumber(c['Id'])),child:Text(ar?'إعادة تدريب الفئة':'Restart topic')),
         ]),
       ]))),
       TextButton(onPressed:()=>Navigator.pushNamed(context,AppRoutes.learningStage),child:Text(ar?'تغيير المرحلة':'Change stage')),
