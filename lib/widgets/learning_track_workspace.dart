@@ -67,7 +67,7 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
       const SizedBox(height:12),
       for(final track in widget.catalog.items) Card(child:ListTile(
         title:Text(trackText(track,'Name',ar)),
-        subtitle:Text('${trackNumber(track['ProblemsCount'])} ${ar?'مسألة':'problems'}'),
+        subtitle:Text('${trackNumber(track['ProblemsCount'])} ${ar?'مسألة':'problems'}${track['FreeProblemsCount']!=null&&trackNumber(track['FreeProblemsCount'])==0?'\n${ar?'التدريب لمشتركي Premium':'Premium practice only'}':''}'),
         trailing:track['Id']==id?const Icon(Icons.check_circle_outline):null,
         enabled:!_busy,onTap:()=>_choose(trackNumber(track['Id'])),
       )),
