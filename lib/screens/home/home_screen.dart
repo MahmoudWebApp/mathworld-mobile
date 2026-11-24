@@ -28,6 +28,7 @@ import '../../widgets/student_badges_card.dart';
 import '../../widgets/rich_math_text.dart';
 import '../../widgets/stage_math_glyph.dart';
 import '../../widgets/learning_session_cards.dart';
+import '../certificates/certificates_screen.dart';
 
 /// Displays the user dashboard, progress summary, and learning shortcuts.
 class HomeScreen extends ConsumerWidget {
@@ -263,6 +264,13 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 if (learningJourney.valueOrNull?.learningSessionsEnabled == true)
                   LearningSessionCards(journey: learningJourney.valueOrNull!),
+                if (learningJourney.valueOrNull?.certificatesEnabled == true)
+                  Card(child:ListTile(
+                    leading:const Icon(Icons.workspace_premium_outlined),
+                    title:Text(context.locale.languageCode=='ar'?'شهاداتي التعليمية':'My learning certificates'),
+                    onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>CertificatesScreen(journey:learningJourney.valueOrNull!))),
+                    trailing:const Icon(Icons.arrow_forward_ios,size:16),
+                  )),
                 if (learningJourney.valueOrNull?.learningSessionsEnabled != true)
                 dailyPractice.when(
                   data: (challenge) => challenge == null

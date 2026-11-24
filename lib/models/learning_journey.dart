@@ -11,6 +11,7 @@ class LearningJourney {
   final int masteredProblems;
   final int totalPoints;
   final bool learningSessionsEnabled;
+  final bool certificatesEnabled;
   final int? permanentPoints;
   final int? permanentSolvedProblems;
   int get displayedPoints => learningSessionsEnabled ? (permanentPoints ?? totalPoints) : totalPoints;
@@ -29,6 +30,7 @@ class LearningJourney {
     required this.masteredProblems,
     required this.totalPoints,
     this.learningSessionsEnabled = false,
+    this.certificatesEnabled = false,
     this.permanentPoints,
     this.permanentSolvedProblems,
     required this.completionPercent,
@@ -53,6 +55,7 @@ class LearningJourney {
       ),
       totalPoints: _integer(data['TotalPoints'] ?? data['totalPoints']),
       learningSessionsEnabled: data['LearningSessionsEnabled']==true,
+      certificatesEnabled: data['CertificatesEnabled']==true,
       permanentPoints: data['PermanentPoints'] is num ? _integer(data['PermanentPoints']) : null,
       permanentSolvedProblems: data['PermanentSolvedProblems'] is num ? _integer(data['PermanentSolvedProblems']) : null,
       completionPercent: _integer(

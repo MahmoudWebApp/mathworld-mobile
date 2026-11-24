@@ -5,6 +5,8 @@ void main(){
   test('capability is opt-in and permanent points remain separate',(){
     final old=LearningJourney.fromJson({'StageId':1,'TotalPoints':12});
     expect(old.learningSessionsEnabled,isFalse);expect(old.displayedPoints,12);
+    expect(old.certificatesEnabled,isFalse);
+    expect(LearningJourney.fromJson({'CertificatesEnabled':true}).certificatesEnabled,isTrue);
     final next=LearningJourney.fromJson({'StageId':1,'TotalPoints':0,'PermanentPoints':12,'LearningSessionsEnabled':true});
     expect(next.learningSessionsEnabled,isTrue);expect(next.displayedPoints,12);
   });
