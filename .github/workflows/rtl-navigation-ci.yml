@@ -8,9 +8,6 @@ on:
       - 'lib/screens/dashboard/leaderboard_screen.dart'
       - 'test/rtl_navigation_test.dart'
       - '.github/workflows/rtl-navigation-ci.yml'
-  push:
-    branches:
-      - fix/rtl-directional-icons-v1
 
 permissions:
   contents: read
