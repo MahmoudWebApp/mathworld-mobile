@@ -27,6 +27,7 @@ import '../../widgets/premium_button.dart';
 import '../../widgets/student_badges_card.dart';
 import '../../widgets/rich_math_text.dart';
 import '../../widgets/stage_math_glyph.dart';
+import '../../widgets/learning_session_cards.dart';
 
 /// Displays the user dashboard, progress summary, and learning shortcuts.
 class HomeScreen extends ConsumerWidget {
@@ -260,6 +261,9 @@ class HomeScreen extends ConsumerWidget {
                     child: _JourneyStatusCard(isLoading: true),
                   ),
                 ),
+                if (learningJourney.valueOrNull?.learningSessionsEnabled == true)
+                  LearningSessionCards(journey: learningJourney.valueOrNull!),
+                if (learningJourney.valueOrNull?.learningSessionsEnabled != true)
                 dailyPractice.when(
                   data: (challenge) => challenge == null
                       ? const SizedBox.shrink()
@@ -752,7 +756,7 @@ class _StatsGrid extends StatelessWidget {
       ),
       _StatData(
         Icons.auto_awesome_rounded,
-        '${journey.totalPoints}',
+        '${journey.displayedPoints}',
         'stage_points'.tr(),
         AppColors.warning,
       ),
@@ -984,7 +988,7 @@ class _LearningJourneyCard extends StatelessWidget {
               ),
               _StageStat(
                 title: 'stage_points'.tr(),
-                value: '${journey.totalPoints}',
+                value: '${journey.displayedPoints}',
               ),
             ],
           ),
