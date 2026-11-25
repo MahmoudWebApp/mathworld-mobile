@@ -124,7 +124,7 @@ class HomeScreen extends ConsumerWidget {
       child: SafeArea(
         bottom: false,
         child: dashboardState.when(
-          loading: () => const AppLoadingView(),
+          loading: () => const AppContentSkeleton(cards:true),
           // The statistics endpoint can fail independently from the
           // learning journey. Keep the primary navigation usable.
           error: (error, _) => ListView(
