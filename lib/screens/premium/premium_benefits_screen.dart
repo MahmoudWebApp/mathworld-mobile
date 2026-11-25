@@ -58,13 +58,7 @@ class _PremiumBenefitsScreenState
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                ar
-                    ? 'قارن الحسابين ومميزاتهما بدون أسعار حالياً. المسائل غير محدودة ضمن الفئات المتاحة لحسابك.'
-                    : 'Compare the two plans without prices for now. Practice is unlimited in your accessible topics.',
-                style: theme.textTheme.bodyMedium,
-              ),
+
               const SizedBox(height: AppSpacing.lg),
               _planCard(
                 context,
@@ -101,17 +95,10 @@ class _PremiumBenefitsScreenState
                   ),
                   icon: const Icon(Icons.redeem_rounded),
                   label: Text(ar
-                      ? 'إدخال كود خصم 100% لتفعيل Premium'
-                      : 'Redeem a 100% Premium access code'),
+                      ? 'تفعيل Premium بكود'
+                      : 'Redeem Premium code'),
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  ar
-                      ? 'رمز خصم 100% من إدارة MathWorld يفعّل Premium مجاناً دون دفع. يُستخدم مرة واحدة.'
-                      : 'A 100% access code from MathWorld activates Premium free of charge. Each code is single-use.',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall,
-                ),
+
               ] else ...[
                 FilledButton.icon(
                   onPressed: () => Navigator.pushNamed(
