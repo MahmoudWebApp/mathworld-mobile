@@ -39,7 +39,6 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
         if (!mounted) return;
         Navigator.pushNamedAndRemoveUntil(
           context, AppRoutes.home, (_) => false,
-          arguments: const {'initialTab': 1},
         );
       } catch (error) {
         if (mounted) {
@@ -58,7 +57,6 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(
         context, AppRoutes.home, (_) => false,
-        arguments: const {'initialTab': 1},
       );
       return;
     }
@@ -70,7 +68,6 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
         context,
         AppRoutes.home,
         (_) => false,
-        arguments: const {'initialTab': 1},
       );
     } catch (error) {
       if (!mounted) return;

@@ -69,14 +69,26 @@ class MathBackground extends StatelessWidget {
   }
 }
 
-class _AmbientSymbolLayer extends StatelessWidget {
+class _AmbientSymbolLayer extends StatefulWidget {
   const _AmbientSymbolLayer();
-
+  @override
+  State<_AmbientSymbolLayer> createState()=>_AmbientSymbolLayerState();
+}
+class _AmbientSymbolLayerState extends State<_AmbientSymbolLayer> with SingleTickerProviderStateMixin {
+  late final AnimationController _motion=AnimationController(vsync:this,duration:const Duration(seconds:9));
+  @override
+  void didChangeDependencies(){
+    super.didChangeDependencies();
+    if(MediaQuery.disableAnimationsOf(context)){_motion.stop();_motion.value=0;}
+    else if(!_motion.isAnimating){_motion.repeat(reverse:true);}
+  }
+  @override
+  void dispose(){_motion.dispose();super.dispose();}
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return IgnorePointer(
-      child: Stack(
+      child: RepaintBoundary(child: AnimatedBuilder(animation:_motion,builder:(context,child)=>Transform.translate(offset:Offset(0,8*Curves.easeInOut.transform(_motion.value)),child:child),child: Stack(
         children: [
           Positioned(
             top: 32,
@@ -121,7 +133,7 @@ class _AmbientSymbolLayer extends StatelessWidget {
             ),
           ),
         ],
-      ),
+      ))),
     );
   }
 }

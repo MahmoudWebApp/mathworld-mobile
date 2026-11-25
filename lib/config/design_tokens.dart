@@ -5,9 +5,9 @@ class AppColors {
   AppColors._();
 
   // Shared with web: accessible purple actions and pink accents, no cyan UI.
-  static const Color brandPurple = Color(0xFF6D28D9);
+  static const Color brandPurple = Color(0xFF5C24FF);
   static const Color brandViolet = Color(0xFFA21CAF);
-  static const Color brandPink = Color(0xFFEC4899);
+  static const Color brandPink = Color(0xFFFF2399);
   static const Color brandLavender = Color(0xFF9B83DF);
 
   // Stage identities: playful color differentiation alongside the original
@@ -93,8 +93,7 @@ class AppGradients {
   static const LinearGradient primary = LinearGradient(
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
-    colors: [AppColors.brandPurple, AppColors.brandViolet, AppColors.brandPink],
-    stops: [0.0, 0.58, 1.0],
+    colors: [AppColors.brandPurple, AppColors.brandPink],
   );
 
   static const LinearGradient darkHero = LinearGradient(

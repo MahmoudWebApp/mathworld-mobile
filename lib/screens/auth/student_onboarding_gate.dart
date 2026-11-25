@@ -12,14 +12,13 @@ import '../../providers/stages_provider.dart';
 
 final studentOnboardingProvider = FutureProvider.autoDispose<String>((ref) async {
   final user = ref.watch(authProvider.select((s) => s.user));
-  if (user == null) return 'SignedOut';
+  if (user == null || user.role != 'Student') return 'SignedOut';
   try {
     final response = await ref.watch(apiClientProvider).get('/users/onboarding');
     final step = ApiEnvelope.map(response.data)['NextStep'];
     if (step is String && ['VerifyEmail','SelectStage','SelectTrack','Complete'].contains(step)) return step;
     throw const AppException(type: AppExceptionType.invalidResponse, messageKey: 'invalid_response');
   } on AppException catch (e) {
-    if (e.statusCode == 404 || e.type == AppExceptionType.notFound) return 'Complete';
     rethrow;
   }
 });
@@ -76,7 +75,7 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
     final client = ref.watch(apiClientProvider);
     final verify = widget.step == 'VerifyEmail';
     final stage = widget.step == 'SelectStage';
-    final stages = ref.watch(stagesProvider);
+    final stages = stage || (!verify && user?.currentStageId == null) ? ref.watch(stagesProvider) : null;
     final stageId = selectedStage ?? user?.currentStageId;
     final tracks = !verify && !stage && stageId != null ? ref.watch(publishedTracksProvider(stageId)) : null;
     return PopScope(canPop: false, child: Scaffold(
@@ -88,11 +87,11 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
           const Icon(Icons.mark_email_unread_outlined, size: 56),
           Text(ar?'أكد بريدك الإلكتروني أولاً':'Verify your email first', style: Theme.of(context).textTheme.headlineSmall),
           Text(ar?'افتح رابط التأكيد من بريدك، ثم ارجع واضغط متابعة.':'Open the verification link from your inbox, then return and continue.'),
-          FilledButton(onPressed: busy?null:()=>ref.invalidate(studentOnboardingProvider), child: Text(ar?'أكدت بريدي — متابعة':'I verified my email — continue')),
+          FilledButton(onPressed: busy?null:()=>ref.invalidate(studentOnboardingProvider), child: Text(ar?'تحقق من التأكيد وتابع':'Check verification and continue')),
           OutlinedButton(onPressed: busy?null:()=>perform(() async {await client.post('/auth/email-verification/request',data:{'Language':ar?'ar':'en'});},success:ar?'تم طلب الرابط. تحقق من بريدك.':'Link requested. Check your inbox.'), child: Text(ar?'إعادة إرسال رابط التأكيد':'Resend verification link')),
         ] else ...[
           Text(stage?(ar?'اختر مرحلتك التعليمية':'Choose your learning stage'):(ar?'اختر الصف أو السنة أو المساق':'Choose grade, year or course'),style: Theme.of(context).textTheme.headlineSmall),
-          if(stage || stageId == null) stages.when(
+          if(stages != null) stages.when(
             loading:()=>const Center(child:CircularProgressIndicator()),
             error:(_,__)=>TextButton(onPressed:()=>ref.invalidate(stagesProvider),child:Text(ar?'إعادة المحاولة':'Retry')),
             data:(items)=>Column(children:items.map((item)=>ListTile(
@@ -111,14 +110,14 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
             error:(_,__)=>TextButton(onPressed:()=>ref.invalidate(publishedTracksProvider(stageId!)),child:Text(ar?'إعادة المحاولة':'Retry')),
             data:(catalog)=>Column(children:[
               if(catalog.items.isEmpty) Text(ar?'لا توجد صفوف أو مساقات منشورة حالياً.':'No published grades or courses yet.'),
-              ...catalog.items.map((item)=>ListTile(title:Text(trackText(item,'Name',ar)),trailing:selectedTrack==trackNumber(item['Id'])?const Icon(Icons.check_circle):null,onTap:busy?null:()=>setState(()=>selectedTrack=trackNumber(item['Id'])))),
+              ...catalog.items.map((item)=>ListTile(title:Text(trackText(item,'Name',ar)),subtitle:_gradeAge(item,ar),trailing:selectedTrack==trackNumber(item['Id'])?const Icon(Icons.check_circle):null,onTap:busy?null:()=>setState(()=>selectedTrack=trackNumber(item['Id'])))),
               FilledButton(onPressed:busy||selectedTrack==null||!catalog.items.any((x)=>trackNumber(x['Id'])==selectedTrack)?null:()=>perform(() async{
                 await client.put('/users/learning-track',data:{'TrackId':selectedTrack});
                 await ref.read(authProvider.notifier).refreshProfile();
                 ref.invalidate(trackSelectionProvider);
                 ref.invalidate(studentOnboardingProvider);
                 if(mounted) Navigator.pushNamedAndRemoveUntil(context,AppRoutes.home,(_)=>false);
-              }),child:Text(ar?'حفظ المسار والمتابعة':'Save selection and continue')),
+              }),child:Text(ar?'حفظ والانتقال للرئيسية':'Save and go to home')),
             ]),
           ),
         ],
@@ -130,4 +129,11 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
       ])),
     ));
   }
+}
+
+Widget? _gradeAge(Map<String,dynamic> item,bool ar){
+  final m=RegExp(r'^grade-(\d+)$').firstMatch(item['Code']?.toString()??'');
+  final n=int.tryParse(m?.group(1)??'');
+  if(n==null||n<1||n>12)return null;
+  return Text(ar?'العمر التقريبي: ${n+5}–${n+6} سنة':'Typical age: ${n+5}–${n+6} years');
 }
