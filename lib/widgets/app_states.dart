@@ -1,8 +1,10 @@
+import 'dart:ui' as ui;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../config/design_tokens.dart';
 import 'glass_card.dart';
+import 'brand_logo.dart';
 
 /// Standard error state used across the application.
 class AppErrorView extends StatelessWidget {
@@ -104,5 +106,28 @@ class AppEmptyView extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Same branded loading state for data, search, filters and section changes.
+enum AppLoadingMode { data, search, filter, section }
+class AppLoadingView extends StatelessWidget {
+  const AppLoadingView({super.key,this.mode=AppLoadingMode.data});
+  final AppLoadingMode mode;
+  @override
+  Widget build(BuildContext context){
+    final ar=context.locale.languageCode=='ar';
+    final label=switch(mode){
+      AppLoadingMode.data=>ar?'جارٍ تحميل البيانات…':'Loading data…',
+      AppLoadingMode.search=>ar?'جارٍ البحث…':'Searching…',
+      AppLoadingMode.filter=>ar?'جارٍ تصفية النتائج…':'Filtering results…',
+      AppLoadingMode.section=>ar?'جارٍ تحميل القسم…':'Loading section…',
+    };
+    return Semantics(label:label,liveRegion:true,child:ExcludeSemantics(child:Center(child:Padding(padding:const EdgeInsets.all(20),child:Column(mainAxisSize:MainAxisSize.min,children:[
+      SizedBox(width:72,height:72,child:Stack(alignment:Alignment.center,children:[
+        SizedBox(width:70,height:70,child:CircularProgressIndicator(value:MediaQuery.disableAnimationsOf(context)?0.7:null,strokeWidth:2.5,color:AppColors.brandPurple,backgroundColor:AppColors.brandPink.withValues(alpha:0.14))),
+        const BrandMark(size:48),
+      ])),const SizedBox(height:12),const Text.rich(TextSpan(children:[TextSpan(text:'Math',style:TextStyle(color:AppColors.brandPurple)),TextSpan(text:'World',style:TextStyle(color:AppColors.brandPink))]),textDirection:ui.TextDirection.ltr,style:TextStyle(fontWeight:FontWeight.w800)),const SizedBox(height:6),Text(label,textAlign:TextAlign.center),
+    ])))));
   }
 }

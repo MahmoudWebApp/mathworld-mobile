@@ -8,6 +8,7 @@ import '../../core/utils/error_message.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/leaderboard_provider.dart';
 import '../../widgets/glass_card.dart';
+import '../../widgets/app_states.dart';
 import '../../widgets/math_background.dart';
 import '../../utils/layout_utils.dart';
 
@@ -54,13 +55,6 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('leaderboard_title'.tr()),
-        actions: [
-          IconButton(
-            onPressed: () => ref.invalidate(leaderboardProvider(filter)),
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'retry'.tr(),
-          ),
-        ],
       ),
       body: MathBackground(
         child: SafeArea(
@@ -73,12 +67,6 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                 AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 32,
               ),
               children: [
-                Text(
-                  isArabic
-                      ? 'الترتيب يعرض طلاباً حلّوا مسائل فعلياً في مرحلتك. أسماء الآخرين مختصرة أو مخفية للخصوصية، وليست أسماء حسابات أُنشئت للترتيب.'
-                      : 'Rankings reflect real solved problems in your stage. Other learners have abbreviated or hidden names for privacy; ranks do not create accounts.',
-                  style: Theme.of(context).textTheme.bodyMedium),
-                const SizedBox(height: AppSpacing.md),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -90,12 +78,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 result.when(
-                  loading: () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(AppSpacing.xxl),
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
+                  skipLoadingOnRefresh:false,skipLoadingOnReload:false,
+                  loading: () => const AppLoadingView(mode:AppLoadingMode.filter),
                   error: (error, _) => GlassCard(
                     child: Column(
                       children: [
@@ -120,12 +104,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                           setState(() => _page = 1);
                         }
                       });
-                      return const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(AppSpacing.xxl),
-                          child: CircularProgressIndicator(),
-                        ),
-                      );
+                      return const AppLoadingView(mode:AppLoadingMode.filter);
                     }
                     if (leaderboard.entries.isEmpty) {
                       return GlassCard(

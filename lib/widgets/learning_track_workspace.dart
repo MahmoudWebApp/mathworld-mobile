@@ -1,3 +1,4 @@
+import 'app_states.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +15,7 @@ import '../providers/repositories_provider.dart';
 import '../providers/user_lists_provider.dart';
 import '../providers/learning_provider.dart';
 import '../providers/problems_provider.dart';
+import '../providers/problem_details_provider.dart';
 import '../providers/student_badges_provider.dart';
 import '../providers/leaderboard_provider.dart';
 
@@ -37,13 +39,23 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
       final result=ApiEnvelope.map(response.data);
       if(result['TrackId']!=id||result['StageId']!=widget.stageId)throw StateError('Invalid track selection response');
       if(!mounted||ref.read(authProvider).user?.id!=actor)return;
+      await ref.read(authProvider.notifier).refreshProfile();
+      if(!mounted||ref.read(authProvider).user?.id!=actor)return;
       ref.invalidate(trackSelectionProvider);
+      ref.invalidate(trackPracticeProvider);
       ref.invalidate(trackProgressProvider);
+      ref.invalidate(solvedProvider);
+      ref.invalidate(favoritesProvider);
+      ref.invalidate(errorNotebookProvider);
+      ref.invalidate(problemDetailsProvider);
+      ref.invalidate(problemsProvider);
+      ref.invalidate(leaderboardProvider);
+      ref.invalidate(studentBadgesProvider);
       ref.invalidate(dashboardProvider);
       ref.invalidate(learningJourneyProvider);
       ref.invalidate(dailyChallengeProvider);
       ref.invalidate(premiumAnalyticsProvider);
-      setState(()=>_changing=false);
+      Navigator.pushNamedAndRemoveUntil(context,AppRoutes.home,(_)=>false);
     }catch(error){
       if(mounted)setState(()=>_error=localizedErrorMessage(error));
     }finally{
@@ -54,7 +66,7 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
   Widget build(BuildContext context){
     final ar=context.locale.languageCode=='ar';
     final selection=ref.watch(trackSelectionProvider);
-    if(selection.isLoading&&!selection.hasValue)return const Center(child:CircularProgressIndicator());
+    if(selection.isLoading&&!selection.hasValue)return const AppLoadingView(mode:AppLoadingMode.section);
     if(selection.hasError)return Center(child:TextButton(onPressed:()=>ref.invalidate(trackSelectionProvider),child:Text(ar?'إعادة المحاولة':'Retry')));
     final current=selection.valueOrNull;
     final id=trackNumber(current?['TrackId']);
@@ -121,7 +133,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
     void reload(){ref.invalidate(trackDetailsProvider(id));ref.invalidate(trackProgressProvider(id));}
     if(detail.hasError||progress.hasError)return Center(child:TextButton(onPressed:reload,child:Text(ar?'إعادة المحاولة':'Retry')));
     final d=detail.valueOrNull;final p=progress.valueOrNull;
-    if(d==null||p==null)return const Center(child:CircularProgressIndicator());
+    if(d==null||p==null)return const AppLoadingView(mode:AppLoadingMode.section);
     final track=Map<String,dynamic>.from(d['Track'] as Map);
     final stats={for(final c in trackRows(p['Categories']))trackNumber(c['CategoryId']):c};
     final percent=(p['CompletionPercent'] as num?)?.toDouble()??0;
@@ -164,7 +176,7 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
     final key=(trackId:widget.id,categoryId:widget.categoryId,page:_page);
     final state=ref.watch(trackPracticeProvider(key));
     final data=state.valueOrNull;
-    return Scaffold(appBar:AppBar(title:Text(widget.name)),body:state.hasError?Center(child:TextButton(onPressed:()=>ref.invalidate(trackPracticeProvider(key)),child:Text(ar?'إعادة المحاولة':'Retry'))):data==null?const Center(child:CircularProgressIndicator()):ListView(padding:const EdgeInsets.all(12),children:[
+    return Scaffold(appBar:AppBar(title:Text(widget.name)),body:state.hasError?Center(child:TextButton(onPressed:()=>ref.invalidate(trackPracticeProvider(key)),child:Text(ar?'إعادة المحاولة':'Retry'))):data==null?const AppLoadingView(mode:AppLoadingMode.section):ListView(padding:const EdgeInsets.all(12),children:[
       for(final problem in trackRows(data['Items'])) Card(child:ListTile(title:Text(trackText(problem,'Title',ar)),subtitle:Text(problem['IsSolved']==true?(ar?'محلولة':'Solved'):(ar?'غير محلولة':'Unsolved')),onTap:()async{
         await Navigator.pushNamed(context,AppRoutes.problemDetails,arguments:trackNumber(problem['Id']));
         if(mounted){ref.invalidate(trackPracticeProvider(key));ref.invalidate(trackProgressProvider(widget.id));ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}

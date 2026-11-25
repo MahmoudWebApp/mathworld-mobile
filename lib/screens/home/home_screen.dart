@@ -124,7 +124,7 @@ class HomeScreen extends ConsumerWidget {
       child: SafeArea(
         bottom: false,
         child: dashboardState.when(
-          loading: () => const _HomeSkeleton(),
+          loading: () => const AppLoadingView(),
           // The statistics endpoint can fail independently from the
           // learning journey. Keep the primary navigation usable.
           error: (error, _) => ListView(
@@ -259,7 +259,7 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   loading: () => const Padding(
                     padding: EdgeInsets.only(bottom: AppSpacing.lg),
-                    child: _JourneyStatusCard(isLoading: true),
+                    child: AppLoadingView(mode:AppLoadingMode.section),
                   ),
                 ),
                 if (learningJourney.valueOrNull?.learningSessionsEnabled == true)
@@ -306,18 +306,9 @@ class HomeScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
-                  loading: () => Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                    child: GlassCard(
-                      child: Row(children: [
-                        const SizedBox.square(dimension: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2)),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(child: Text(context.locale.languageCode == 'ar'
-                          ? 'جارٍ تحميل مسائل اليوم…'
-                          : 'Loading daily practice…')),
-                      ]),
-                    ),
+                  loading: () => const Padding(
+                    padding: EdgeInsets.only(bottom: AppSpacing.lg),
+                    child: AppLoadingView(mode:AppLoadingMode.section),
                   ),
                   error: (error, _) => isBackendMismatch(error)
                       ? const SizedBox.shrink()
@@ -1057,30 +1048,3 @@ class _StatData {
   const _StatData(this.icon, this.value, this.label, this.color);
 }
 
-class _HomeSkeleton extends StatelessWidget {
-  const _HomeSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.lg,
-        132,
-      ),
-      children: List.generate(
-        5,
-        (index) => Container(
-          height: index == 0 ? 180 : 125,
-          margin: const EdgeInsets.only(bottom: AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: Theme.of(context).colorScheme.outline),
-          ),
-        ),
-      ),
-    );
-  }
-}

@@ -17,6 +17,7 @@ import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/account_password_dialog.dart';
 import '../../widgets/email_preferences_dialog.dart';
+import '../../widgets/leaderboard_name_preference.dart';
 import '../../widgets/platform_contact_card.dart';
 
 /// Displays appearance, language, legal, and account preferences.
@@ -42,18 +43,18 @@ class SettingsScreen extends ConsumerWidget {
       showSymbols: false,
       child: SafeArea(
         bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 18, 16, 132),
-          children: [
-            if (embedded) ...[
-              Text(
-                'settings'.tr(),
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 6),
-              Text('settings_subtitle'.tr()),
-              const SizedBox(height: 24),
-            ],
+        child: DefaultTabController(
+          length: 4,
+          child: Column(children: [
+            if(embedded) Padding(padding: const EdgeInsets.fromLTRB(16,12,16,8),child: Row(mainAxisAlignment:MainAxisAlignment.spaceBetween,children:[Text('settings'.tr(),style:Theme.of(context).textTheme.headlineSmall),Icon(Icons.settings_outlined,color:Theme.of(context).colorScheme.primary)])),
+            TabBar(isScrollable:true,tabAlignment:TabAlignment.start,tabs:[
+              Tab(text:context.locale.languageCode=='ar'?'المظهر واللغة':'Appearance'),
+              Tab(text:context.locale.languageCode=='ar'?'التعلّم':'Learning'),
+              Tab(text:context.locale.languageCode=='ar'?'الحساب':'Account'),
+              Tab(text:context.locale.languageCode=='ar'?'حول التطبيق':'About'),
+            ]),
+            Expanded(child:TabBarView(children:[
+ListView(key: const PageStorageKey('settings-0'),padding:const EdgeInsets.all(16),children:[
             _SectionTitle(title: 'appearance'.tr()),
             const SizedBox(height: 10),
             GlassCard(
@@ -124,6 +125,8 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 24),
+]),
+ListView(key: const PageStorageKey('settings-1'),padding:const EdgeInsets.all(16),children:[
             _SectionTitle(title: 'learning_tools'.tr()),
             const SizedBox(height: 10),
             GlassCard(
@@ -207,6 +210,8 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
             const SizedBox(height: 24),
+]),
+ListView(key: const PageStorageKey('settings-2'),padding:const EdgeInsets.all(16),children:[
             // The linking tile disappears after the API confirms Google.
             // Verification errors still allow retry.
             if (GoogleIdentityService.available &&
@@ -283,7 +288,7 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.xl),
             ],
-            if (currentUser?.role == 'Student') ...[
+            if (currentUser != null && currentUser.role == 'Student') ...[
               _SectionTitle(title: context.locale.languageCode == 'ar' ? 'أمان الحساب' : 'Account security'),
               const SizedBox(height: 10),
               GlassCard(
@@ -309,7 +314,9 @@ class SettingsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.xl),
             ],
-            if (currentUser?.role == 'Student') ...[
+            if (currentUser != null && currentUser.role == 'Student') ...[
+              LeaderboardNamePreference(key: ValueKey(currentUser.id), userId: currentUser.id),
+              const SizedBox(height: AppSpacing.md),
               GlassCard(
                 padding: EdgeInsets.zero,
                 child: ListTile(
@@ -318,12 +325,14 @@ class SettingsScreen extends ConsumerWidget {
                   trailing: LayoutUtils.forwardIcon(context),
                   onTap: () => showDialog<void>(
                     context: context,
-                    builder: (_) => EmailPreferencesDialog(userId: currentUser!.id),
+                    builder: (_) => EmailPreferencesDialog(userId: currentUser.id),
                   ),
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
             ],
+]),
+ListView(key: const PageStorageKey('settings-3'),padding:const EdgeInsets.all(16),children:[
             _SectionTitle(title: 'about_and_legal'.tr()),
             const SizedBox(height: 10),
             GlassCard(
@@ -391,7 +400,9 @@ class SettingsScreen extends ConsumerWidget {
                 },
               ),
             ),
-          ],
+]),
+            ])),
+          ]),
         ),
       ),
     );

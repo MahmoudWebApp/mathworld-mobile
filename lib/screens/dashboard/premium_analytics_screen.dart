@@ -39,19 +39,9 @@ class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text(ar ? 'تقريري الشخصي' : 'My progress report'),
-        actions: [
-          IconButton(
-            tooltip: ar ? 'تحديث التقرير' : 'Refresh report',
-            onPressed: () {
-              ref.invalidate(studentPremiumProvider);
-              ref.invalidate(reportProvider);
-            },
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-        ],
       ),
       body: entitlement.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const AppLoadingView(),
         error: (error, _) => AppErrorView(
           message: localizedErrorMessage(error),
           onRetry: () => ref.invalidate(studentPremiumProvider),
@@ -59,19 +49,20 @@ class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen>
         data: (premium) => premium
             ? Column(children:[
                 if(enabled&&j!=null)Padding(padding:const EdgeInsets.symmetric(horizontal:16,vertical:8),child:Column(children:[
-                  DropdownButton<String>(isExpanded:true,value:scope,onChanged:(v)=>setState(()=>_scope=v??'all'),items:[
+                  DropdownButtonFormField<String>(decoration:InputDecoration(labelText:ar?'النطاق':'Scope',border:OutlineInputBorder(borderRadius:BorderRadius.circular(12))),isExpanded:true,initialValue:scope,key:ValueKey(scope),onChanged:(v)=>setState(()=>_scope=v??'all'),items:[
                     DropdownMenuItem(value:'all',child:Text(ar?'جميع المراحل':'All stages')),
                     DropdownMenuItem(value:'stage',child:Text(ar?'المرحلة الحالية':'Current stage')),
                     if(j.trackId!=null)DropdownMenuItem(value:'track',child:Text(ar?'الصف أو المساق الحالي':'Current grade or course')),
                     for(final c in j.categories)DropdownMenuItem(value:'category:'+c.categoryId.toString(),child:Text(c.getName(context.locale.languageCode),overflow:TextOverflow.ellipsis)),
                   ]),
-                  DropdownButton<int>(isExpanded:true,value:_days,onChanged:(v)=>setState(()=>_days=v??0),items:[
+                  const SizedBox(height:12),
+                  DropdownButtonFormField<int>(decoration:InputDecoration(labelText:ar?'الفترة':'Period',border:OutlineInputBorder(borderRadius:BorderRadius.circular(12))),isExpanded:true,initialValue:_days,key:ValueKey(_days),onChanged:(v)=>setState(()=>_days=v??0),items:[
                     DropdownMenuItem(value:0,child:Text(ar?'كل الوقت':'All time')),
                     for(final d in [7,30,90,365])DropdownMenuItem(value:d,child:Text(ar?'آخر $d يوم':'Last $d days')),
                   ]),
                 ])),
                 Expanded(child:ref.watch(reportProvider).when(skipLoadingOnRefresh:false,skipLoadingOnReload:false,
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => const AppLoadingView(mode:AppLoadingMode.filter),
                 error: (error, _) => AppErrorView(
                   message: localizedErrorMessage(error),
                   onRetry: () => ref.invalidate(reportProvider),

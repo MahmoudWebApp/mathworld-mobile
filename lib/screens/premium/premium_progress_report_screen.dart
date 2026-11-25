@@ -57,10 +57,8 @@ class _PremiumProgressReportScreenState
                         ),
                       ),
                     )
-                  : ref.watch(premiumProgressReportProvider(stageId)).when(
-                      loading: () => const Center(
-                        child: CircularProgressIndicator(),
-                      ),
+                  : ref.watch(premiumProgressReportProvider(stageId)).when(skipLoadingOnRefresh:false,skipLoadingOnReload:false,
+                      loading: () => const AppLoadingView(mode:AppLoadingMode.section),
                       error: (error, _) => AppErrorView(
                         message: localizedErrorMessage(error),
                         onRetry: () => ref.invalidate(

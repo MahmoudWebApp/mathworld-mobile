@@ -154,7 +154,7 @@ class StageCategoriesScreen extends ConsumerWidget {
         top: embedded,
         bottom: false,
         child: accessState.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const AppLoadingView(mode:AppLoadingMode.section),
           error: (error, __) => AppErrorView(
             message: localizedErrorMessage(error),
             onRetry: () => ref.invalidate(
@@ -424,7 +424,7 @@ class CurrentStageCategoriesScreen extends ConsumerWidget {
     // An explicit disabled/legacy API response preserves existing stage UI.
     // A temporary failure must not silently switch a selected track to a stage.
     if (trackCatalog.isLoading && !trackCatalog.hasValue) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoadingView(mode:AppLoadingMode.section);
     }
     if (trackCatalog.hasError) {
       return AppErrorView(onRetry: () => ref.invalidate(publishedTracksProvider(stageId)));
@@ -435,7 +435,7 @@ class CurrentStageCategoriesScreen extends ConsumerWidget {
     }
 
     return ref.watch(stagesProvider).when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const AppLoadingView(mode:AppLoadingMode.section),
       error: (error, _) => AppErrorView(
         message: localizedErrorMessage(error),
         onRetry: () => ref.invalidate(stagesProvider),

@@ -39,7 +39,6 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
         if (!mounted) return;
         Navigator.pushNamedAndRemoveUntil(
           context, AppRoutes.home, (_) => false,
-          arguments: const {'initialTab': 1},
         );
       } catch (error) {
         if (mounted) {
@@ -58,7 +57,6 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(
         context, AppRoutes.home, (_) => false,
-        arguments: const {'initialTab': 1},
       );
       return;
     }
@@ -70,7 +68,6 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
         context,
         AppRoutes.home,
         (_) => false,
-        arguments: const {'initialTab': 1},
       );
     } catch (error) {
       if (!mounted) return;
@@ -226,7 +223,7 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
                   label: widget.onCreateAccount != null
                       ? (language == 'ar' ? 'إكمال إنشاء الحساب' : 'Finish registration')
                       : effective != null && effective == user?.currentStageId
-                      ? (language == 'ar' ? 'استكشف الفئات' : 'Explore topics')
+                      ? (language == 'ar' ? 'العودة للرئيسية' : 'Return to home')
                       : (language == 'ar' ? 'حفظ المرحلة والمتابعة' : 'Save stage and continue'),
                   trailingIcon: Icons.arrow_forward_rounded,
                   onPressed: effective == null || _saving

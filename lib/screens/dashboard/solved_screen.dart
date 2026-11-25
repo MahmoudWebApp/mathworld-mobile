@@ -24,7 +24,8 @@ class SolvedScreen extends ConsumerWidget {
       body: MathBackground(
         child: SafeArea(
           child: solvedState.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            skipLoadingOnRefresh:false,skipLoadingOnReload:false,
+            loading: () => const AppLoadingView(mode:AppLoadingMode.section),
             error: (error, __) => AppErrorView(
               message: localizedErrorMessage(error),
               onRetry: () => ref.invalidate(solvedProvider),
