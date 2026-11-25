@@ -59,9 +59,9 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
     try{
       await ref.read(apiClientProvider).post('$_root/issue',data:_scope);
       if(!mounted||!_sameOwner)return;
-      setState(()=>_notice=tr('تم إصدار الشهادة وحفظها.','Certificate issued and saved.'));
+      setState((){_choice=null;_eligibility=null;_notice=tr('تم إصدار الشهادة وحفظها.','Certificate issued and saved.');});
       await _load();
-    }catch(_){if(mounted&&_sameOwner)setState(()=>_error=true);}
+    }catch(_){if(mounted&&_sameOwner)setState((){_error=true;_eligibility=null;});}
     finally{if(mounted)setState(()=>_busy=false);}
   }
   Future<void> _share(Map<String,dynamic> cert,String lang) async{
