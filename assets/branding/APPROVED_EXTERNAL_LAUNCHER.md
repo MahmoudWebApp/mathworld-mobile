@@ -1,6 +1,6 @@
 # MathWorld approved external Android launcher
 
-**Approved artwork:** glossy unified blue → violet → magenta rounded-square
+**Approved artwork:** glossy balanced violet → pink rounded-square
 icon featuring the graduation-cap stroke and `Σ x²`, **without** a separate
 smaller hexagonal badge or pastel outer background.
 
@@ -11,8 +11,7 @@ smaller hexagonal badge or pastel outer background.
 - Exact deterministic generator:
   `python tools/rebuild_approved_external_launcher.py`
 - Native Android launcher: all mipmap densities, adaptive foreground, legacy icon.
-- Generated and committed to `main` by GitHub Actions; use signed release APK
-  built **after** the generated resources commit.
+- Generated resources are committed with the branding change. The maintenance workflow regenerates only on explicit dispatch; regular CI audits the committed artwork. Use the signed APK built from the merged branding commit.
 
 ## Branding boundary — mandatory
 
@@ -30,10 +29,10 @@ external Android icon.
 ## Android release verification
 
 After rebuilding, verify:
-1. Launcher artwork shows a **single** continuous blue/violet/magenta field.
+1. Launcher artwork shows a **single** continuous violet/pink field, split equally with a narrow transition.
 2. `Σ x²` and graduation cap remain legible on installed launcher at 48–192px.
 3. On Android 8+, adaptive launcher uses the approved artwork with the device mask.
-4. In-app MathWorld mark remains identical to the earlier version.
+4. In-app MathWorld mark matches the balanced web mark; the external rounded artwork retains its approved geometry.
 5. Google sign-in still uses the established signing certificate; no QA package ID.
 
 The compressed source is intentionally compact for reproducible GitHub Actions.

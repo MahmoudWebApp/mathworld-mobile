@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ASSETS = {
     "flutter-mark": "assets/branding/mathworld-mark.png",
     "android-adaptive-foreground": "android/app/src/main/res/drawable-nodpi/mathworld_adaptive_foreground.png",
-    "android-legacy-source": "android/app/src/main/res/drawable-nodpi/mathworld_external_launcher.webp",
+    "android-legacy-source": "android/app/src/main/res/drawable-nodpi/mathworld_external_launcher.png",
     "android-native-launch": "android/app/src/main/res/drawable-nodpi/launch_image.png",
     "android-launcher-mdpi": "android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
     "android-launcher-round-mdpi": "android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png",
@@ -96,7 +96,7 @@ def main():
     native_launch=next(x for x in results if x["name"] == "ios-native-launch-3x")
     if (native_launch["width"],native_launch["height"]) != (504,555):
         raise SystemExit("Native iOS splash image must be 504x555 pixels at 3x")
-    print("PASS: Android launcher full-bleed; Flutter mark, iOS/PWA and native splash unchanged")
+    print("PASS: Android launcher full-bleed; mark and native splash retain transparent geometry")
 
 if __name__=="__main__":
     main()
