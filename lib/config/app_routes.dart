@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../screens/auth/login_screen.dart';
+import '../screens/auth/student_onboarding_gate.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/dashboard/error_notebook_screen.dart';
 import '../screens/dashboard/solved_screen.dart';
@@ -44,22 +45,22 @@ class AppRoutes {
       splash: (_) => const SplashScreen(),
       login: (_) => const LoginScreen(),
       register: (_) => const RegisterScreen(),
-      home: (_) => const MainShell(),
-      solved: (_) => const SolvedScreen(),
-      errorNotebook: (_) => const ErrorNotebookScreen(),
-      stageCategories: (_) => const StageCategoriesScreen(),
-      learningStage: (_) => const LearningStageScreen(),
-      leaderboard: (_) => const LeaderboardScreen(),
-      problems: (_) => const ProblemsListScreen(),
-      problemDetails: (_) => const ProblemDetailsScreen(),
+      home: (_) => StudentOnboardingGate(child: const MainShell()),
+      solved: (_) => StudentOnboardingGate(child: const SolvedScreen()),
+      errorNotebook: (_) => StudentOnboardingGate(child: const ErrorNotebookScreen()),
+      stageCategories: (_) => StudentOnboardingGate(child: const StageCategoriesScreen()),
+      learningStage: (_) => StudentOnboardingGate(child: const LearningStageScreen()),
+      leaderboard: (_) => StudentOnboardingGate(child: const LeaderboardScreen()),
+      problems: (_) => StudentOnboardingGate(child: const ProblemsListScreen()),
+      problemDetails: (_) => StudentOnboardingGate(child: const ProblemDetailsScreen()),
       privacy: (_) => const PrivacyScreen(),
-      notifications: (_) => const NotificationsScreen(),
-      premiumAnalytics: (_) => const PremiumAnalyticsScreen(),
-      premiumBenefits: (_) => const PremiumBenefitsScreen(),
-      premiumReport: (_) => const PremiumProgressReportScreen(),
-      premiumGiftRedeem: (_) => const PremiumGiftRedeemScreen(),
+      notifications: (_) => StudentOnboardingGate(child: const NotificationsScreen()),
+      premiumAnalytics: (_) => StudentOnboardingGate(child: const PremiumAnalyticsScreen()),
+      premiumBenefits: (_) => StudentOnboardingGate(child: const PremiumBenefitsScreen()),
+      premiumReport: (_) => StudentOnboardingGate(child: const PremiumProgressReportScreen()),
+      premiumGiftRedeem: (_) => StudentOnboardingGate(child: const PremiumGiftRedeemScreen()),
       // Preserve old deep links but never expose unavailable checkout pricing.
-      premiumCheckout: (_) => const PremiumBenefitsScreen(),
+      premiumCheckout: (_) => StudentOnboardingGate(child: const PremiumBenefitsScreen()),
     };
   }
 }
