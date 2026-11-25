@@ -27,11 +27,7 @@ class _SocialSignInButtonsState extends ConsumerState<SocialSignInButtons> {
     try {
       await ref.read(authProvider.notifier).loginWithGoogle();
       if (!mounted) return;
-      final user = ref.read(authProvider).user;
-      final target = user?.role == 'Student' &&
-              user?.currentStageId == null
-          ? AppRoutes.learningStage
-          : AppRoutes.home;
+      final target = AppRoutes.home;
       Navigator.pushNamedAndRemoveUntil(context, target, (_) => false);
     } catch (error) {
       if (!mounted) return;
