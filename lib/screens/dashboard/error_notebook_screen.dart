@@ -66,9 +66,7 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
               ),
               Expanded(
                 child: state.problems.when(
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  loading: () => const AppLoadingView(mode:AppLoadingMode.section),
                   error: (error, _) => AppErrorView(
                     message: localizedErrorMessage(error),
                     onRetry: notifier.load,
