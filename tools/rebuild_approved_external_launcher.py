@@ -54,7 +54,7 @@ def read_approved_icon() -> Image.Image:
             saturation = 1 - low / v if v else 0
             if saturation < .12 or v < .025:
                 continue
-            t = max(0., min(1., (x / result.width - .45) / .10))
+            t = max(0., min(1., (x / result.width - .10) / .80))
             t = t * t * (3 - 2 * t)
             hue = (255 + 73 * t) / 60
             chroma = v * saturation

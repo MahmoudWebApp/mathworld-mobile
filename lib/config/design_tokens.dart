@@ -44,6 +44,19 @@ class AppColors {
   static const Color darkMuted = Color(0xFFB9ADBF);
   static const Color darkBorder = Color(0xFF40344D);
 
+  /// Preserve white glyphs and alpha while tinting the icon shading to its stage.
+  static ColorFilter topicArtworkFilter(Color accent) {
+    List<double> channel(double value) {
+      final base = value * 255 * .32;
+      final gain = 1 - base / 255;
+      return [.2126 * gain, .7152 * gain, .0722 * gain, 0, base];
+    }
+    return ColorFilter.matrix([
+      ...channel(accent.r), ...channel(accent.g), ...channel(accent.b),
+      0, 0, 0, 1, 0,
+    ]);
+  }
+
   /// Identical stage accents to the web's StagePremiumCard identity.
   static Color stageForOrder(int order) {
     const colors = [stageCyan, stageOrange, stageGreen, stageViolet];
