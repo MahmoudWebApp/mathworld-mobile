@@ -92,7 +92,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         ],
       ),
       body: inboxState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const AppLoadingView(mode:AppLoadingMode.section),
         error: (error, _) => AppErrorView(
           message: localizedErrorMessage(error),
           onRetry: () => ref.invalidate(notificationPageProvider(_page)),

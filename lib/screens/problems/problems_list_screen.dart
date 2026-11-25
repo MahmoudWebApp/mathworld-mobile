@@ -74,7 +74,7 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
 
   void _handleSearch(String value) {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 420), () {
+    _debounce = Timer(const Duration(milliseconds: 300), () {
       if (!mounted) {
         return;
       }
@@ -99,6 +99,7 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
       page: _page,
     );
     final problemsState = ref.watch(problemsProvider(parameters));
+    final searching = _searchController.text.trim() != (_query ?? '');
 
     return Scaffold(
       appBar: AppBar(title: Text(
@@ -172,8 +173,9 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
               ),
             ),
             Expanded(
-              child: problemsState.when(
-                loading: () => const _ProblemsSkeleton(),
+              child: searching ? const AppLoadingView(mode:AppLoadingMode.search) : problemsState.when(
+                skipLoadingOnRefresh:false,skipLoadingOnReload:false,
+                loading: () => AppLoadingView(mode:_query != null ? AppLoadingMode.search : _hideSolved ? AppLoadingMode.filter : AppLoadingMode.data),
                 error: (error, __) {
                   if (error is AppException &&
                       error.type == AppExceptionType.forbidden &&
@@ -373,25 +375,3 @@ class _PaginationControls extends StatelessWidget {
   }
 }
 
-class _ProblemsSkeleton extends StatelessWidget {
-  const _ProblemsSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      itemCount: 5,
-      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.lg),
-      itemBuilder: (_, __) => Container(
-        height: 150,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outline,
-          ),
-        ),
-      ),
-    );
-  }
-}
