@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate ONLY Android launcher assets from the user-approved MathWorld icon.
 
-The PNG/WebP launched by Android contains a single continuous cosmic surface
+The PNG launched by Android contains a single continuous cosmic surface
 rather than a smaller hexagonal emblem on top of a second pale square.
 
 Never writes assets/branding/mathworld-mark.png, in-app logo widget,
@@ -44,6 +44,25 @@ def read_approved_icon() -> Image.Image:
     r, g, b = result.getpixel((result.width // 2, result.height // 2))
     if not (r < 210 and b > 100):
         raise ValueError("Unexpected icon color balance")
+    # Retain the approved artwork and highlights; rebalance only chromatic pixels.
+    pixels = result.load()
+    for y in range(result.height):
+        for x in range(result.width):
+            rgb = pixels[x, y]
+            r, g, b = (v / 255 for v in rgb)
+            v, low = max(r, g, b), min(r, g, b)
+            saturation = 1 - low / v if v else 0
+            if saturation < .12 or v < .025:
+                continue
+            t = max(0., min(1., (x / result.width - .45) / .10))
+            t = t * t * (3 - 2 * t)
+            hue = (255 + 73 * t) / 60
+            chroma = v * saturation
+            z = chroma * (1 - abs(hue % 2 - 1))
+            m = v - chroma
+            target = (z, 0, chroma) if hue < 5 else (chroma, 0, z)
+            mix = min(1., (saturation - .12) / .20)
+            pixels[x, y] = tuple(round(rgb[i] * (1 - mix) + 255 * (target[i] + m) * mix) for i in range(3))
     return result
 
 
@@ -64,12 +83,7 @@ def main() -> None:
             write_png(icon, ANDROID / directory / name, size)
     write_png(icon, ANDROID / "drawable-nodpi/mathworld_adaptive_foreground.png", 432)
     write_png(icon, ANDROID / "drawable-nodpi/ic_launcher_foreground.png", 432)
-    webp = ANDROID / "drawable-nodpi/mathworld_external_launcher.webp"
-    webp.parent.mkdir(parents=True, exist_ok=True)
-    icon.resize((432, 432), Image.Resampling.LANCZOS).save(
-        webp, "WEBP", quality=95, method=6
-    )
-    print(f"EXTERNAL_LAUNCHER|{webp.relative_to(ROOT)}|432")
+    write_png(icon, ANDROID / "drawable-nodpi/mathworld_external_launcher.png", 432)
     print("PASS: generated Android external launcher ONLY; internal MathWorld logo unchanged")
 
 
