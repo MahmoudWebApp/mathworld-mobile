@@ -81,7 +81,7 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
                         _isDue(problem, now)).length;
                     final visible = problems.where((problem) =>
                         (stageId != null && problem.stageId == stageId) &&
-                        (!_dueOnly || _isDue(problem, now))).toList()
+                        (!_dueOnly || (!problem.isArchived && _isDue(problem, now)))).toList()
                       ..sort((a, b) {
                         final first = a.nextReviewAt?.millisecondsSinceEpoch ??
                             9223372036854775807;
