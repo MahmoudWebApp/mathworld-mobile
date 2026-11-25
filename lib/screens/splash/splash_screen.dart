@@ -48,10 +48,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       Navigator.pushReplacementNamed(
         context,
         status == AuthStatus.authenticated
-            ? (ref.read(authProvider).user?.role == 'Student' &&
-                    ref.read(authProvider).user?.currentStageId == null
-                ? AppRoutes.learningStage
-                : AppRoutes.home)
+            ? AppRoutes.home
             : AppRoutes.login,
       );
     });
