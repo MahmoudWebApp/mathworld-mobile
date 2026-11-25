@@ -288,7 +288,7 @@ ListView(key: const PageStorageKey('settings-2'),padding:const EdgeInsets.all(16
               ),
               const SizedBox(height: AppSpacing.xl),
             ],
-            if (currentUser?.role == 'Student') ...[
+            if (currentUser != null && currentUser.role == 'Student') ...[
               _SectionTitle(title: context.locale.languageCode == 'ar' ? 'أمان الحساب' : 'Account security'),
               const SizedBox(height: 10),
               GlassCard(
@@ -325,7 +325,7 @@ ListView(key: const PageStorageKey('settings-2'),padding:const EdgeInsets.all(16
                   trailing: LayoutUtils.forwardIcon(context),
                   onTap: () => showDialog<void>(
                     context: context,
-                    builder: (_) => EmailPreferencesDialog(userId: currentUser!.id),
+                    builder: (_) => EmailPreferencesDialog(userId: currentUser.id),
                   ),
                 ),
               ),

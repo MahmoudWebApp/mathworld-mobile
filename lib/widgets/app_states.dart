@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
@@ -126,7 +127,7 @@ class AppLoadingView extends StatelessWidget {
       SizedBox(width:72,height:72,child:Stack(alignment:Alignment.center,children:[
         SizedBox(width:70,height:70,child:CircularProgressIndicator(value:MediaQuery.disableAnimationsOf(context)?0.7:null,strokeWidth:2.5,color:AppColors.brandPurple,backgroundColor:AppColors.brandPink.withValues(alpha:0.14))),
         const BrandMark(size:48),
-      ])),const SizedBox(height:12),const Text.rich(TextSpan(children:[TextSpan(text:'Math',style:TextStyle(color:AppColors.brandPurple)),TextSpan(text:'World',style:TextStyle(color:AppColors.brandPink))]),textDirection:TextDirection.ltr,style:TextStyle(fontWeight:FontWeight.w800)),const SizedBox(height:6),Text(label,textAlign:TextAlign.center),
+      ])),const SizedBox(height:12),const Text.rich(TextSpan(children:[TextSpan(text:'Math',style:TextStyle(color:AppColors.brandPurple)),TextSpan(text:'World',style:TextStyle(color:AppColors.brandPink))]),textDirection:ui.TextDirection.ltr,style:TextStyle(fontWeight:FontWeight.w800)),const SizedBox(height:6),Text(label,textAlign:TextAlign.center),
     ])))));
   }
 }
