@@ -39,13 +39,10 @@ class BrandLogo extends StatelessWidget {
                 child: FittedBox(
                   alignment: AlignmentDirectional.centerStart,
                   fit: fit == BoxFit.fill ? BoxFit.scaleDown : fit,
-                  child: Text.rich(
-                    TextSpan(children: [
-                      TextSpan(text: 'Math', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFFA78BFA) : AppColors.brandPurple)),
-                      TextSpan(text: 'World', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFFFF4DAC) : AppColors.brandPink)),
-                    ]),
-                    maxLines: 1,
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+                  child: ShaderMask(
+                    blendMode: BlendMode.srcIn,
+                    shaderCallback: (bounds) => const LinearGradient(colors: [AppColors.brandPurple, Color(0xFFB52FD1), AppColors.brandPink]).createShader(bounds),
+                    child: const Text('MathWorld', maxLines: 1, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white)),
                   ),
                 ),
               ),
