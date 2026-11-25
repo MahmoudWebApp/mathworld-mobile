@@ -117,6 +117,18 @@ class AppTheme {
         focusedErrorBorder: _inputBorder(AppColors.error, width: 1.7),
         hintStyle: TextStyle(color: muted),
       ),
+      tabBarTheme: TabBarThemeData(
+        indicator: BoxDecoration(
+          gradient: AppGradients.primary,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelColor: Colors.white,
+        unselectedLabelColor: muted,
+        labelStyle: baseTextTheme.labelLarge,
+        unselectedLabelStyle: baseTextTheme.labelLarge,
+        dividerColor: Colors.transparent,
+      ),
       searchBarTheme: SearchBarThemeData(
         elevation: const WidgetStatePropertyAll(0),
         backgroundColor: WidgetStatePropertyAll(mutedSurface),

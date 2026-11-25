@@ -54,18 +54,25 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
                     horizontal: AppSpacing.lg,
                     vertical: AppSpacing.sm,
                   ),
-                  child: SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    value: state.includeArchived,
-                    onChanged: notifier.setIncludeArchived,
-                    secondary: const Icon(Icons.inventory_2_outlined),
-                    title: Text('show_archived_problems'.tr()),
-                    subtitle: Text('show_archived_problems_desc'.tr()),
+                  child: DefaultTabController(
+                    length: 2,
+                    initialIndex: state.includeArchived ? 1 : 0,
+                    child: TabBar(
+                      onTap: (index) {
+                        setState(() => _dueOnly = false);
+                        notifier.setIncludeArchived(index == 1);
+                      },
+                      tabs: [
+                        Tab(text: context.locale.languageCode == 'ar' ? 'تحتاج مراجعة' : 'Needs review'),
+                        Tab(text: context.locale.languageCode == 'ar' ? 'المؤرشفة' : 'Archived'),
+                      ],
+                    ),
                   ),
                 ),
               ),
               Expanded(
                 child: state.problems.when(
+                  skipLoadingOnRefresh:false,skipLoadingOnReload:false,
                   loading: () => const AppLoadingView(mode:AppLoadingMode.section),
                   error: (error, _) => AppErrorView(
                     message: localizedErrorMessage(error),
@@ -79,6 +86,7 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
                         _isDue(problem, now)).length;
                     final visible = problems.where((problem) =>
                         (stageId != null && problem.stageId == stageId) &&
+                        problem.isArchived == state.includeArchived &&
                         (!_dueOnly || (!problem.isArchived && _isDue(problem, now)))).toList()
                       ..sort((a, b) {
                         final first = a.nextReviewAt?.millisecondsSinceEpoch ??
@@ -93,7 +101,7 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
 
                     return Column(
                       children: [
-                        Padding(
+                        if (!state.includeArchived) Padding(
                           padding: const EdgeInsets.fromLTRB(
                             AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md,
                           ),
@@ -168,11 +176,7 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
                                       ? 'لا توجد مسائل مطابقة لهذه التصفية.'
                                       : 'No problems match these filters.')
                                   : ('error_notebook_empty_desc'.tr()),
-                              action: OutlinedButton.icon(
-                                onPressed: notifier.load,
-                                icon: const Icon(Icons.refresh_rounded),
-                                label: Text('retry'.tr()),
-                              ),
+
                             ),
                           ],
                         ),

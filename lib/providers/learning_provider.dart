@@ -55,6 +55,7 @@ final errorNotebookProvider = StateNotifierProvider.autoDispose<
 class ErrorNotebookNotifier extends StateNotifier<ErrorNotebookState> {
   final ProblemsRepository _repository;
   final String _languageCode;
+  int _loadRevision = 0;
 
   ErrorNotebookNotifier({
     required ProblemsRepository repository,
@@ -66,6 +67,7 @@ class ErrorNotebookNotifier extends StateNotifier<ErrorNotebookState> {
   }
 
   Future<void> load() async {
+    final revision = ++_loadRevision;
     state = state.copyWith(problems: const AsyncValue.loading());
 
     try {
@@ -73,8 +75,10 @@ class ErrorNotebookNotifier extends StateNotifier<ErrorNotebookState> {
         languageCode: _languageCode,
         includeArchived: state.includeArchived,
       );
+      if (!mounted || revision != _loadRevision) return;
       state = state.copyWith(problems: AsyncValue.data(problems));
     } catch (error, stackTrace) {
+      if (!mounted || revision != _loadRevision) return;
       state = state.copyWith(
         problems: AsyncValue.error(error, stackTrace),
       );
@@ -103,28 +107,18 @@ class ErrorNotebookNotifier extends StateNotifier<ErrorNotebookState> {
     );
 
     try {
-      final serverValue = await _repository.setErrorNotebookArchive(
+      await _repository.setErrorNotebookArchive(
         problemId: problemId,
         isArchived: isArchived,
       );
 
-      final List<ErrorNotebookProblem> current =
-          state.problems.valueOrNull ?? <ErrorNotebookProblem>[];
-      final updated = current
-          .map(
-            (problem) => problem.id == problemId
-                ? problem.copyWith(isArchived: serverValue)
-                : problem,
-          )
-          .where(
-            (problem) => state.includeArchived || !problem.isArchived,
-          )
-          .toList();
-
-      state = state.copyWith(problems: AsyncValue.data(updated));
+      if (!mounted) return;
+      await load();
     } finally {
-      final nextBusy = {...state.busyProblemIds}..remove(problemId);
-      state = state.copyWith(busyProblemIds: nextBusy);
+      if (mounted) {
+        final nextBusy = {...state.busyProblemIds}..remove(problemId);
+        state = state.copyWith(busyProblemIds: nextBusy);
+      }
     }
   }
 }
