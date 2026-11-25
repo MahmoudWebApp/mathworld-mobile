@@ -39,14 +39,7 @@ class BrandLogo extends StatelessWidget {
                 child: FittedBox(
                   alignment: AlignmentDirectional.centerStart,
                   fit: fit == BoxFit.fill ? BoxFit.scaleDown : fit,
-                  child: Text.rich(
-                    TextSpan(children: [
-                      TextSpan(text: 'Math', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFFA78BFA) : AppColors.brandPurple)),
-                      TextSpan(text: 'World', style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFFFF4DAC) : AppColors.brandPink)),
-                    ]),
-                    maxLines: 1,
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
-                  ),
+                  child: const _BrandWordmark(),
                 ),
               ),
             ],
@@ -56,6 +49,42 @@ class BrandLogo extends StatelessWidget {
       ),
     );
   }
+}
+
+class _BrandWordmark extends StatefulWidget {
+  const _BrandWordmark();
+  @override
+  State<_BrandWordmark> createState() => _BrandWordmarkState();
+}
+
+class _BrandWordmarkState extends State<_BrandWordmark> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(seconds: 9));
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.stop();
+      _controller.value = 0;
+    } else if (!_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    }
+  }
+  @override
+  void dispose() { _controller.dispose(); super.dispose(); }
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _controller,
+    child: const Text('MathWorld', maxLines: 1, style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
+    builder: (_, child) => ShaderMask(
+      blendMode: BlendMode.srcIn,
+      shaderCallback: (bounds) => LinearGradient(
+        begin: Alignment(-1.5 + _controller.value, 0),
+        end: Alignment(1.5 - _controller.value * .3, 0),
+        colors: const [AppColors.brandPurple, AppColors.brandViolet, AppColors.brandPink],
+      ).createShader(bounds),
+      child: child,
+    ),
+  );
 }
 
 /// Exact user-proposed image, resized, without redrawing its symbols.
