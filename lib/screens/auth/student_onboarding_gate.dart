@@ -1,4 +1,4 @@
-import 'package:easy_localization/easy_localization.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,7 +50,7 @@ class StudentOnboardingGate extends ConsumerWidget {
           skipLoadingOnRefresh: false,
           loading: () =>
               const Scaffold(body: Center(child: CircularProgressIndicator())),
-          error: (_, _) => Scaffold(
+          error: (_, __) => Scaffold(
             body: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -323,7 +323,7 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
                         .when(
                           loading: () =>
                               const Center(child: CircularProgressIndicator()),
-                          error: (_, _) =>
+                          error: (_, __) =>
                               _retry(() => ref.invalidate(stagesProvider)),
                           data: (stages) => Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -367,10 +367,11 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
                                             await ref
                                                 .read(authProvider.notifier)
                                                 .chooseLearningStage(stageId);
-                                            if (mounted)
+                                            if (mounted) {
                                               ref.invalidate(
                                                 studentOnboardingProvider,
                                               );
+                                            }
                                           });
                                         },
                                   child: Text(_text('متابعة', 'Continue')),
@@ -394,7 +395,7 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
                         .when(
                           loading: () =>
                               const Center(child: CircularProgressIndicator()),
-                          error: (_, _) => _retry(
+                          error: (_, __) => _retry(
                             () => ref.invalidate(
                               publishedTracksProvider(stageId),
                             ),
@@ -497,12 +498,12 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
                           ? null
                           : () => _perform(() async {
                               await ref.read(authProvider.notifier).logout();
-                              if (mounted)
-                                Navigator.pushNamedAndRemoveUntil(
-                                  context,
-                                  AppRoutes.login,
-                                  (_) => false,
-                                );
+                              if (!context.mounted) return;
+                              Navigator.pushNamedAndRemoveUntil(
+                                context,
+                                AppRoutes.login,
+                                (_) => false,
+                              );
                             }),
                       child: Text(_text('تسجيل الخروج', 'Sign out')),
                     ),
