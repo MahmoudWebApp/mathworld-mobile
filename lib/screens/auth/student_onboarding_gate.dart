@@ -18,7 +18,7 @@ final studentOnboardingProvider = FutureProvider.autoDispose<String>((ref) async
     final step = ApiEnvelope.map(response.data)['NextStep'];
     if (step is String && ['VerifyEmail','SelectStage','SelectTrack','Complete'].contains(step)) return step;
     throw const AppException(type: AppExceptionType.invalidResponse, messageKey: 'invalid_response');
-  } on AppException catch (e) {
+  } on AppException {
     rethrow;
   }
 });
