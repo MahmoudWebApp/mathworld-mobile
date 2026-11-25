@@ -202,14 +202,14 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
   bool _hideSolved=false;
   @override Widget build(BuildContext context){
     final ar=context.locale.languageCode=='ar';
-    final key=(trackId:widget.id,categoryId:widget.categoryId,page:_page);
+    final key=(trackId:widget.id,categoryId:widget.categoryId,page:_page,hideSolved:_hideSolved);
     final state=ref.watch(trackPracticeProvider(key));
     final data=state.valueOrNull;
     final rows=trackRows(data?['Items']);
-    final visible=rows.where((problem)=>!_hideSolved||problem['IsSolved']!=true).toList();
+    final visible=rows;
     return Scaffold(appBar:AppBar(title:Text(widget.name)),body:state.hasError?AppErrorView(message:localizedErrorMessage(state.error!),onRetry:()=>ref.invalidate(trackPracticeProvider(key))):data==null?const AppLoadingView(mode:AppLoadingMode.section):RefreshIndicator(onRefresh:()async{ref.invalidate(trackPracticeProvider(key));await ref.read(trackPracticeProvider(key).future);},child:ListView(physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.all(12),children:[
-      FilterChip(label:Text(ar?'إخفاء المحلولة في هذه الصفحة':'Hide solved on this page'),selected:_hideSolved,onSelected:(value)=>setState(()=>_hideSolved=value)),
-      if(visible.isEmpty) AppEmptyView(icon:Icons.calculate_outlined,title:ar?'لا توجد مسائل في هذه الصفحة':'No problems on this page'),
+      FilterChip(label:Text(ar?'إخفاء المحلولة':'Hide solved'),selected:_hideSolved,onSelected:(value)=>setState((){_hideSolved=value;_page=1;})),
+      if(visible.isEmpty) AppEmptyView(icon:Icons.calculate_outlined,title:ar?'لا توجد مسائل مطابقة':'No matching problems'),
       for(final problem in visible) Card(child:ListTile(title:Text(trackText(problem,'Title',ar)),subtitle:Text(problem['IsSolved']==true?(ar?'محلولة':'Solved'):(ar?'غير محلولة':'Unsolved')),onTap:()async{
         await Navigator.pushNamed(context,AppRoutes.problemDetails,arguments:trackNumber(problem['Id']));
         if(mounted){ref.invalidate(trackPracticeProvider(key));ref.invalidate(trackProgressProvider(widget.id));ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}
