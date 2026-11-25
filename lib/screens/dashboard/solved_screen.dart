@@ -25,7 +25,7 @@ class SolvedScreen extends ConsumerWidget {
         child: SafeArea(
           child: solvedState.when(
             skipLoadingOnRefresh:false,skipLoadingOnReload:false,
-            loading: () => const AppLoadingView(mode:AppLoadingMode.section),
+            loading: () => const AppContentSkeleton(),
             error: (error, __) => AppErrorView(
               message: localizedErrorMessage(error),
               onRetry: () => ref.invalidate(solvedProvider),
