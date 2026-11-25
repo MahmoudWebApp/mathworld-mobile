@@ -68,7 +68,7 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
   Widget build(BuildContext context){
     final ar=context.locale.languageCode=='ar';
     final selection=ref.watch(trackSelectionProvider);
-    if(selection.isLoading&&!selection.hasValue)return const AppLoadingView(mode:AppLoadingMode.section);
+    if(selection.isLoading&&!selection.hasValue)return const AppContentSkeleton(cards:true);
     if(selection.hasError)return AppErrorView(message:localizedErrorMessage(selection.error!),onRetry:()=>ref.invalidate(trackSelectionProvider));
     final current=selection.valueOrNull;
     final id=trackNumber(current?['TrackId']);
@@ -134,7 +134,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
     void reload(){ref.invalidate(trackDetailsProvider(id));ref.invalidate(trackProgressProvider(id));}
     if(detail.hasError||progress.hasError)return AppErrorView(message:localizedErrorMessage(detail.error??progress.error!),onRetry:reload);
     final d=detail.valueOrNull;final p=progress.valueOrNull;
-    if(d==null||p==null)return const AppLoadingView(mode:AppLoadingMode.section);
+    if(d==null||p==null)return const AppContentSkeleton(cards:true);
     final rawTrack=d['Track'];
     if(rawTrack is! Map)return AppErrorView(onRetry:reload,message:ar?'تعذّر قراءة بيانات الصف أو المساق':'Could not read grade or course data');
     final track=Map<String,dynamic>.from(rawTrack);
@@ -207,7 +207,7 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
     final data=state.valueOrNull;
     final rows=trackRows(data?['Items']);
     final visible=rows;
-    return Scaffold(appBar:AppBar(title:Text(widget.name)),body:state.hasError?AppErrorView(message:localizedErrorMessage(state.error!),onRetry:()=>ref.invalidate(trackPracticeProvider(key))):data==null?const AppLoadingView(mode:AppLoadingMode.section):RefreshIndicator(onRefresh:()async{ref.invalidate(trackPracticeProvider(key));await ref.read(trackPracticeProvider(key).future);},child:ListView(physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.all(12),children:[
+    return Scaffold(appBar:AppBar(title:Text(widget.name)),body:state.hasError?AppErrorView(message:localizedErrorMessage(state.error!),onRetry:()=>ref.invalidate(trackPracticeProvider(key))):data==null?const AppContentSkeleton():RefreshIndicator(onRefresh:()async{ref.invalidate(trackPracticeProvider(key));await ref.read(trackPracticeProvider(key).future);},child:ListView(physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.all(12),children:[
       FilterChip(label:Text(ar?'إخفاء المحلولة':'Hide solved'),selected:_hideSolved,onSelected:(value)=>setState((){_hideSolved=value;_page=1;})),
       if(visible.isEmpty) AppEmptyView(icon:Icons.calculate_outlined,title:ar?'لا توجد مسائل مطابقة':'No matching problems'),
       for(final problem in visible) Card(child:ListTile(title:Text(trackText(problem,'Title',ar)),subtitle:Text(problem['IsSolved']==true?(ar?'محلولة':'Solved'):(ar?'غير محلولة':'Unsolved')),onTap:()async{
