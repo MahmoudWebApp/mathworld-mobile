@@ -52,12 +52,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!mounted) {
         return;
       }
-      final user = ref.read(authProvider).user;
-      final destination = user?.role == 'Student' &&
-              user?.currentStageId == null
-          ? AppRoutes.learningStage
-          : AppRoutes.home;
-      Navigator.pushNamedAndRemoveUntil(context, destination, (_) => false);
+      Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (_) => false);
     } catch (error) {
       if (!mounted) {
         return;

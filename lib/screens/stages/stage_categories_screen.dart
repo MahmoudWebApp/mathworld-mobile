@@ -424,7 +424,7 @@ class CurrentStageCategoriesScreen extends ConsumerWidget {
     // An explicit disabled/legacy API response preserves existing stage UI.
     // A temporary failure must not silently switch a selected track to a stage.
     if (trackCatalog.isLoading && !trackCatalog.hasValue) {
-      return const AppLoadingView(mode:AppLoadingMode.section);
+      return const AppContentSkeleton(cards:true);
     }
     if (trackCatalog.hasError) {
       return AppErrorView(onRetry: () => ref.invalidate(publishedTracksProvider(stageId)));

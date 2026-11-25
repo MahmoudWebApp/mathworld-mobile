@@ -15,6 +15,7 @@ import 'daily_challenge_provider.dart';
 import 'leaderboard_provider.dart';
 import 'dashboard_provider.dart';
 import 'learning_provider.dart';
+import 'learning_tracks_provider.dart';
 import 'learning_journey_provider.dart';
 import 'learner_presence_provider.dart';
 import 'problem_details_provider.dart';
@@ -386,6 +387,9 @@ class AuthNotifier extends StateNotifier<AuthState>
   /// Riverpod providers live above the Navigator, so removing routes alone is
   /// not enough when a different user signs in during the same app process.
   void _resetAccountScopedState() {
+    _ref.invalidate(trackSelectionProvider);
+    _ref.invalidate(trackProgressProvider);
+    _ref.invalidate(trackPracticeProvider);
     _ref.invalidate(stagesProvider);
     _ref.invalidate(categoriesProvider);
     _ref.invalidate(stageCategoriesProvider);
