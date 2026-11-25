@@ -8,6 +8,7 @@ on:
       - 'android/**'
       - 'test/**'
       - 'pubspec.yaml'
+      - 'pubspec.lock'
       - '.github/workflows/stage-daily-quota-mobile-ci.yml'
   push:
     branches: [main]
@@ -17,6 +18,7 @@ on:
       - 'android/**'
       - 'test/**'
       - 'pubspec.yaml'
+      - 'pubspec.lock'
       - '.github/workflows/stage-daily-quota-mobile-ci.yml'
   workflow_dispatch:
 
@@ -38,7 +40,7 @@ jobs:
       - name: Provide non-secret application environment
         run: cp .env.example .env
       - name: Resolve Flutter packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
       - name: Verify Free access and Google build configuration
         run: flutter test test/models/stage_daily_quota_test.dart test/daily_challenge_model_test.dart test/google_oauth_configuration_test.dart
       - name: Analyze Flutter
@@ -97,13 +99,14 @@ jobs:
           echo "One Android app: com.mathworld.mathworld_mobile"
           echo "Stable signing certificate SHA-1 matched."
       - name: Resolve Flutter dependencies
-        run: flutter pub get
-      - name: Build signed app with Google sign-in enabled
+        run: flutter pub get --enforce-lockfile
+      - name: Build signed app with Google sign-in and hosted CAPTCHA acceptance enabled
         shell: bash
         run: |
           set -euo pipefail
           flutter build apk --release --no-pub --build-number=${{ github.run_number }} \
             --dart-define=MATHWORLD_SOCIAL_LOGIN_ENABLED=true \
+            --dart-define=MATHWORLD_CAPTCHA_ENABLED=true \
             "--dart-define=MATHWORLD_GOOGLE_SERVER_CLIENT_ID=${GOOGLE_WEB_CLIENT_ID}"
       - name: Upload single MathWorld Android APK
         uses: actions/upload-artifact@v4
@@ -116,5 +119,5 @@ jobs:
         run: |
           echo "### MathWorld Android test build" >> "$GITHUB_STEP_SUMMARY"
           echo "Package: `com.mathworld.mathworld_mobile` (no .qa suffix)." >> "$GITHUB_STEP_SUMMARY"
-          echo "Google login enabled with the existing MathWorld Web OAuth client." >> "$GITHUB_STEP_SUMMARY"
+          echo "Google login enabled with the existing MathWorld Web OAuth client. Hosted CAPTCHA is enabled for device acceptance; backend enforcement must remain disabled until tested." >> "$GITHUB_STEP_SUMMARY"
           echo "Uses one persistent developer signing key. This APK is for device testing, not Google Play publishing." >> "$GITHUB_STEP_SUMMARY"
