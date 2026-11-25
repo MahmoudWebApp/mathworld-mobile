@@ -526,9 +526,9 @@ class _CategoryCard extends StatelessWidget {
           : locked
               ? () => _showPremiumLockedSheet(context, title)
               : null,
-      color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+      color: Color.alphaBlend(accent.withValues(alpha: isDark ? .19 : .10), isDark ? AppColors.darkSurface : AppColors.lightSurface),
       border: BorderSide(
-        color: accent.withValues(alpha: isDark ? 0.27 : 0.18),
+        color: accent.withValues(alpha: isDark ? 0.55 : 0.36),
       ),
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
@@ -601,8 +601,8 @@ class _CategoryCard extends StatelessWidget {
                 child: LinearProgressIndicator(
                   minHeight: 5,
                   value: category.progress!.clamp(0.0, 1.0).toDouble(),
-                  backgroundColor: mutedColor.withValues(alpha: 0.18),
-                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.success),
+                  backgroundColor: accent.withValues(alpha: 0.18),
+                  valueColor: AlwaysStoppedAnimation<Color>(accent),
                 ),
               ),
             ),
@@ -622,6 +622,8 @@ class _CategoryCard extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
                 textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
                 foregroundColor: accent,
+                side: BorderSide(color: accent.withValues(alpha: .55)),
+                backgroundColor: accent.withValues(alpha: .07),
               ),
             ),
           ),
@@ -636,6 +638,8 @@ class _CategoryCard extends StatelessWidget {
               child: FilledButton(
                 onPressed: noPublishedProblems ? null : openQuestions,
                 style: FilledButton.styleFrom(
+                  backgroundColor: accent,
+                  foregroundColor: Colors.white,
                   minimumSize: const Size(0, 36),
                   padding: const EdgeInsets.symmetric(horizontal: 5),
                   visualDensity: VisualDensity.compact,
@@ -651,6 +655,8 @@ class _CategoryCard extends StatelessWidget {
               child: OutlinedButton(
                 onPressed: onRestart,
                 style: OutlinedButton.styleFrom(
+                  foregroundColor: accent,
+                  side: BorderSide(color: accent.withValues(alpha: .55)),
                   minimumSize: const Size(0, 36),
                   padding: const EdgeInsets.symmetric(horizontal: 5),
                   visualDensity: VisualDensity.compact,
