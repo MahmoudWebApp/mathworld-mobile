@@ -47,11 +47,11 @@ class AuthRepository {
     }
   }
 
-  Future<User> login(String email, String password) async {
+  Future<User> login(String email, String password, {String? captchaToken}) async {
     await clearSession();
     final response = await _apiService.post(
       ApiConstants.login,
-      data: {'Email': email, 'Password': password},
+      data: {'Email': email, 'Password': password, if (captchaToken != null) 'CaptchaToken': captchaToken},
       handleUnauthorized: false,
     );
     return _parseAndSaveAuthResult(response.data);
@@ -75,8 +75,9 @@ class AuthRepository {
     String fullName,
     String email,
     String password,
-    int? stageId,
-  ) async {
+    int? stageId, {
+    String? captchaToken,
+  }) async {
     await clearSession();
     final response = await _apiService.post(
       ApiConstants.register,
@@ -85,6 +86,7 @@ class AuthRepository {
         'Email': email,
         'Password': password,
         if (stageId != null) 'StageId': stageId,
+        if (captchaToken != null) 'CaptchaToken': captchaToken,
       },
       handleUnauthorized: false,
     );

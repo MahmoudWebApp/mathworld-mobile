@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'auth_captcha.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/app_routes.dart';
@@ -27,6 +28,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _passwordSubmitting = false;
   @override
   void dispose() {
     _nameController.dispose();
@@ -37,9 +39,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate() ||
+    if (_passwordSubmitting || !_formKey.currentState!.validate() ||
         ref.read(authProvider).isSubmitting) return;
+    setState(() => _passwordSubmitting = true);
     try {
+      final captcha = await requestAuthCaptcha(context, 'register', context.locale.languageCode == 'ar');
+      if (!mounted || (authCaptchaEnabled && captcha == null)) return;
       // Create the account first. Stage selection happens in the authenticated
       // onboarding screen, not in the registration form.
       await ref.read(authProvider.notifier).register(
@@ -47,6 +52,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         _emailController.text.trim(),
         _passwordController.text,
         null,
+        captchaToken: captcha,
       );
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(
@@ -59,6 +65,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(localizedErrorMessage(error))),
       );
+    } finally {
+      if (mounted) setState(() => _passwordSubmitting = false);
     }
   }
 
@@ -184,10 +192,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         ),
                         const SizedBox(height: AppSpacing.xl),
                         PremiumButton(
-                          onPressed: isLoading ? null : _submit,
+                          onPressed: isLoading || _passwordSubmitting ? null : _submit,
                           label: context.locale.languageCode == 'ar' ? 'متابعة' : 'Continue',
                           leadingIcon: Icons.person_add_alt_1_rounded,
-                          isLoading: isLoading,
+                          isLoading: _passwordSubmitting,
                           expand: true,
                         ),
                         const SizedBox(height: AppSpacing.md),
