@@ -124,7 +124,7 @@ class AuthNotifier extends StateNotifier<AuthState>
     }
   }
 
-  Future<void> login(String email, String password) async {
+  Future<void> login(String email, String password, {String? captchaToken}) async {
     _resetAccountScopedState();
     state = state.copyWith(
       isSubmitting: true,
@@ -132,7 +132,7 @@ class AuthNotifier extends StateNotifier<AuthState>
       sessionExpired: false,
     );
     try {
-      final user = await _repository.login(email, password);
+      final user = await _repository.login(email, password, captchaToken: captchaToken);
       _resetAccountScopedState();
       state = AuthState(status: AuthStatus.authenticated, user: user);
     } catch (error) {
@@ -220,8 +220,9 @@ class AuthNotifier extends StateNotifier<AuthState>
     String fullName,
     String email,
     String password,
-    int? stageId,
-  ) async {
+    int? stageId, {
+    String? captchaToken,
+  }) async {
     _resetAccountScopedState();
     state = state.copyWith(
       isSubmitting: true,
@@ -229,7 +230,7 @@ class AuthNotifier extends StateNotifier<AuthState>
       sessionExpired: false,
     );
     try {
-      final user = await _repository.register(fullName, email, password, stageId);
+      final user = await _repository.register(fullName, email, password, stageId, captchaToken: captchaToken);
       _resetAccountScopedState();
       state = AuthState(status: AuthStatus.authenticated, user: user);
     } catch (error) {

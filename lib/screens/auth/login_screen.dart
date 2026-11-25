@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'auth_captcha.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -41,9 +42,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
     setState(() => _passwordSubmitting = true);
     try {
+      final captcha = await requestAuthCaptcha(context, 'login', context.locale.languageCode == 'ar');
+      if (!mounted || (authCaptchaEnabled && captcha == null)) return;
       await ref.read(authProvider.notifier).login(
             _emailController.text.trim(),
             _passwordController.text,
+            captchaToken: captcha,
           );
       if (!mounted) {
         return;
