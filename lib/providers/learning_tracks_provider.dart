@@ -4,7 +4,7 @@ import '../core/network/api_envelope.dart';
 import 'auth_provider.dart';
 import 'repositories_provider.dart';
 
-int trackNumber(dynamic value) => value is num ? value.toInt() : 0;
+int trackNumber(dynamic value) => value is num ? value.toInt() : int.tryParse(value?.toString() ?? '') ?? 0;
 List<Map<String,dynamic>> trackRows(dynamic value) => value is List
     ? value.whereType<Map>().map((row)=>Map<String,dynamic>.from(row)).toList()
     : [];
@@ -35,7 +35,7 @@ final publishedTracksProvider=FutureProvider.autoDispose.family<TrackCatalog,int
 
 final trackSelectionProvider=FutureProvider.autoDispose<Map<String,dynamic>>((ref) async {
   final user=ref.watch(authProvider.select((s)=>s.user));
-  if(user?.role!='Student') return {};
+  if(user?.role.toLowerCase()!='student') return {};
   final response=await ref.watch(apiClientProvider).get('/users/learning-track');
   return ApiEnvelope.map(response.data);
 });
@@ -45,14 +45,14 @@ final trackDetailsProvider=FutureProvider.autoDispose.family<Map<String,dynamic>
 });
 final trackProgressProvider=FutureProvider.autoDispose.family<Map<String,dynamic>,int>((ref,id) async {
   final user=ref.watch(authProvider.select((s)=>s.user));
-  if(user?.role!='Student')return {};
+  if(user?.role.toLowerCase()!='student')return {};
   final response=await ref.watch(apiClientProvider).get('/users/learning-tracks/$id/progress');
   return ApiEnvelope.map(response.data);
 });
 typedef TrackPracticeKey=({int trackId,int categoryId,int page});
 final trackPracticeProvider=FutureProvider.autoDispose.family<Map<String,dynamic>,TrackPracticeKey>((ref,key) async {
   final user=ref.watch(authProvider.select((s)=>s.user));
-  if(user?.role!='Student')return {};
+  if(user?.role.toLowerCase()!='student')return {};
   final response=await ref.watch(apiClientProvider).get('/users/learning-tracks/${key.trackId}/categories/${key.categoryId}/problems',queryParameters:{'page':key.page});
   return ApiEnvelope.map(response.data);
 });
