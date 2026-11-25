@@ -24,10 +24,14 @@ class _PremiumHintPanelState extends State<PremiumHintPanel>{
     if(oldWidget.problemId!=widget.problemId||oldWidget.isArabic!=widget.isArabic||oldWidget.practiceScopeId!=widget.practiceScopeId){_load();}
   }
   Future<void> _load({int? level}) async{
+    if(level!=null&&_loading)return;
     final generation=++_generation;
     setState((){_loading=true;_error=false;if(level==null){_entitlement=null;_hints=null;}});
     try{
-      final entitlement=await widget.service.getEntitlement();
+      // The reveal endpoint validates entitlement itself. Avoid an extra GET
+      // for each hint, but revalidate entitlement on initial load/recovery.
+      final entitlement=level!=null&&_entitlement!=null
+          ?_entitlement!:await widget.service.getEntitlement();
       if(!mounted||generation!=_generation)return;
       final hints=entitlement.isPremium?await widget.service.getHints(widget.problemId,level:level,practiceScopeId:widget.practiceScopeId):null;
       if(!mounted||generation!=_generation)return;
@@ -42,13 +46,13 @@ class _PremiumHintPanelState extends State<PremiumHintPanel>{
       if(_loading)const LinearProgressIndicator(),
       if(_error)TextButton(onPressed:_loading?null:()=>_load(),child:Text(ar?'تعذّر تحميل التلميحات. إعادة المحاولة':'Could not load hints. Retry')),
       if(_entitlement?.isPremium==false)OutlinedButton.icon(onPressed:()=>Navigator.pushNamed(context,AppRoutes.premiumBenefits),icon:const Icon(Icons.lock_outline),label:Text(ar?'تلميحات Premium':'Premium hints')),
-      if(hints!=null&&!_error)...[
+      if(hints!=null)...[
         if(!hints.available)Text(ar?'لا توجد تلميحات لهذه المسألة بعد.':'Hints are not yet available for this problem.'),
         for(var i=0;i<hints.hints.length;i++)...[
           const SizedBox(height:8),Text('${ar?'التلميح':'Hint'} ${i+1}',style:Theme.of(context).textTheme.titleSmall),
           RichMathText(text:hints.hints[i],isArabic:ar),
         ],
-        if(hints.available&&hints.revealedCount<2)OutlinedButton(onPressed:_loading?null:()=>_load(level:hints.revealedCount+1),child:Text('${ar?'عرض التلميح':'Reveal hint'} ${hints.revealedCount+1}')),
+        if(hints.available&&hints.revealedCount<2)OutlinedButton(onPressed:_loading||_error?null:()=>_load(level:hints.revealedCount+1),child:Text('${ar?'عرض التلميح':'Reveal hint'} ${hints.revealedCount+1}')),
       ],
       const SizedBox(height:8),
       Text(ar?'الإجابة وطريقة الحل تظهران بعد الحل الصحيح لجميع الطلاب.':'The answer and solution appear after a correct solve for all learners.',style:Theme.of(context).textTheme.bodySmall),
