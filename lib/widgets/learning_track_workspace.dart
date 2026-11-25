@@ -78,7 +78,7 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
       Text(ar?'اختر الصف أو المساق':'Choose grade or course',style:Theme.of(context).textTheme.headlineSmall),
       const SizedBox(height:8),
       const SizedBox(height:4),
-      for(final track in widget.catalog.items) Card(child:ListTile(
+      for(final track in widget.catalog.items) Card(color: Color.alphaBlend(AppColors.stageForOrder(widget.stageId).withValues(alpha: .10), Theme.of(context).colorScheme.surface), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: AppColors.stageForOrder(widget.stageId).withValues(alpha: .4))), child:ListTile(
         title:Text(trackText(track,'Name',ar)),
         subtitle:Text('${trackNumber(track['ProblemsCount'])} ${ar?'مسألة':'problems'}${track['FreeProblemsCount']!=null&&trackNumber(track['FreeProblemsCount'])==0?'\n${ar?'التدريب لمشتركي Premium':'Premium practice only'}':''}'),
         trailing:track['Id']==id?const Icon(Icons.check_circle_outline):null,
@@ -147,7 +147,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
       if(p['TrackPracticeIsolationEnabled']==true&&stats.values.any((c)=>trackNumber(c['Attempted'])>0))
         OutlinedButton.icon(onPressed:_resetting?null:()=>_reset(trackNumber(p['StageId']),trackText(track,'Name',ar)),icon:const Icon(Icons.restart_alt),label:Text(ar?'إعادة تدريب الصف أو المساق':'Restart grade or course')),
       const SizedBox(height:16),
-      for(final c in trackRows(d['Categories'])) Card(shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(16),side:BorderSide(color:accent.withValues(alpha:.3))),child:Padding(padding:const EdgeInsets.all(14),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      for(final c in trackRows(d['Categories'])) Card(color:Color.alphaBlend(accent.withValues(alpha:Theme.of(context).brightness==Brightness.dark?.19:.10),Theme.of(context).colorScheme.surface),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(16),side:BorderSide(color:accent.withValues(alpha:.45))),child:Padding(padding:const EdgeInsets.all(14),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         Row(children:[_TrackTopicIcon(value:c['Icon']?.toString()??'',accent:accent),const SizedBox(width:10),Expanded(child:Text(trackText(c,'Name',ar),style:Theme.of(context).textTheme.titleMedium?.copyWith(color:accent,fontWeight:FontWeight.w800))),const SizedBox(width:8),Container(padding:const EdgeInsets.symmetric(horizontal:8,vertical:6),decoration:BoxDecoration(color:accent.withValues(alpha:.12),borderRadius:BorderRadius.circular(8)),child:Text('${trackNumber(c['ProblemsCount'])} ${ar?'مسألة':'problems'}',style:TextStyle(color:accent,fontSize:12,fontWeight:FontWeight.w700)))]),
         const SizedBox(height:8),
         if(trackText(c,'Description',ar).isNotEmpty)Text(trackText(c,'Description',ar)),
@@ -157,14 +157,14 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
         LinearProgressIndicator(value:trackNumber(c['ProblemsCount'])>0?(trackNumber(stats[trackNumber(c['Id'])]?['Solved'])/trackNumber(c['ProblemsCount'])).clamp(0.0,1.0).toDouble():0,color:accent,borderRadius:BorderRadius.circular(8)),
         const SizedBox(height:6),
         Wrap(spacing:8,children:[
-          TextButton(onPressed:()=>showDialog<void>(context:context,builder:(ctx)=>AlertDialog(title:Text(ar?'المهارات':'Skills'),content:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
+          TextButton(style:TextButton.styleFrom(foregroundColor:accent),onPressed:()=>showDialog<void>(context:context,builder:(ctx)=>AlertDialog(title:Text(ar?'المهارات':'Skills'),content:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
             for(final skill in trackRows(d['Skills']).where((s)=>s['CategoryId']==c['Id'])) ListTile(title:Text(trackText(skill,'Name',ar)),subtitle:Text(trackText(skill,'Description',ar))),
           ])),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:Text(ar?'إغلاق':'Close'))])),child:Text(ar?'عرض المهارات':'View skills')),
           if(stats[trackNumber(c['Id'])]?['IsLocked']==false)
-            FilledButton(onPressed:()async{await Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>_TrackPractice(id:id,categoryId:trackNumber(c['Id']),name:trackText(c,'Name',ar))));if(context.mounted)ref.invalidate(trackProgressProvider(id));},child:Text(ar?'عرض المسائل':'View problems'))
-          else TextButton(onPressed:()=>Navigator.pushNamed(context,AppRoutes.premiumBenefits),child:Text(ar?'ترقية الحساب':'Upgrade account')),
+            FilledButton(style:FilledButton.styleFrom(backgroundColor:accent,foregroundColor:Colors.white),onPressed:()async{await Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>_TrackPractice(id:id,categoryId:trackNumber(c['Id']),name:trackText(c,'Name',ar))));if(context.mounted)ref.invalidate(trackProgressProvider(id));},child:Text(ar?'عرض المسائل':'View problems'))
+          else TextButton(style:TextButton.styleFrom(foregroundColor:accent),onPressed:()=>Navigator.pushNamed(context,AppRoutes.premiumBenefits),child:Text(ar?'ترقية الحساب':'Upgrade account')),
           if(p['TrackPracticeIsolationEnabled']==true&&stats[trackNumber(c['Id'])]?['IsLocked']==false&&trackNumber(stats[trackNumber(c['Id'])]?['Attempted'])>0)
-            OutlinedButton(onPressed:_resetting?null:()=>_reset(trackNumber(p['StageId']),trackText(c,'Name',ar),categoryId:trackNumber(c['Id'])),child:Text(ar?'إعادة تدريب الفئة':'Restart topic')),
+            OutlinedButton(style:OutlinedButton.styleFrom(foregroundColor:accent,side:BorderSide(color:accent.withValues(alpha:.55))),onPressed:_resetting?null:()=>_reset(trackNumber(p['StageId']),trackText(c,'Name',ar),categoryId:trackNumber(c['Id'])),child:Text(ar?'إعادة تدريب الفئة':'Restart topic')),
         ]),
       ]))),
       TextButton(onPressed:()=>Navigator.pushNamed(context,AppRoutes.learningStage),child:Text(ar?'تغيير المرحلة':'Change stage')),
