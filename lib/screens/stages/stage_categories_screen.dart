@@ -526,7 +526,7 @@ class _CategoryCard extends StatelessWidget {
           : locked
               ? () => _showPremiumLockedSheet(context, title)
               : null,
-      color: Color.alphaBlend(accent.withValues(alpha: isDark ? .19 : .10), isDark ? AppColors.darkSurface : AppColors.lightSurface),
+      color: isDark ? AppColors.darkSurface : Colors.white,
       border: BorderSide(
         color: accent.withValues(alpha: isDark ? 0.55 : 0.36),
       ),
@@ -721,6 +721,7 @@ class _CategoryCard extends StatelessWidget {
     final value = category.icon?.trim() ?? '';
     if (value.startsWith('https://') && value.toLowerCase().split('?').first.endsWith('.svg')) {
       return SvgPicture.network(value, width: 34, height: 34,
+        colorFilter: ColorFilter.mode(accent, BlendMode.color),
         placeholderBuilder: (_) => SizedBox.square(
           dimension: 24,
           child: CircularProgressIndicator(strokeWidth: 2, color: accent),
@@ -735,6 +736,8 @@ class _CategoryCard extends StatelessWidget {
         width: 30,
         height: 30,
         fit: BoxFit.contain,
+        color: accent,
+        colorBlendMode: BlendMode.color,
         errorBuilder: (_, __, ___) =>
             Icon(Icons.calculate_outlined, color: accent, size: 26),
       );
