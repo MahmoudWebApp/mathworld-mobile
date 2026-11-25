@@ -1,0 +1,40 @@
+name: Flutter dependency lock reproducibility
+
+on:
+  pull_request:
+    paths:
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - '.github/workflows/flutter-lockfile-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.38.10'
+          cache: true
+      - name: Resolve public package dependencies
+        run: flutter pub get
+      - name: Check and record exact public dependency lock
+        run: |
+          if ! git diff --quiet -- pubspec.lock; then
+            echo 'MATHWORLD_LOCKFILE_BEGIN'
+            base64 -w0 pubspec.lock
+            echo
+            echo 'MATHWORLD_LOCKFILE_END'
+            echo '::error::Commit the exact lock resolved by the release Flutter toolchain.'
+            exit 1
+          fi
+      - name: Verify locked package resolution
+        run: flutter pub get --enforce-lockfile
