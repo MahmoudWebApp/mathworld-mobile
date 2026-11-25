@@ -78,7 +78,7 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
       Text(ar?'اختر الصف أو المساق':'Choose grade or course',style:Theme.of(context).textTheme.headlineSmall),
       const SizedBox(height:8),
       const SizedBox(height:4),
-      for(final track in widget.catalog.items) Card(color: Color.alphaBlend(AppColors.stageForOrder(widget.stageId).withValues(alpha: .10), Theme.of(context).colorScheme.surface), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: AppColors.stageForOrder(widget.stageId).withValues(alpha: .4))), child:ListTile(
+      for(final track in widget.catalog.items) Card(color: Theme.of(context).brightness == Brightness.dark ? Theme.of(context).colorScheme.surface : Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: AppColors.stageForOrder(widget.stageId).withValues(alpha: .4))), child:ListTile(
         title:Text(trackText(track,'Name',ar)),
         subtitle:Text('${trackNumber(track['ProblemsCount'])} ${ar?'مسألة':'problems'}${track['FreeProblemsCount']!=null&&trackNumber(track['FreeProblemsCount'])==0?'\n${ar?'التدريب لمشتركي Premium':'Premium practice only'}':''}'),
         trailing:track['Id']==id?const Icon(Icons.check_circle_outline):null,
@@ -147,7 +147,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
       if(p['TrackPracticeIsolationEnabled']==true&&stats.values.any((c)=>trackNumber(c['Attempted'])>0))
         OutlinedButton.icon(onPressed:_resetting?null:()=>_reset(trackNumber(p['StageId']),trackText(track,'Name',ar)),icon:const Icon(Icons.restart_alt),label:Text(ar?'إعادة تدريب الصف أو المساق':'Restart grade or course')),
       const SizedBox(height:16),
-      for(final c in trackRows(d['Categories'])) Card(color:Color.alphaBlend(accent.withValues(alpha:Theme.of(context).brightness==Brightness.dark ? .19 : .10),Theme.of(context).colorScheme.surface),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(16),side:BorderSide(color:accent.withValues(alpha:.45))),child:Padding(padding:const EdgeInsets.all(14),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      for(final c in trackRows(d['Categories'])) Card(color:Theme.of(context).brightness==Brightness.dark?Theme.of(context).colorScheme.surface:Colors.white,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(16),side:BorderSide(color:accent.withValues(alpha:.45))),child:Padding(padding:const EdgeInsets.all(14),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         Row(children:[_TrackTopicIcon(value:c['Icon']?.toString()??'',accent:accent),const SizedBox(width:10),Expanded(child:Text(trackText(c,'Name',ar),style:Theme.of(context).textTheme.titleMedium?.copyWith(color:accent,fontWeight:FontWeight.w800))),const SizedBox(width:8),Container(padding:const EdgeInsets.symmetric(horizontal:8,vertical:6),decoration:BoxDecoration(color:accent.withValues(alpha:.12),borderRadius:BorderRadius.circular(8)),child:Text('${trackNumber(c['ProblemsCount'])} ${ar?'مسألة':'problems'}',style:TextStyle(color:accent,fontSize:12,fontWeight:FontWeight.w700)))]),
         const SizedBox(height:8),
         if(trackText(c,'Description',ar).isNotEmpty)Text(trackText(c,'Description',ar)),
@@ -183,8 +183,8 @@ class _TrackTopicIcon extends StatelessWidget {
     Widget icon=fallback;
     if(uri!=null&&uri.scheme=='https'&&uri.host.isNotEmpty){
       icon=uri.path.toLowerCase().endsWith('.svg')
-        ?SvgPicture.network(url,width:36,height:36,placeholderBuilder:(_)=>fallback,errorBuilder:(_,__,___)=>fallback)
-        :Image.network(url,width:36,height:36,fit:BoxFit.contain,errorBuilder:(_,__,___)=>fallback);
+        ?SvgPicture.network(url,width:36,height:36,colorFilter:ColorFilter.mode(accent,BlendMode.color),placeholderBuilder:(_)=>fallback,errorBuilder:(_,__,___)=>fallback)
+        :Image.network(url,width:36,height:36,fit:BoxFit.contain,color:accent,colorBlendMode:BlendMode.color,errorBuilder:(_,__,___)=>fallback);
     }
     return Container(width:44,height:44,decoration:BoxDecoration(color:accent.withValues(alpha:.1),borderRadius:BorderRadius.circular(12)),alignment:Alignment.center,child:icon);
   }
