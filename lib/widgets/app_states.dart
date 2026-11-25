@@ -131,3 +131,22 @@ class AppLoadingView extends StatelessWidget {
     ])))));
   }
 }
+
+/// Loading placeholders follow the eventual content layout; no fake counts.
+class AppContentSkeleton extends StatelessWidget {
+  const AppContentSkeleton({super.key,this.cards=false,this.count=5});
+  final bool cards;
+  final int count;
+  @override
+  Widget build(BuildContext context) {
+    final colors=Theme.of(context).colorScheme;
+    Widget bar(double width,double height)=>Container(width:width,height:height,decoration:BoxDecoration(color:colors.onSurface.withValues(alpha:.09),borderRadius:BorderRadius.circular(7)));
+    Widget item()=>Card(elevation:0,child:Padding(padding:const EdgeInsets.all(16),child:Row(children:[bar(42,42),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[bar(140,14),const SizedBox(height:12),bar(double.infinity,10),const SizedBox(height:8),bar(90,10)]))])));
+    final ar=context.locale.languageCode=='ar';
+    return Semantics(label:ar?'جارٍ تحميل المحتوى':'Loading content',liveRegion:true,child:ExcludeSemantics(child:TweenAnimationBuilder<double>(
+      tween:Tween(begin:.75,end:1),duration:MediaQuery.disableAnimationsOf(context)?Duration.zero:const Duration(milliseconds:500),
+      builder:(_,opacity,child)=>Opacity(opacity:opacity,child:child),
+      child:cards?GridView.builder(padding:const EdgeInsets.all(12),gridDelegate:const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent:320,mainAxisExtent:120),itemCount:count,itemBuilder:(_,__)=>item()):ListView.builder(padding:const EdgeInsets.all(12),itemCount:count,itemBuilder:(_,__)=>item()),
+    )));
+  }
+}
