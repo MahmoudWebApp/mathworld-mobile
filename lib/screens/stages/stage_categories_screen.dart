@@ -526,7 +526,7 @@ class _CategoryCard extends StatelessWidget {
           : locked
               ? () => _showPremiumLockedSheet(context, title)
               : null,
-      color: Color.alphaBlend(accent.withValues(alpha: isDark ? .19 : .10), isDark ? AppColors.darkSurface : AppColors.lightSurface),
+      color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
       border: BorderSide(
         color: accent.withValues(alpha: isDark ? 0.55 : 0.36),
       ),
@@ -720,24 +720,24 @@ class _CategoryCard extends StatelessWidget {
   Widget _categoryIcon(Color accent) {
     final value = category.icon?.trim() ?? '';
     if (value.startsWith('https://') && value.toLowerCase().split('?').first.endsWith('.svg')) {
-      return SvgPicture.network(value, width: 34, height: 34,
+      return ColorFiltered(colorFilter: AppColors.topicArtworkFilter(accent), child: SvgPicture.network(value, width: 34, height: 34,
         placeholderBuilder: (_) => SizedBox.square(
           dimension: 24,
           child: CircularProgressIndicator(strokeWidth: 2, color: accent),
         ),
         errorBuilder: (context, error, stackTrace) =>
           Icon(Icons.calculate_outlined, color: accent, size: 26),
-      );
+      ));
     }
     if (value.startsWith('https://')) {
-      return Image.network(
+      return ColorFiltered(colorFilter: AppColors.topicArtworkFilter(accent), child: Image.network(
         value,
         width: 30,
         height: 30,
         fit: BoxFit.contain,
         errorBuilder: (_, __, ___) =>
             Icon(Icons.calculate_outlined, color: accent, size: 26),
-      );
+      ));
     }
     // The API may return an asset path or URL instead of a glyph.
     // Never display a long raw URL or path over the category card.
