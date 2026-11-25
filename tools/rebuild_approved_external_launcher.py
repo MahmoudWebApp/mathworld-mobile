@@ -54,14 +54,14 @@ def read_approved_icon() -> Image.Image:
             saturation = 1 - low / v if v else 0
             if saturation < .12 or v < .025:
                 continue
-            t = max(0., min(1., (x / result.width - .45) / .10))
+            t = max(0., min(1., (x / result.width - .06 + .10 * (.5 - y / result.height)) / .88))
             t = t * t * (3 - 2 * t)
             hue = (255 + 73 * t) / 60
             chroma = v * saturation
             z = chroma * (1 - abs(hue % 2 - 1))
             m = v - chroma
             target = (z, 0, chroma) if hue < 5 else (chroma, 0, z)
-            mix = min(1., (saturation - .12) / .20)
+            mix = min(1., (saturation - .12) / .24)
             pixels[x, y] = tuple(round(rgb[i] * (1 - mix) + 255 * (target[i] + m) * mix) for i in range(3))
     return result
 
