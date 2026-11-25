@@ -14,6 +14,7 @@ import '../providers/repositories_provider.dart';
 import '../providers/user_lists_provider.dart';
 import '../providers/learning_provider.dart';
 import '../providers/problems_provider.dart';
+import '../providers/problem_details_provider.dart';
 import '../providers/student_badges_provider.dart';
 import '../providers/leaderboard_provider.dart';
 
@@ -37,13 +38,23 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
       final result=ApiEnvelope.map(response.data);
       if(result['TrackId']!=id||result['StageId']!=widget.stageId)throw StateError('Invalid track selection response');
       if(!mounted||ref.read(authProvider).user?.id!=actor)return;
+      await ref.read(authProvider.notifier).refreshProfile();
+      if(!mounted||ref.read(authProvider).user?.id!=actor)return;
       ref.invalidate(trackSelectionProvider);
+      ref.invalidate(trackPracticeProvider);
       ref.invalidate(trackProgressProvider);
+      ref.invalidate(solvedProvider);
+      ref.invalidate(favoritesProvider);
+      ref.invalidate(errorNotebookProvider);
+      ref.invalidate(problemDetailsProvider);
+      ref.invalidate(problemsProvider);
+      ref.invalidate(leaderboardProvider);
+      ref.invalidate(studentBadgesProvider);
       ref.invalidate(dashboardProvider);
       ref.invalidate(learningJourneyProvider);
       ref.invalidate(dailyChallengeProvider);
       ref.invalidate(premiumAnalyticsProvider);
-      setState(()=>_changing=false);
+      Navigator.pushNamedAndRemoveUntil(context,AppRoutes.home,(_)=>false);
     }catch(error){
       if(mounted)setState(()=>_error=localizedErrorMessage(error));
     }finally{

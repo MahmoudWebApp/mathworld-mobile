@@ -223,7 +223,7 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
                   label: widget.onCreateAccount != null
                       ? (language == 'ar' ? 'إكمال إنشاء الحساب' : 'Finish registration')
                       : effective != null && effective == user?.currentStageId
-                      ? (language == 'ar' ? 'استكشف الفئات' : 'Explore topics')
+                      ? (language == 'ar' ? 'العودة للرئيسية' : 'Return to home')
                       : (language == 'ar' ? 'حفظ المرحلة والمتابعة' : 'Save stage and continue'),
                   trailingIcon: Icons.arrow_forward_rounded,
                   onPressed: effective == null || _saving
