@@ -175,7 +175,7 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
             Expanded(
               child: searching ? const AppLoadingView(mode:AppLoadingMode.search) : problemsState.when(
                 skipLoadingOnRefresh:false,skipLoadingOnReload:false,
-                loading: () => AppLoadingView(mode:_query != null ? AppLoadingMode.search : _hideSolved ? AppLoadingMode.filter : AppLoadingMode.data),
+                loading: () => _query != null || _hideSolved ? AppLoadingView(mode:_query != null ? AppLoadingMode.search : AppLoadingMode.filter) : const AppContentSkeleton(),
                 error: (error, __) {
                   if (error is AppException &&
                       error.type == AppExceptionType.forbidden &&
