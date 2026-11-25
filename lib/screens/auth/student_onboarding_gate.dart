@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -116,13 +117,13 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
           Text(ar?'أكد بريدك الإلكتروني':'Verify your email', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 8),
           Text(ar?'أدخل رمز التحقق المكوّن من 6 أرقام الذي وصلك على بريدك الإلكتروني.':'Enter the six-digit verification code sent to your email.', textAlign: TextAlign.center),
-          if(user!=null) Padding(padding:const EdgeInsets.symmetric(vertical:12),child:Text(user.email,textAlign:TextAlign.center,textDirection:TextDirection.ltr,style:Theme.of(context).textTheme.titleSmall)),
+          if(user!=null) Padding(padding:const EdgeInsets.symmetric(vertical:12),child:Text(user.email,textAlign:TextAlign.center,textDirection:ui.TextDirection.ltr,style:Theme.of(context).textTheme.titleSmall)),
           const SizedBox(height: 16),
           TextField(
             controller: _codeController,
             enabled: !busy,
             keyboardType: TextInputType.number,
-            textDirection: TextDirection.ltr,
+            textDirection: ui.TextDirection.ltr,
             textAlign: TextAlign.center,
             autofillHints: const [AutofillHints.oneTimeCode],
             inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
