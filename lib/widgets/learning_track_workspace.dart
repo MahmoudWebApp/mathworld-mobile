@@ -1,4 +1,6 @@
 import 'app_states.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../config/design_tokens.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -75,8 +77,7 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
     return ListView(padding:const EdgeInsets.all(16),children:[
       Text(ar?'اختر الصف أو المساق':'Choose grade or course',style:Theme.of(context).textTheme.headlineSmall),
       const SizedBox(height:8),
-      Text(ar?'اختيارك لا يحذف تقدمك السابق.':'Your previous progress is preserved.'),
-      const SizedBox(height:12),
+      const SizedBox(height:4),
       for(final track in widget.catalog.items) Card(child:ListTile(
         title:Text(trackText(track,'Name',ar)),
         subtitle:Text('${trackNumber(track['ProblemsCount'])} ${ar?'مسألة':'problems'}${track['FreeProblemsCount']!=null&&trackNumber(track['FreeProblemsCount'])==0?'\n${ar?'التدريب لمشتركي Premium':'Premium practice only'}':''}'),
@@ -137,18 +138,24 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
     final track=Map<String,dynamic>.from(d['Track'] as Map);
     final stats={for(final c in trackRows(p['Categories']))trackNumber(c['CategoryId']):c};
     final percent=(p['CompletionPercent'] as num?)?.toDouble()??0;
+    final accent=AppColors.stageForOrder(trackNumber(track['StageId']));
     return RefreshIndicator(onRefresh:()async{reload();await ref.read(trackProgressProvider(id).future);},child:ListView(padding:const EdgeInsets.all(16),children:[
-      Row(children:[Expanded(child:Text(trackText(track,'Name',ar),style:Theme.of(context).textTheme.headlineSmall)),TextButton(onPressed:_resetting?null:widget.onChange,child:Text(ar?'تغيير':'Change'))]),
-      Text('${ar?'التقدم':'Progress'}: ${trackNumber(p['Solved'])}/${trackNumber(p['ProblemsCount'])} · ${percent.toStringAsFixed(1)}%'),
+      Row(children:[Expanded(child:Text(trackText(track,'Name',ar),style:Theme.of(context).textTheme.headlineSmall?.copyWith(color:accent,fontWeight:FontWeight.w800))),TextButton(onPressed:_resetting?null:widget.onChange,child:Text(ar?'تغيير':'Change'))]),
+      Row(children:[Expanded(child:Text(ar?'التقدم':'Progress')),Text('${trackNumber(p['Solved'])}/${trackNumber(p['ProblemsCount'])} · ${percent.toStringAsFixed(1)}%',style:TextStyle(color:accent,fontWeight:FontWeight.w700))]),
       const SizedBox(height:8),
-      LinearProgressIndicator(value:(percent/100).clamp(0.0,1.0).toDouble()),
+      LinearProgressIndicator(value:(percent/100).clamp(0.0,1.0).toDouble(),color:accent,borderRadius:BorderRadius.circular(8)),
       if(p['TrackPracticeIsolationEnabled']==true&&stats.values.any((c)=>trackNumber(c['Attempted'])>0))
         OutlinedButton.icon(onPressed:_resetting?null:()=>_reset(trackNumber(p['StageId']),trackText(track,'Name',ar)),icon:const Icon(Icons.restart_alt),label:Text(ar?'إعادة تدريب الصف أو المساق':'Restart grade or course')),
       const SizedBox(height:16),
-      for(final c in trackRows(d['Categories'])) Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        Row(children:[Expanded(child:Text(trackText(c,'Name',ar),style:Theme.of(context).textTheme.titleMedium)),Text('${trackNumber(c['ProblemsCount'])} ${ar?'مسألة':'problems'}')]),
+      for(final c in trackRows(d['Categories'])) Card(shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(16),side:BorderSide(color:accent.withValues(alpha:.3))),child:Padding(padding:const EdgeInsets.all(14),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Row(children:[_TrackTopicIcon(value:c['Icon']?.toString()??'',accent:accent),const SizedBox(width:10),Expanded(child:Text(trackText(c,'Name',ar),style:Theme.of(context).textTheme.titleMedium?.copyWith(color:accent,fontWeight:FontWeight.w800))),const SizedBox(width:8),Container(padding:const EdgeInsets.symmetric(horizontal:8,vertical:6),decoration:BoxDecoration(color:accent.withValues(alpha:.12),borderRadius:BorderRadius.circular(8)),child:Text('${trackNumber(c['ProblemsCount'])} ${ar?'مسألة':'problems'}',style:TextStyle(color:accent,fontSize:12,fontWeight:FontWeight.w700)))]),
+        const SizedBox(height:8),
         if(trackText(c,'Description',ar).isNotEmpty)Text(trackText(c,'Description',ar)),
-        Text('${ar?'محلولة':'Solved'}: ${trackNumber(stats[trackNumber(c['Id'])]?['Solved'])}/${trackNumber(c['ProblemsCount'])}'),
+        const SizedBox(height:8),
+        Text('${ar?'محلولة':'Solved'}: ${trackNumber(stats[trackNumber(c['Id'])]?['Solved'])}/${trackNumber(c['ProblemsCount'])}',style:Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height:6),
+        LinearProgressIndicator(value:trackNumber(c['ProblemsCount'])>0?(trackNumber(stats[trackNumber(c['Id'])]?['Solved'])/trackNumber(c['ProblemsCount'])).clamp(0.0,1.0).toDouble():0,color:accent,borderRadius:BorderRadius.circular(8)),
+        const SizedBox(height:6),
         Wrap(spacing:8,children:[
           TextButton(onPressed:()=>showDialog<void>(context:context,builder:(ctx)=>AlertDialog(title:Text(ar?'المهارات':'Skills'),content:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
             for(final skill in trackRows(d['Skills']).where((s)=>s['CategoryId']==c['Id'])) ListTile(title:Text(trackText(skill,'Name',ar)),subtitle:Text(trackText(skill,'Description',ar))),
@@ -162,6 +169,24 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
       ]))),
       TextButton(onPressed:()=>Navigator.pushNamed(context,AppRoutes.learningStage),child:Text(ar?'تغيير المرحلة':'Change stage')),
     ]));
+  }
+}
+class _TrackTopicIcon extends StatelessWidget {
+  const _TrackTopicIcon({required this.value,required this.accent});
+  final String value;
+  final Color accent;
+  @override
+  Widget build(BuildContext context){
+    final url=value.startsWith('/category-icons/')?'https://math-world-frontend.vercel.app$value':value;
+    final uri=Uri.tryParse(url);
+    final fallback=Icon(Icons.calculate_outlined,color:accent,size:27);
+    Widget icon=fallback;
+    if(uri!=null&&uri.scheme=='https'&&uri.host.isNotEmpty){
+      icon=uri.path.toLowerCase().endsWith('.svg')
+        ?SvgPicture.network(url,width:36,height:36,placeholderBuilder:(_)=>fallback,errorBuilder:(_,__,___)=>fallback)
+        :Image.network(url,width:36,height:36,fit:BoxFit.contain,errorBuilder:(_,__,___)=>fallback);
+    }
+    return Container(width:44,height:44,decoration:BoxDecoration(color:accent.withValues(alpha:.1),borderRadius:BorderRadius.circular(12)),alignment:Alignment.center,child:icon);
   }
 }
 class _TrackPractice extends ConsumerStatefulWidget{
