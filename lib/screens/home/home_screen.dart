@@ -39,6 +39,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardState = ref.watch(dashboardProvider);
+    final dashboard = dashboardState.valueOrNull;
     final premiumAccount = ref.watch(authProvider.select(
       (state) => state.user?.subscriptionType.toLowerCase() == 'premium',
     ));
@@ -123,313 +124,315 @@ class HomeScreen extends ConsumerWidget {
       showSymbols: true,
       child: SafeArea(
         bottom: false,
-        child: dashboardState.when(
-          loading: () => const AppLoadingView(),
-          // The statistics endpoint can fail independently from the
-          // learning journey. Keep the primary navigation usable.
-          error: (error, _) => ListView(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            // Refresh both datasets together: points and the recommended
+            // next topic must reflect the same latest saved practice.
+            Future<void> refreshSection(Future<Object?> request) async {
+              try {
+                await request;
+              } catch (_) {
+                // Each section reports the error from its own provider.
+              }
+            }
+
+            await Future.wait([
+              refreshSection(ref.refresh(dashboardProvider.future)),
+              refreshSection(ref.refresh(learningJourneyProvider.future)),
+              refreshSection(ref.refresh(dailyChallengeProvider.future)),
+              refreshSection(ref.refresh(studentBadgesProvider.future)),
+            ]);
+          },
+          child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.lg,
+              144,
+            ),
             children: [
-              _ContinueLearningCard(onTap: onOpenStages),
-              const SizedBox(height: AppSpacing.lg),
-              AppErrorView(
-                message: localizedErrorMessage(error),
-                onRetry: () {
-                  ref.invalidate(dashboardProvider);
-                  ref.invalidate(learningJourneyProvider);
-                },
-              ),
-            ],
-          ),
-          data: (dashboard) => RefreshIndicator(
-            onRefresh: () async {
-              // Refresh both datasets together: points and the recommended
-              // next topic must reflect the same latest saved practice.
-              await Future.wait([
-                ref.refresh(dashboardProvider.future),
-                ref.refresh(learningJourneyProvider.future),
-                ref.refresh(dailyChallengeProvider.future),
-              ]);
-            },
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.lg,
-                AppSpacing.lg,
-                144,
-              ),
-              children: [
+              if (dashboard == null)
+                _ContinueLearningCard(onTap: resumeNextProblem)
+              else
                 AnimatedEntry(child: _HeroCard(
                   dashboard: dashboard,
                   journey: learningJourney.valueOrNull,
                   onContinue: () { resumeNextProblem(); },
                 )),
-                const SizedBox(height: AppSpacing.lg),
-                if (!premiumAccount) ...[
-                  GlassCard(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(children: [
-                          Icon(Icons.workspace_premium_rounded,
-                            color: Theme.of(context).colorScheme.primary),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(child: Text(
-                            context.locale.languageCode == 'ar'
-                              ? 'مميزات Premium وترقية الحساب'
-                              : 'Premium benefits and account upgrade',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800),
-                          )),
-                        ]),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(context.locale.languageCode == 'ar'
-                          ? 'افتح جميع فئات مرحلتك وطريقة الحل والتقارير الشخصية. التفعيل حالياً بكود من الإدارة، دون عرض أسعار.'
-                          : 'Unlock all topics in your stage, preview solutions and access personal reports. Activation uses an admin-issued code; no prices are shown.',
-                          style: Theme.of(context).textTheme.bodyMedium),
-                        const SizedBox(height: AppSpacing.md),
-                        OutlinedButton.icon(
-                          onPressed: () => Navigator.pushNamed(context, AppRoutes.premiumBenefits),
-                          icon: const Icon(Icons.arrow_circle_up_rounded),
-                          label: Text(context.locale.languageCode == 'ar'
-                            ? 'المميزات وترقية الحساب' : 'Benefits & upgrade'),
-                        ),
-                      ],
-                    ),
+              const SizedBox(height: AppSpacing.lg),
+              if (!premiumAccount) ...[
+                GlassCard(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Icon(Icons.workspace_premium_rounded,
+                          color: Theme.of(context).colorScheme.primary),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(child: Text(
+                          context.locale.languageCode == 'ar'
+                            ? 'مميزات Premium وترقية الحساب'
+                            : 'Premium benefits and account upgrade',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800),
+                        )),
+                      ]),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(context.locale.languageCode == 'ar'
+                        ? 'افتح جميع فئات مرحلتك وطريقة الحل والتقارير الشخصية. التفعيل حالياً بكود من الإدارة، دون عرض أسعار.'
+                        : 'Unlock all topics in your stage, preview solutions and access personal reports. Activation uses an admin-issued code; no prices are shown.',
+                        style: Theme.of(context).textTheme.bodyMedium),
+                      const SizedBox(height: AppSpacing.md),
+                      OutlinedButton.icon(
+                        onPressed: () => Navigator.pushNamed(context, AppRoutes.premiumBenefits),
+                        icon: const Icon(Icons.arrow_circle_up_rounded),
+                        label: Text(context.locale.languageCode == 'ar'
+                          ? 'المميزات وترقية الحساب' : 'Benefits & upgrade'),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: AppSpacing.xl),
-                ] else
-                  const SizedBox(height: AppSpacing.md),
-                if (backendMismatch) ...[
-                  GlassCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(children: [
-                          const Icon(Icons.sync_problem_rounded,
-                              color: AppColors.warning),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: Text(
-                              context.locale.languageCode == 'ar'
-                                  ? 'تحديث بيانات التعلّم'
-                                  : 'Learning services need an update',
+                ),
+                const SizedBox(height: AppSpacing.xl),
+              ] else
+                const SizedBox(height: AppSpacing.md),
+              if (backendMismatch) ...[
+                GlassCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        const Icon(Icons.sync_problem_rounded,
+                            color: AppColors.warning),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            context.locale.languageCode == 'ar'
+                                ? 'تحديث بيانات التعلّم'
+                                : 'Learning services need an update',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                      ]),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text('server_feature_unavailable'.tr()),
+                      const SizedBox(height: AppSpacing.sm),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          ref.invalidate(learningJourneyProvider);
+                          ref.invalidate(dailyChallengeProvider);
+                          ref.invalidate(studentBadgesProvider);
+                        },
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: Text('retry'.tr()),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+              ],
+              learningJourney.when(
+                data: (journey) => journey == null
+                    ? const SizedBox.shrink()
+                    : Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+                        child: AnimatedEntry(
+                          child: _LearningJourneyCard(journey: journey, onOpenStages: onOpenStages),
+                        ),
+                      ),
+                error: (error, _) => isBackendMismatch(error)
+                    ? const SizedBox.shrink()
+                    : Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                  child: _JourneyStatusCard(
+                    isLoading: false,
+                    message: localizedErrorMessage(error),
+                    onRetry: () => ref.invalidate(learningJourneyProvider),
+                  ),
+                ),
+                loading: () => const Padding(
+                  padding: EdgeInsets.only(bottom: AppSpacing.lg),
+                  child: AppLoadingView(mode:AppLoadingMode.section),
+                ),
+              ),
+              if (learningJourney.valueOrNull?.learningSessionsEnabled == true)
+                LearningSessionCards(journey: learningJourney.valueOrNull!),
+              if (learningJourney.valueOrNull?.certificatesEnabled == true)
+                Card(child:ListTile(
+                  leading:const Icon(Icons.workspace_premium_outlined),
+                  title:Text(context.locale.languageCode=='ar'?'شهاداتي التعليمية':'My learning certificates'),
+                  onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>CertificatesScreen(journey:learningJourney.valueOrNull!))),
+                  trailing:const Icon(Icons.arrow_forward_ios,size:16),
+                )),
+              if (learningJourney.valueOrNull?.learningSessionsEnabled != true)
+              dailyPractice.when(
+                data: (challenge) => challenge == null
+                    ? const SizedBox.shrink()
+                    : Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+                        child: AnimatedEntry(
+                          child: _DailyPracticeCard(
+                            challenge: challenge,
+                            onOpen: (problemId) async {
+                              var nextId = problemId;
+                              for (var step = 0; step < 5; step++) {
+                                final submitted = await Navigator.pushNamed(
+                                  context, AppRoutes.problemDetails,
+                                  arguments: {
+                                    'problemId': nextId,
+                                    'dailyChallenge': true,
+                                  },
+                                );
+                                if (!context.mounted) return;
+                                ref.invalidate(dailyChallengeProvider);
+                                ref.invalidate(dashboardProvider);
+                                ref.invalidate(learningJourneyProvider);
+                                if (submitted != true) break;
+                                final latest = await ref.read(dailyChallengeProvider.future);
+                                if (!context.mounted || latest == null) return;
+                                final waiting = latest.problems.where((p) => !p.isAnswered);
+                                if (waiting.isEmpty) break;
+                                nextId = waiting.first.id;
+                              }
+                              ref.invalidate(dailyChallengeProvider);
+                            },
+                          ),
+                        ),
+                      ),
+                loading: () => const Padding(
+                  padding: EdgeInsets.only(bottom: AppSpacing.lg),
+                  child: AppLoadingView(mode:AppLoadingMode.section),
+                ),
+                error: (error, _) => isBackendMismatch(error)
+                    ? const SizedBox.shrink()
+                    : Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                  child: GlassCard(child: Row(children: [
+                    const Icon(Icons.refresh_outlined,
+                      color: AppColors.warning),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(child: Text(localizedErrorMessage(error))),
+                    IconButton(
+                      tooltip: context.locale.languageCode == 'ar'
+                        ? 'إعادة المحاولة' : 'Retry',
+                      onPressed: () => ref.invalidate(dailyChallengeProvider),
+                      icon: const Icon(Icons.refresh_rounded),
+                    ),
+                  ])),
+                ),
+              ),
+              if (learningJourney.valueOrNull != null) ...[
+                AnimatedEntry(
+                  index: 1,
+                  child: _StatsGrid(journey: learningJourney.valueOrNull!),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.xl),
+              if (!isBackendMismatch(badges.asError?.error))
+                const StudentBadgesCard(),
+              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.xxl),
+              AnimatedEntry(
+                index: 3,
+                child: _SectionHeader(title: 'recent_activity'.tr()),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              if (dashboard == null && dashboardState.hasError)
+                _JourneyStatusCard(
+                  isLoading: false,
+                  message: context.locale.languageCode == 'ar'
+                      ? 'تعذّر تحميل نشاطك الأخير.'
+                      : 'Could not load your recent activity.',
+                  onRetry: () => ref.invalidate(dashboardProvider),
+                )
+              else if (dashboard == null)
+                const AppLoadingView(mode: AppLoadingMode.section)
+              else if (dashboard.recentActivities.isEmpty)
+                AppEmptyView(
+                  icon: Icons.timeline_rounded,
+                  title: 'no_activity_yet'.tr(),
+                )
+              else
+                GlassCard(
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    children: dashboard.recentActivities
+                        .take(4)
+                        .toList()
+                        .asMap()
+                        .entries
+                        .map((entry) {
+                      final activity = entry.value;
+                      return Column(
+                        children: [
+                          ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.lg,
+                              vertical: AppSpacing.sm,
+                            ),
+                            leading: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: AppColors.success.withValues(
+                                  alpha: 0.12,
+                                ),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Icon(
+                                Icons.check_rounded,
+                                color: AppColors.success,
+                              ),
+                            ),
+                            title: RichMathText(
+                              text: activity.title,
+                              inline: true,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
-                          ),
-                        ]),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text('server_feature_unavailable'.tr()),
-                        const SizedBox(height: AppSpacing.sm),
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            ref.invalidate(learningJourneyProvider);
-                            ref.invalidate(dailyChallengeProvider);
-                            ref.invalidate(studentBadgesProvider);
-                          },
-                          icon: const Icon(Icons.refresh_rounded),
-                          label: Text('retry'.tr()),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                ],
-                learningJourney.when(
-                  data: (journey) => journey == null
-                      ? const SizedBox.shrink()
-                      : Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-                          child: AnimatedEntry(
-                            child: _LearningJourneyCard(journey: journey, onOpenStages: onOpenStages),
-                          ),
-                        ),
-                  error: (error, _) => isBackendMismatch(error)
-                      ? const SizedBox.shrink()
-                      : Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                    child: _JourneyStatusCard(
-                      isLoading: false,
-                      message: localizedErrorMessage(error),
-                      onRetry: () => ref.invalidate(learningJourneyProvider),
-                    ),
-                  ),
-                  loading: () => const Padding(
-                    padding: EdgeInsets.only(bottom: AppSpacing.lg),
-                    child: AppLoadingView(mode:AppLoadingMode.section),
-                  ),
-                ),
-                if (learningJourney.valueOrNull?.learningSessionsEnabled == true)
-                  LearningSessionCards(journey: learningJourney.valueOrNull!),
-                if (learningJourney.valueOrNull?.certificatesEnabled == true)
-                  Card(child:ListTile(
-                    leading:const Icon(Icons.workspace_premium_outlined),
-                    title:Text(context.locale.languageCode=='ar'?'شهاداتي التعليمية':'My learning certificates'),
-                    onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>CertificatesScreen(journey:learningJourney.valueOrNull!))),
-                    trailing:const Icon(Icons.arrow_forward_ios,size:16),
-                  )),
-                if (learningJourney.valueOrNull?.learningSessionsEnabled != true)
-                dailyPractice.when(
-                  data: (challenge) => challenge == null
-                      ? const SizedBox.shrink()
-                      : Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-                          child: AnimatedEntry(
-                            child: _DailyPracticeCard(
-                              challenge: challenge,
-                              onOpen: (problemId) async {
-                                var nextId = problemId;
-                                for (var step = 0; step < 5; step++) {
-                                  final submitted = await Navigator.pushNamed(
-                                    context, AppRoutes.problemDetails,
-                                    arguments: {
-                                      'problemId': nextId,
-                                      'dailyChallenge': true,
-                                    },
-                                  );
-                                  if (!context.mounted) return;
-                                  ref.invalidate(dailyChallengeProvider);
-                                  ref.invalidate(dashboardProvider);
-                                  ref.invalidate(learningJourneyProvider);
-                                  if (submitted != true) break;
-                                  final latest = await ref.read(dailyChallengeProvider.future);
-                                  if (!context.mounted || latest == null) return;
-                                  final waiting = latest.problems.where((p) => !p.isAnswered);
-                                  if (waiting.isEmpty) break;
-                                  nextId = waiting.first.id;
-                                }
-                                ref.invalidate(dailyChallengeProvider);
-                              },
-                            ),
-                          ),
-                        ),
-                  loading: () => const Padding(
-                    padding: EdgeInsets.only(bottom: AppSpacing.lg),
-                    child: AppLoadingView(mode:AppLoadingMode.section),
-                  ),
-                  error: (error, _) => isBackendMismatch(error)
-                      ? const SizedBox.shrink()
-                      : Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                    child: GlassCard(child: Row(children: [
-                      const Icon(Icons.refresh_outlined,
-                        color: AppColors.warning),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(child: Text(localizedErrorMessage(error))),
-                      IconButton(
-                        tooltip: context.locale.languageCode == 'ar'
-                          ? 'إعادة المحاولة' : 'Retry',
-                        onPressed: () => ref.invalidate(dailyChallengeProvider),
-                        icon: const Icon(Icons.refresh_rounded),
-                      ),
-                    ])),
-                  ),
-                ),
-                if (learningJourney.valueOrNull != null) ...[
-                  AnimatedEntry(
-                    index: 1,
-                    child: _StatsGrid(journey: learningJourney.valueOrNull!),
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.xl),
-                if (!isBackendMismatch(badges.asError?.error))
-                  const StudentBadgesCard(),
-                const SizedBox(height: AppSpacing.xl),
-                const SizedBox(height: AppSpacing.xxl),
-                AnimatedEntry(
-                  index: 3,
-                  child: _SectionHeader(title: 'recent_activity'.tr()),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                if (dashboard.recentActivities.isEmpty)
-                  AppEmptyView(
-                    icon: Icons.timeline_rounded,
-                    title: 'no_activity_yet'.tr(),
-                  )
-                else
-                  GlassCard(
-                    padding: EdgeInsets.zero,
-                    child: Column(
-                      children: dashboard.recentActivities
-                          .take(4)
-                          .toList()
-                          .asMap()
-                          .entries
-                          .map((entry) {
-                        final activity = entry.value;
-                        return Column(
-                          children: [
-                            ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.lg,
-                                vertical: AppSpacing.sm,
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(
+                                top: AppSpacing.xs,
                               ),
-                              leading: Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: AppColors.success.withValues(
-                                    alpha: 0.12,
-                                  ),
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: const Icon(
-                                  Icons.check_rounded,
-                                  color: AppColors.success,
-                                ),
-                              ),
-                              title: RichMathText(
-                                text: activity.title,
-                                inline: true,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              subtitle: Padding(
-                                padding: const EdgeInsets.only(
-                                  top: AppSpacing.xs,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(activity.categoryName),
-                                    if (activity.solvedAt != null)
-                                      Text(
-                                        formatLocalizedDateTime(
-                                          context,
-                                          activity.solvedAt,
-                                        ),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(activity.categoryName),
+                                  if (activity.solvedAt != null)
+                                    Text(
+                                      formatLocalizedDateTime(
+                                        context,
+                                        activity.solvedAt,
                                       ),
-                                  ],
-                                ),
-                              ),
-                              trailing: LayoutUtils.forwardIcon(context),
-                              onTap: () => Navigator.pushNamed(
-                                context,
-                                AppRoutes.problemDetails,
-                                arguments: activity.problemId,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall,
+                                    ),
+                                ],
                               ),
                             ),
-                            if (entry.key <
-                                dashboard.recentActivities.take(4).length - 1)
-                              const Divider(
-                                height: 1,
-                                indent: 72,
-                                endIndent: 16,
-                              ),
-                          ],
-                        );
-                      }).toList(),
-                    ),
+                            trailing: LayoutUtils.forwardIcon(context),
+                            onTap: () => Navigator.pushNamed(
+                              context,
+                              AppRoutes.problemDetails,
+                              arguments: activity.problemId,
+                            ),
+                          ),
+                          if (entry.key <
+                              dashboard.recentActivities.take(4).length - 1)
+                            const Divider(
+                              height: 1,
+                              indent: 72,
+                              endIndent: 16,
+                            ),
+                        ],
+                      );
+                    }).toList(),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ),
