@@ -196,11 +196,13 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
     state = state.copyWith(isPreviewLoading: true);
     try {
       final preview = await _repository.previewSolution(_problemId);
+      if (!mounted) return;
       state = state.copyWith(
         solutionPreview: preview,
         isPreviewLoading: false,
       );
     } catch (_) {
+      if (!mounted) return;
       state = state.copyWith(isPreviewLoading: false);
       rethrow;
     }
@@ -209,7 +211,7 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
   /// Starts a new training attempt without changing the official first result.
   void startRetry() {
     final problem = state.problem.valueOrNull;
-    if (problem == null || !problem.hasAttempted || !problem.canRetry) {
+    if (problem == null || !problem.hasAttempted || !problem.canRetry || state.isSubmitting) {
       return;
     }
 
@@ -224,7 +226,7 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
   /// Cancels training mode and restores the official answer state.
   void cancelRetry() {
     final problem = state.problem.valueOrNull;
-    if (problem == null || !problem.hasAttempted) {
+    if (problem == null || !problem.hasAttempted || state.isSubmitting) {
       return;
     }
 
@@ -264,7 +266,7 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
     if (!canAnswer || state.isSubmitting) {
       return;
     }
-    state = state.copyWith(selectedOptionId: optionId);
+    state = state.copyWith(selectedOptionId: optionId, clearSelectedOption: optionId == null);
   }
 
   Future<void> submitAnswer() async {
@@ -293,7 +295,7 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
       );
 
       if (!mounted) return;
-      final updatedProblem = problem.copyWith(
+      final updatedProblem = (state.problem.valueOrNull ?? problem).copyWith(
         isSolved: result.isSolved,
         hasAttempted: true,
         wasCorrect: result.isCorrect,
@@ -357,7 +359,7 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
       );
 
       if (!mounted) return;
-      final updated = problem.copyWith(isFavorite: serverValue);
+      final updated = (state.problem.valueOrNull ?? problem).copyWith(isFavorite: serverValue);
       state = state.copyWith(
         problem: AsyncValue.data(updated),
         isFavoriteBusy: false,

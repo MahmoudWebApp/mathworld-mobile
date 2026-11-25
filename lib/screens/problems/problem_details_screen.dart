@@ -157,7 +157,7 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
       )),
       body: MathBackground(
         child: state.problem.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const AppContentSkeleton(count:4),
           error: (error, _) => ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
@@ -318,7 +318,7 @@ class _ProblemContent extends ConsumerWidget {
         const SizedBox(height: AppSpacing.md),
         RadioGroup<int>(
           groupValue: state.selectedOptionId,
-          onChanged: canSelect ? onOptionChanged : (_) {},
+          onChanged: canSelect && !state.isSubmitting ? onOptionChanged : (_) {},
           child: Column(
             children: [
               for (var index = 0; index < problem.options.length; index++) ...[
@@ -329,7 +329,7 @@ class _ProblemContent extends ConsumerWidget {
                       state.selectedOptionId == problem.options[index].id,
                   isCorrect: _isCorrectOption(problem.options[index], state),
                   isWrong: _isWrongOption(problem.options[index], state),
-                  enabled: canSelect,
+                  enabled: canSelect && !state.isSubmitting,
                 ),
                 if (index < problem.options.length - 1)
                   const SizedBox(height: AppSpacing.md),
@@ -416,7 +416,7 @@ class _ProblemContent extends ConsumerWidget {
             expand: true,
           ),
         ],
-        if (solution.isNotEmpty) ...[
+        if (solution.isNotEmpty || structure != null) ...[
           const SizedBox(height: AppSpacing.xxl),
           Text(
             'detailed_solution'.tr(),
