@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/app_routes.dart';
@@ -63,6 +64,15 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
   int? selectedTrack;
   bool busy = false;
   String notice = '';
+  final _codeController = TextEditingController();
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  String get verificationCode => _codeController.text.trim();
 
   Future<void> perform(Future<void> Function() action, {String? success}) async {
     if (busy) return;
@@ -101,11 +111,35 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
         if (widget.step == 'SignedOut')
           FilledButton(onPressed: () => Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false), child: Text(ar?'تسجيل الدخول':'Sign in'))
         else if (verify) ...[
-          const Icon(Icons.mark_email_unread_outlined, size: 56),
-          Text(ar?'أكد بريدك الإلكتروني أولاً':'Verify your email first', style: Theme.of(context).textTheme.headlineSmall),
-          Text(ar?'افتح رابط التأكيد من بريدك، ثم ارجع واضغط متابعة.':'Open the verification link from your inbox, then return and continue.'),
-          FilledButton(onPressed: busy?null:()=>ref.invalidate(studentOnboardingProvider), child: Text(ar?'تحقق من التأكيد وتابع':'Check verification and continue')),
-          OutlinedButton(onPressed: busy?null:()=>perform(() async {await client.post('/auth/email-verification/request',data:{'Language':ar?'ar':'en'});},success:ar?'تم طلب الرابط. تحقق من بريدك.':'Link requested. Check your inbox.'), child: Text(ar?'إعادة إرسال رابط التأكيد':'Resend verification link')),
+          const Icon(Icons.mark_email_unread_outlined, size: 56, color: AppColors.brandPurple),
+          const SizedBox(height: 12),
+          Text(ar?'أكد بريدك الإلكتروني':'Verify your email', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 8),
+          Text(ar?'أدخل رمز التحقق المكوّن من 6 أرقام الذي وصلك على بريدك الإلكتروني.':'Enter the six-digit verification code sent to your email.', textAlign: TextAlign.center),
+          if(user!=null) Padding(padding:const EdgeInsets.symmetric(vertical:12),child:Text(user.email,textAlign:TextAlign.center,textDirection:TextDirection.ltr,style:Theme.of(context).textTheme.titleSmall)),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _codeController,
+            enabled: !busy,
+            keyboardType: TextInputType.number,
+            textDirection: TextDirection.ltr,
+            textAlign: TextAlign.center,
+            autofillHints: const [AutofillHints.oneTimeCode],
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
+            style: const TextStyle(fontSize:26, letterSpacing:8, fontWeight:FontWeight.bold),
+            decoration: InputDecoration(labelText:ar?'رمز التحقق':'Verification code',hintText:'000000',counterText:''),
+            onChanged: (_) => setState(() => notice=''),
+          ),
+          const SizedBox(height: 16),
+          FilledButton(onPressed: busy||verificationCode.length!=6?null:()=>perform(() async {
+            await client.post('/auth/email-verification/confirm-code',data:{'Code':verificationCode});
+            if(mounted) ref.invalidate(studentOnboardingProvider);
+          }), child: Text(busy?(ar?'جارٍ التحقق…':'Verifying…'):(ar?'تفعيل الحساب والمتابعة':'Verify and continue'))),
+          OutlinedButton(onPressed: busy?null:()=>perform(() async {
+            await client.post('/auth/email-verification/request',data:{'Language':ar?'ar':'en'});
+            if(mounted) _codeController.clear();
+          },success:ar?'تم طلب رمز جديد. تحقق من بريدك.':'New code requested. Check your email.'), child: Text(ar?'إعادة إرسال الرمز':'Resend code')),
+          TextButton(onPressed:busy?null:()=>ref.invalidate(studentOnboardingProvider), child:Text(ar?'فعّلت البريد من الموقع؟ متابعة':'Verified on the website? Continue')),
         ] else ...[
           Text(stage?(ar?'اختر مرحلتك التعليمية':'Choose your learning stage'):(ar?'اختر الصف أو السنة أو المساق':'Choose grade, year or course'),style: Theme.of(context).textTheme.headlineSmall),
           if(stages != null) stages.when(
