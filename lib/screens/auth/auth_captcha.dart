@@ -42,8 +42,12 @@ class _AuthCaptchaScreenState extends State<_AuthCaptchaScreen> {
           if (request.isMainFrame) {
             return uri == _url ? NavigationDecision.navigate : NavigationDecision.prevent;
           }
-          return uri?.scheme == 'https' && uri?.host == 'challenges.cloudflare.com'
-              ? NavigationDecision.navigate : NavigationDecision.prevent;
+          // Turnstile uses blank/srcdoc subframes during verification.
+          // Never allow these or third-party domains as the top-level page.
+          final allowedFrame = request.url == 'about:blank' ||
+              request.url == 'about:srcdoc' ||
+              (uri?.scheme == 'https' && uri?.host == 'challenges.cloudflare.com' && uri?.userInfo == '' && uri?.port == 443);
+          return allowedFrame ? NavigationDecision.navigate : NavigationDecision.prevent;
         },
         onWebResourceError: (error) {
           if (mounted && error.isForMainFrame == true) setState(() => _failed = true);
