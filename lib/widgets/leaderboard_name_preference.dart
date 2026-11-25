@@ -40,7 +40,7 @@ class _LeaderboardNamePreferenceState extends ConsumerState<LeaderboardNamePrefe
             await ref.read(apiClientProvider).put('/users/leaderboard-preferences',data:{'ShareLeaderboardFullName':next});
             if(!mounted||ref.read(authProvider).user?.id!=widget.userId)return;
             ref.invalidate(leaderboardProvider);
-            await ref.refresh(provider.future);
+            await ref.refresh(provider.future).then<void>((_) {});
           }catch(_){if(mounted)setState(()=>failed=true);}
           finally{if(mounted)setState(()=>saving=false);}
         }),

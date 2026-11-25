@@ -315,7 +315,7 @@ ListView(key: const PageStorageKey('settings-2'),padding:const EdgeInsets.all(16
               const SizedBox(height: AppSpacing.xl),
             ],
             if (currentUser?.role == 'Student') ...[
-              LeaderboardNamePreference(key: ValueKey(currentUser!.id), userId: currentUser.id),
+              LeaderboardNamePreference(key: ValueKey(currentUser.id), userId: currentUser.id),
               const SizedBox(height: AppSpacing.md),
               GlassCard(
                 padding: EdgeInsets.zero,
