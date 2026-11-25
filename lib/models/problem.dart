@@ -4,8 +4,10 @@ class SolutionStructure {
   const SolutionStructure({required this.idea,required this.formulaLatex,required this.steps,required this.substitution,required this.result,required this.unit,required this.verification,required this.commonError});
   static SolutionStructure? parse(dynamic raw){
     if(raw is! Map)return null;
-    String value(String key)=>(raw[key]??'').toString();
-    return SolutionStructure(idea:value('Idea'),formulaLatex:value('FormulaLatex'),steps:(raw['Steps'] as List? ?? []).map((s)=>s.toString()).toList(),substitution:value('Substitution'),result:value('Result'),unit:value('Unit'),verification:value('Verification'),commonError:value('CommonError'));
+    dynamic field(String key)=>raw[key]??raw[key[0].toLowerCase()+key.substring(1)];
+    String value(String key)=>(field(key)??'').toString();
+    final rawSteps=field('Steps');
+    return SolutionStructure(idea:value('Idea'),formulaLatex:value('FormulaLatex'),steps:rawSteps is List?rawSteps.whereType<String>().toList():const <String>[],substitution:value('Substitution'),result:value('Result'),unit:value('Unit'),verification:value('Verification'),commonError:value('CommonError'));
   }
 }
 
@@ -160,7 +162,7 @@ class Problem {
           .map((item) => Option.fromJson(_map(item)))
           .toList()
         ..sort((a, b) => a.order.compareTo(b.order)),
-      solutionStructure: isSolved?SolutionStructure.parse(json['SolutionStructure']):null,
+      solutionStructure: isSolved?SolutionStructure.parse(json['SolutionStructure']??json['solutionStructure']):null,
       detailedSolution: localizedNullableString(
         json,
         languageCode: languageCode,
@@ -392,7 +394,7 @@ class AnswerResult {
       correctOptionText: _nullableString(
         json['CorrectOptionText'] ?? json['correctOptionText'],
       ),
-      solutionStructure:isCorrect?SolutionStructure.parse(json['SolutionStructure']):null,
+      solutionStructure:isCorrect?SolutionStructure.parse(json['SolutionStructure']??json['solutionStructure']):null,
       usedHint:_bool(json['UsedHint']),
       detailedSolution: localizedString(
         json,
