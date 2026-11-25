@@ -17,6 +17,7 @@ import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/account_password_dialog.dart';
 import '../../widgets/email_preferences_dialog.dart';
+import '../../widgets/leaderboard_name_preference.dart';
 import '../../widgets/platform_contact_card.dart';
 
 /// Displays appearance, language, legal, and account preferences.
@@ -314,6 +315,8 @@ ListView(key: const PageStorageKey('settings-2'),padding:const EdgeInsets.all(16
               const SizedBox(height: AppSpacing.xl),
             ],
             if (currentUser?.role == 'Student') ...[
+              LeaderboardNamePreference(key: ValueKey(currentUser!.id), userId: currentUser.id),
+              const SizedBox(height: AppSpacing.md),
               GlassCard(
                 padding: EdgeInsets.zero,
                 child: ListTile(
