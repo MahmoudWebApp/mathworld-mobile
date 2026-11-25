@@ -31,9 +31,15 @@ class _LearningSessionScreenState extends ConsumerState<LearningSessionScreen>{
     setState((){_busy=true;_error=false;});
     try{
       final current=_session;
-      final value=current==null?await _api.current(widget.scope):await _api.get(sessionText(current,'Id'),widget.scope);
+      Map<String,dynamic>? value;
+      try {
+        value=current==null?await _api.current(widget.scope):await _api.get(sessionText(current,'Id'),widget.scope);
+      } on AppException catch(e) {
+        if(current==null||!(e.statusCode==404||e.statusCode==409||e.type==AppExceptionType.notFound))rethrow;
+        value=await _api.current(widget.scope);
+      }
       if(!mounted||!_sameUser)return;
-      setState((){_session=value;_loadFailed=false;_clear();});
+      setState((){_session=value;_startId=null;_loadFailed=false;_clear();});
     }catch(_){if(mounted&&_sameUser)setState((){_error=true;_loadFailed=_session==null;});}
     finally{if(mounted)setState(()=>_busy=false);}
   }
