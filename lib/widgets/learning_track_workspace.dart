@@ -39,7 +39,7 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
     try{
       final response=await ref.read(apiClientProvider).put('/users/learning-track',data:{'TrackId':id});
       final result=ApiEnvelope.map(response.data);
-      if(result['TrackId']!=id||result['StageId']!=widget.stageId)throw StateError('Invalid track selection response');
+      if(trackNumber(result['TrackId'])!=id||trackNumber(result['StageId'])!=widget.stageId)throw StateError('Invalid track selection response');
       if(!mounted||ref.read(authProvider).user?.id!=actor)return;
       await ref.read(authProvider.notifier).refreshProfile();
       if(!mounted||ref.read(authProvider).user?.id!=actor)return;
@@ -69,10 +69,10 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
     final ar=context.locale.languageCode=='ar';
     final selection=ref.watch(trackSelectionProvider);
     if(selection.isLoading&&!selection.hasValue)return const AppLoadingView(mode:AppLoadingMode.section);
-    if(selection.hasError)return Center(child:TextButton(onPressed:()=>ref.invalidate(trackSelectionProvider),child:Text(ar?'إعادة المحاولة':'Retry')));
+    if(selection.hasError)return AppErrorView(message:localizedErrorMessage(selection.error!),onRetry:()=>ref.invalidate(trackSelectionProvider));
     final current=selection.valueOrNull;
     final id=trackNumber(current?['TrackId']);
-    final selected=current?['StageId']==widget.stageId && widget.catalog.items.any((t)=>t['Id']==id);
+    final selected=trackNumber(current?['StageId'])==widget.stageId && widget.catalog.items.any((t)=>trackNumber(t['Id'])==id);
     if(selected&&!_changing)return _TrackContent(key:ValueKey(id),id:id,onChange:()=>setState(()=>_changing=true));
     return ListView(padding:const EdgeInsets.all(16),children:[
       Text(ar?'اختر الصف أو المساق':'Choose grade or course',style:Theme.of(context).textTheme.headlineSmall),
@@ -132,12 +132,14 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
     final ar=context.locale.languageCode=='ar';
     final detail=ref.watch(trackDetailsProvider(id));final progress=ref.watch(trackProgressProvider(id));
     void reload(){ref.invalidate(trackDetailsProvider(id));ref.invalidate(trackProgressProvider(id));}
-    if(detail.hasError||progress.hasError)return Center(child:TextButton(onPressed:reload,child:Text(ar?'إعادة المحاولة':'Retry')));
+    if(detail.hasError||progress.hasError)return AppErrorView(message:localizedErrorMessage(detail.error??progress.error!),onRetry:reload);
     final d=detail.valueOrNull;final p=progress.valueOrNull;
     if(d==null||p==null)return const AppLoadingView(mode:AppLoadingMode.section);
-    final track=Map<String,dynamic>.from(d['Track'] as Map);
+    final rawTrack=d['Track'];
+    if(rawTrack is! Map)return AppErrorView(onRetry:reload,message:ar?'تعذّر قراءة بيانات الصف أو المساق':'Could not read grade or course data');
+    final track=Map<String,dynamic>.from(rawTrack);
     final stats={for(final c in trackRows(p['Categories']))trackNumber(c['CategoryId']):c};
-    final percent=(p['CompletionPercent'] as num?)?.toDouble()??0;
+    final percent=double.tryParse(p['CompletionPercent']?.toString()??'')??0;
     final accent=AppColors.stageForOrder(trackNumber(track['StageId']));
     return RefreshIndicator(onRefresh:()async{reload();await ref.read(trackProgressProvider(id).future);},child:ListView(padding:const EdgeInsets.all(16),children:[
       Row(children:[Expanded(child:Text(trackText(track,'Name',ar),style:Theme.of(context).textTheme.headlineSmall?.copyWith(color:accent,fontWeight:FontWeight.w800))),TextButton(onPressed:_resetting?null:widget.onChange,child:Text(ar?'تغيير':'Change'))]),
@@ -168,6 +170,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
         ]),
       ]))),
       TextButton(onPressed:()=>Navigator.pushNamed(context,AppRoutes.learningStage),child:Text(ar?'تغيير المرحلة':'Change stage')),
+      if(trackRows(d['Categories']).isEmpty) AppEmptyView(icon:Icons.category_outlined,title:ar?'لا توجد فئات منشورة':'No published categories',action:TextButton(onPressed:reload,child:Text(ar?'تحديث':'Refresh'))),
     ]));
   }
 }
@@ -196,21 +199,26 @@ class _TrackPractice extends ConsumerStatefulWidget{
 }
 class _TrackPracticeState extends ConsumerState<_TrackPractice>{
   int _page=1;
+  bool _hideSolved=false;
   @override Widget build(BuildContext context){
     final ar=context.locale.languageCode=='ar';
     final key=(trackId:widget.id,categoryId:widget.categoryId,page:_page);
     final state=ref.watch(trackPracticeProvider(key));
     final data=state.valueOrNull;
-    return Scaffold(appBar:AppBar(title:Text(widget.name)),body:state.hasError?Center(child:TextButton(onPressed:()=>ref.invalidate(trackPracticeProvider(key)),child:Text(ar?'إعادة المحاولة':'Retry'))):data==null?const AppLoadingView(mode:AppLoadingMode.section):ListView(padding:const EdgeInsets.all(12),children:[
-      for(final problem in trackRows(data['Items'])) Card(child:ListTile(title:Text(trackText(problem,'Title',ar)),subtitle:Text(problem['IsSolved']==true?(ar?'محلولة':'Solved'):(ar?'غير محلولة':'Unsolved')),onTap:()async{
+    final rows=trackRows(data?['Items']);
+    final visible=rows.where((problem)=>!_hideSolved||problem['IsSolved']!=true).toList();
+    return Scaffold(appBar:AppBar(title:Text(widget.name)),body:state.hasError?AppErrorView(message:localizedErrorMessage(state.error!),onRetry:()=>ref.invalidate(trackPracticeProvider(key))):data==null?const AppLoadingView(mode:AppLoadingMode.section):RefreshIndicator(onRefresh:()async{ref.invalidate(trackPracticeProvider(key));await ref.read(trackPracticeProvider(key).future);},child:ListView(physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.all(12),children:[
+      FilterChip(label:Text(ar?'إخفاء المحلولة في هذه الصفحة':'Hide solved on this page'),selected:_hideSolved,onSelected:(value)=>setState(()=>_hideSolved=value)),
+      if(visible.isEmpty) AppEmptyView(icon:Icons.calculate_outlined,title:ar?'لا توجد مسائل في هذه الصفحة':'No problems on this page'),
+      for(final problem in visible) Card(child:ListTile(title:Text(trackText(problem,'Title',ar)),subtitle:Text(problem['IsSolved']==true?(ar?'محلولة':'Solved'):(ar?'غير محلولة':'Unsolved')),onTap:()async{
         await Navigator.pushNamed(context,AppRoutes.problemDetails,arguments:trackNumber(problem['Id']));
         if(mounted){ref.invalidate(trackPracticeProvider(key));ref.invalidate(trackProgressProvider(widget.id));ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}
       })),
       Row(mainAxisAlignment:MainAxisAlignment.center,children:[
         TextButton(onPressed:_page<=1?null:()=>setState(()=>_page--),child:Text(ar?'السابق':'Previous')),
         Text('$_page'),
-        TextButton(onPressed:_page*trackNumber(data['PageSize'])>=trackNumber(data['Total'])?null:()=>setState(()=>_page++),child:Text(ar?'التالي':'Next')),
+        TextButton(onPressed:trackNumber(data['PageSize'])<=0||_page*trackNumber(data['PageSize'])>=trackNumber(data['Total'])?null:()=>setState(()=>_page++),child:Text(ar?'التالي':'Next')),
       ]),
-    ]));
+    ])));
   }
 }
