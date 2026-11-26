@@ -115,9 +115,9 @@ class AppTheme {
         elevation: 0,
         color: surface,
         surfaceTintColor: Colors.transparent,
-        margin: EdgeInsets.zero,
+        margin: const EdgeInsets.symmetric(vertical:6),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           side: BorderSide(color: border),
         ),
       ),
