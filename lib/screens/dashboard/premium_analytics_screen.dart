@@ -411,7 +411,7 @@ class _XlsxDownloadButtonState extends ConsumerState<_XlsxDownloadButton> {
           ? const SizedBox(
               width: 18,
               height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: AppInlineLoader(size:18),
             )
           : const Icon(Icons.table_chart_outlined),
       label: Text(_sharing
@@ -473,7 +473,7 @@ class _PdfShareButtonState extends ConsumerState<_PdfShareButton> {
       onPressed: _sharing ? null : _sharePdf,
       icon: _sharing
           ? const SizedBox(width: 18, height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2))
+              child: AppInlineLoader(size:18))
           : const Icon(Icons.picture_as_pdf_outlined),
       label: Text(_sharing
           ? (ar ? 'جارٍ تجهيز PDF…' : 'Preparing PDF…')
