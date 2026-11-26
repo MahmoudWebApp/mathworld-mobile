@@ -41,7 +41,7 @@ class CurrentGradeReportScreen extends ConsumerWidget {
         ))):ref.watch(currentGradeReportProvider).when(skipLoadingOnRefresh:false,skipLoadingOnReload:false,
           loading:()=>const AppContentSkeleton(),
           error:(e,_)=>AppErrorView(message:localizedErrorMessage(e),onRetry:(){ref.invalidate(trackSelectionProvider);ref.invalidate(currentGradeReportProvider);}),
-          data:(p)=>_ReportBody(report:p,ar:ar,onRefresh:() async {try{await ref.refresh(currentGradeReportProvider.future);}catch(_){}}),
+          data:(p)=>_ReportBody(report:p,ar:ar,onRefresh:() async {try{await ref.refresh(currentGradeReportProvider.future).then((_) {});}catch(_){}}),
         ),
       ))));
   }
