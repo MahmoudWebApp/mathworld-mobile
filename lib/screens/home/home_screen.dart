@@ -47,7 +47,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final examsEnabled=ref.watch(customExamAvailabilityProvider).valueOrNull==true;
     final primary=Theme.of(context).colorScheme.primary;
     final gold=AppColors.pointsGold(context);
-    final stageAccent=j==null?primary:AppColors.stageForOrder(j.stageId);
+    final stageAccent=j==null?primary:AppColors.stageForIdentity(j.stageId,j.nameAr);
     String tr(String a,String e)=>ar?a:e;
     Future<void> resumeNextProblem() async {
       if(_resuming)return;
@@ -141,7 +141,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height:8),
         Text(j?.recommendedCategory?.getName(context.locale.languageCode)??tr('استكشف الفئات المتاحة لك','Explore your available topics')),
         const SizedBox(height:12),
-        PremiumButton(onPressed:_resuming?null:resumeNextProblem,isLoading:_resuming,expand:true,label:tr('متابعة التعلم','Continue learning'),trailingIcon:Icons.arrow_forward_rounded),
+        PremiumButton(onPressed:resumeNextProblem,isLoading:_resuming,expand:true,label:tr('متابعة التعلم','Continue learning'),trailingIcon:Icons.arrow_forward_rounded),
       ])),
       Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         MobileSectionTitle(title:tr('أدوات التعلم','Learning tools')),
