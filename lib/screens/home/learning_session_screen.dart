@@ -6,6 +6,8 @@ import '../../providers/auth_provider.dart';
 import '../../providers/repositories_provider.dart';
 import '../../services/learning_session_api.dart';
 import '../../widgets/rich_math_text.dart';
+import '../../widgets/math_background.dart';
+import '../../config/design_tokens.dart';
 
 class LearningSessionScreen extends ConsumerStatefulWidget {
   final SessionScope scope;
@@ -101,7 +103,7 @@ class _LearningSessionScreenState extends ConsumerState<LearningSessionScreen>{
     final revealed=sessionInt(_hints?['RevealedCount']??s?['HintsRevealed']);
     final practice=widget.scope.kind=='practice';
     return Scaffold(appBar:AppBar(title:Text(practice?tr('جلسة تدريب','Practice session'):tr('تحدي اليوم','Daily challenge'))),
-      body:SafeArea(child:ListView(padding:const EdgeInsets.all(16),children:[
+      body:MathBackground(child:SafeArea(child:ListView(padding:const EdgeInsets.all(16),children:[
         if(_busy)const LinearProgressIndicator(),
         if(practice)OutlinedButton.icon(onPressed:_busy||_pending!=null||_startId!=null?null:_restartScope,icon:const Icon(Icons.restart_alt),label:Text(tr('إعادة بدء الجلسات المفتوحة','Restart open sessions'))),
         if(_notice!=null)Text(_notice!),
@@ -118,7 +120,7 @@ class _LearningSessionScreenState extends ConsumerState<LearningSessionScreen>{
           const SizedBox(height:8),LinearProgressIndicator(value:total>0?(completed/total).clamp(0.0,1.0).toDouble():0),
           const SizedBox(height:16),
           if(s['IsComplete']==true&&r==null)...[
-            Icon(Icons.emoji_events,size:52,color:Theme.of(context).colorScheme.primary),
+            const Icon(Icons.emoji_events,size:52,color:AppColors.rewardGold),
             Text(tr('أحسنت! اكتملت الجلسة','Well done! Session complete'),textAlign:TextAlign.center),
             if(practice)FilledButton(onPressed:_busy?null:_begin,child:Text(tr('جلسة جديدة','New session'))),
             OutlinedButton(onPressed:()=>Navigator.pop(context),child:Text(tr('العودة للرئيسية','Back to dashboard'))),
@@ -147,14 +149,15 @@ class _LearningSessionScreenState extends ConsumerState<LearningSessionScreen>{
                 FilledButton(onPressed:()=>setState((){_result=null;_selected=null;}),child:Text(tr('إعادة المحاولة','Retry'))),
               ],
               if(r!=null&&r['IsCorrect']==true)...[
-                Text('${tr('إجابة صحيحة','Correct answer')} · +${sessionInt(r['PointsEarned'])}',style:const TextStyle(color:Colors.green,fontWeight:FontWeight.bold)),
+                Text(tr('إجابة صحيحة','Correct answer'),style:const TextStyle(color:AppColors.success,fontWeight:FontWeight.bold)),
+                Row(children:[const Icon(Icons.star_rounded,color:AppColors.rewardGold),const SizedBox(width:4),Text('+${sessionInt(r['PointsEarned'])}',style:TextStyle(fontWeight:FontWeight.bold,color:Theme.of(context).brightness==Brightness.dark?AppColors.rewardGoldBright:AppColors.rewardGoldInk))]),
                 _Solution(result:r,ar:ar),
                 FilledButton(onPressed:_busy?null:_load,child:Text(r['IsComplete']==true?tr('عرض النتيجة','View result'):tr('المسألة التالية','Next question'))),
               ],
             ]))),
           ],
         ],
-      ])));
+      ]))));
   }
 }
 class _Solution extends StatelessWidget{

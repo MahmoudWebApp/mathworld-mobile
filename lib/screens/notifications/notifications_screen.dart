@@ -6,6 +6,9 @@ import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
 import '../../providers/notification_provider.dart';
 import '../../widgets/app_states.dart';
+import '../../widgets/math_background.dart';
+import '../../widgets/mathworld_pagination.dart';
+import '../../widgets/animated_entry.dart';
 
 /// Complete thirty-day inbox with server-side pages. The home/bell provider
 /// remains separate and is invalidated after every read so its dot stays fresh.
@@ -94,7 +97,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           ),
         ],
       ),
-      body: inboxState.when(
+      body: MathBackground(child: inboxState.when(
         loading: () => const AppContentSkeleton(),
         error: (error, _) => AppErrorView(
           message: localizedErrorMessage(error),
@@ -135,8 +138,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   ),
                 )
               else
-                for (final item in inbox.items)
-                  Card(
+                for (final (index,item) in inbox.items.indexed)
+                  AnimatedEntry(index:index,child: Card(
                     color: item.isUnread
                         ? Theme.of(context).colorScheme.primaryContainer
                             .withValues(alpha: 0.35)
@@ -172,7 +175,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                         item.id, item.isUnread, item.targetPath,
                       ),
                     ),
-                  ),
+                  )),
               const SizedBox(height: AppSpacing.sm),
               Semantics(
                 liveRegion: true,
@@ -185,26 +188,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  OutlinedButton(
-                    onPressed: _page > 0 && !_markingNotice
-                        ? () => setState(() => _page--)
-                        : null,
-                    child: Text(ar ? 'السابق' : 'Previous'),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  OutlinedButton(
-                    onPressed: inbox.hasMore &&
-                            !_markingNotice &&
-                            (_page + 1) * notificationPageSize <= 10000
-                        ? () => setState(() => _page++)
-                        : null,
-                    child: Text(ar ? 'التالي' : 'Next'),
-                  ),
-                ],
-              ),
+              MathWorldPagination(page:_page+1, pageCount:((inbox.totalCount+notificationPageSize-1)~/notificationPageSize).clamp(1,10000~/notificationPageSize+1).toInt(), arabic:ar,disabled:_markingNotice,onChanged:(p)=>setState(()=>_page=p-1)),
               if (!inbox.hasMore)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
@@ -217,7 +201,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             ],
           ),
         ),
-      ),
+      )),
     );
   }
 }

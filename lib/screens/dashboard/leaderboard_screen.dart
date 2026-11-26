@@ -11,6 +11,8 @@ import '../../widgets/glass_card.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/math_background.dart';
 import '../../utils/layout_utils.dart';
+import '../../widgets/mathworld_pagination.dart';
+import '../../widgets/animated_entry.dart';
 
 /// Read-only stage leaderboard, with anonymous peers and the learner's own rank.
 class LeaderboardScreen extends ConsumerStatefulWidget {
@@ -213,7 +215,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                                   color: medalColor?.withValues(alpha: 0.70) ??
                                       scheme.outline.withValues(alpha: 0.65),
                                 );
-                          return Padding(
+                          return AnimatedEntry(index:entry.rank-1,child: Padding(
                             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                             child: GlassCard(
                               color: cardBackground,
@@ -296,41 +298,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                                 ],
                               ),
                             ),
-                          );
+                          ));
                         }),
                         const SizedBox(height: AppSpacing.md),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            OutlinedButton(
-                              onPressed: _page > 1
-                                  ? () => setState(() => _page--)
-                                  : null,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  LayoutUtils.previousPageIcon(context, size: 18),
-                                  const SizedBox(width: 5),
-                                  Text('leaderboard_previous'.tr()),
-                                ],
-                              ),
-                            ),
-                            Text('$_page / $maxPage'),
-                            OutlinedButton(
-                              onPressed: _page < maxPage
-                                  ? () => setState(() => _page++)
-                                  : null,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text('leaderboard_next'.tr()),
-                                  const SizedBox(width: 5),
-                                  LayoutUtils.nextPageIcon(context, size: 18),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                        MathWorldPagination(page:_page,pageCount:maxPage,arabic:isArabic,onChanged:(p)=>setState(()=>_page=p)),
                         const SizedBox(height: AppSpacing.md),
                         Text(
                           'leaderboard_privacy'.tr(),

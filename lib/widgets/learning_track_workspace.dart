@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../config/design_tokens.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'math_background.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/app_routes.dart';
 import '../core/network/api_envelope.dart';
@@ -210,7 +211,7 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
     final data=state.valueOrNull;
     final rows=trackRows(data?['Items']);
     final visible=rows;
-    return Scaffold(appBar:AppBar(title:Text(widget.name)),body:state.hasError?AppErrorView(message:localizedErrorMessage(state.error!),onRetry:()=>ref.invalidate(trackPracticeProvider(key))):data==null?const AppContentSkeleton():RefreshIndicator(onRefresh:()async{ref.invalidate(trackPracticeProvider(key));await ref.read(trackPracticeProvider(key).future);},child:ListView(physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.all(12),children:[
+    return Scaffold(appBar:AppBar(title:Text(widget.name)),body:MathBackground(child:state.hasError?AppErrorView(message:localizedErrorMessage(state.error!),onRetry:()=>ref.invalidate(trackPracticeProvider(key))):data==null?const AppContentSkeleton():RefreshIndicator(onRefresh:()async{ref.invalidate(trackPracticeProvider(key));await ref.read(trackPracticeProvider(key).future);},child:ListView(physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.all(12),children:[
       FilterChip(label:Text(ar?'إخفاء المحلولة':'Hide solved'),selected:_hideSolved,onSelected:(value)=>setState((){_hideSolved=value;_page=1;})),
       if(visible.isEmpty) AppEmptyView(icon:Icons.calculate_outlined,title:ar?'لا توجد مسائل مطابقة':'No matching problems'),
       for(final problem in visible) Card(child:ListTile(title:Text(trackText(problem,'Title',ar)),subtitle:Text(problem['IsSolved']==true?(ar?'محلولة':'Solved'):(ar?'غير محلولة':'Unsolved')),onTap:()async{
@@ -222,6 +223,6 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
         Text('$_page'),
         TextButton(onPressed:trackNumber(data['PageSize'])<=0||_page*trackNumber(data['PageSize'])>=trackNumber(data['Total'])?null:()=>setState(()=>_page++),child:Text(ar?'التالي':'Next')),
       ]),
-    ])));
+    ]))));
   }
 }
