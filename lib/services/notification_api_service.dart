@@ -46,6 +46,7 @@ class NotificationInbox {
     required this.totalCount,
     required this.hasMore,
     required this.skip,
+    this.snapshotId = 0,
   });
 
   final List<UserNotice> items;
@@ -53,6 +54,7 @@ class NotificationInbox {
   final int totalCount;
   final bool hasMore;
   final int skip;
+  final int snapshotId;
 
   factory NotificationInbox.fromJson(Map<String, dynamic> json) {
     final items = (json['Items'] as List<dynamic>? ?? const [])
@@ -66,6 +68,7 @@ class NotificationInbox {
       totalCount: (json['TotalCount'] as num?)?.toInt() ?? items.length,
       hasMore: json['HasMore'] as bool? ?? false,
       skip: (json['Skip'] as num?)?.toInt() ?? 0,
+      snapshotId: (json['SnapshotId'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -76,7 +79,7 @@ class NotificationApiService {
 
   final ApiClient _client;
 
-  Future<NotificationInbox> getInbox({int take = 30, int skip = 0}) async {
+  Future<NotificationInbox> getInbox({int take = 5, int skip = 0}) async {
     if (take < 1 || take > 50 || skip < 0 || skip > 10000) {
       throw ArgumentError('Invalid inbox pagination');
     }
@@ -88,6 +91,22 @@ class NotificationApiService {
     return NotificationInbox.fromJson(
       Map<String, dynamic>.from(envelope['Data'] as Map),
     );
+  }
+
+  Future<NotificationInbox> managed({int? snapshotId, UserNotice? before}) async {
+    final response = await _client.get('/notifications/v2/managed', queryParameters: {
+      if (snapshotId != null) 'snapshotId': snapshotId,
+      if (before != null) 'beforeId': before.id,
+      if (before != null) 'beforeCreatedAt': before.createdAtUtc.toUtc().toIso8601String(),
+    });
+    final envelope = Map<String, dynamic>.from(response.data as Map);
+    return NotificationInbox.fromJson(Map<String, dynamic>.from(envelope['Data'] as Map));
+  }
+
+  Future<void> deleteSelection({required bool all, required int snapshotId, required List<int> ids}) async {
+    await _client.post('/notifications/v2/delete-selection', data: {
+      'All': all, 'SnapshotId': snapshotId, 'Ids': all ? <int>[] : ids,
+    });
   }
 
   Future<void> markRead(int id) async {
