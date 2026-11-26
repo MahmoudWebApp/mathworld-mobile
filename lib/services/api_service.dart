@@ -110,10 +110,11 @@ class ApiService implements ApiClient {
   }) {
     final cancel=CancelToken();
     return _execute(
-      () => _dio.get(path, queryParameters: queryParameters,cancelToken:cancel),
+      () => _dio.get(path, queryParameters: queryParameters,cancelToken:cancel,
+        options:Options(receiveTimeout:const Duration(seconds:30))),
       handleUnauthorized: handleUnauthorized,
       transientGetRetries: 1,
-    ).timeout(const Duration(seconds:15),onTimeout:(){
+    ).timeout(const Duration(seconds:35),onTimeout:(){
       cancel.cancel('Read deadline exceeded');
       throw const AppException(type:AppExceptionType.timeout,messageKey:'connection_timeout');
     });
@@ -225,7 +226,7 @@ class ApiService implements ApiClient {
         (status != null && status >= 520 && status < 600)) {
       return true;
     }
-    // Do not extend a timed-out request with another 15-second attempt.
+    // Do not retry a timed-out read: this amplifies database contention.
     return error.type == DioExceptionType.connectionError;
   }
 
