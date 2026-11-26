@@ -12,6 +12,10 @@ import '../../core/errors/app_exception.dart';
 import '../../core/network/api_envelope.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/learning_tracks_provider.dart';
+import '../../providers/premium_reports_provider.dart';
+import '../../providers/premium_analytics_provider.dart';
+import '../../providers/dashboard_provider.dart';
+import '../../providers/learning_journey_provider.dart';
 import '../../providers/repositories_provider.dart';
 import '../../providers/stages_provider.dart';
 
@@ -142,7 +146,7 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
           },success:ar?'تم طلب رمز جديد. تحقق من بريدك.':'New code requested. Check your email.'), child: Text(ar?'إعادة إرسال الرمز':'Resend code')),
           TextButton(onPressed:busy?null:()=>ref.invalidate(studentOnboardingProvider), child:Text(ar?'فعّلت البريد من الموقع؟ متابعة':'Verified on the website? Continue')),
         ] else ...[
-          Text(stage?(ar?'اختر مرحلتك التعليمية':'Choose your learning stage'):(ar?'اختر الصف أو السنة أو المساق':'Choose grade, year or course'),style: Theme.of(context).textTheme.headlineSmall),
+          Text(stage?(ar?'اختر مرحلتك التعليمية':'Choose your learning stage'):(ar?'اختر الصف أو المستوى':'Choose grade or level'),style: Theme.of(context).textTheme.headlineSmall),
           if(stages != null) stages.when(
             loading:()=>const Center(child:CircularProgressIndicator()),
             error:(_,__)=>TextButton(onPressed:()=>ref.invalidate(stagesProvider),child:Text(ar?'إعادة المحاولة':'Retry')),
@@ -160,12 +164,19 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
             loading:()=>const Center(child:CircularProgressIndicator()),
             error:(_,__)=>TextButton(onPressed:()=>ref.invalidate(publishedTracksProvider(stageId!)),child:Text(ar?'إعادة المحاولة':'Retry')),
             data:(catalog)=>Column(children:[
-              if(catalog.items.isEmpty) Text(ar?'لا توجد صفوف أو مساقات منشورة حالياً.':'No published grades or courses yet.'),
+              if(catalog.items.isEmpty) Text(ar?'لا توجد صفوف أو مستويات منشورة حالياً.':'No published grades or levels yet.'),
               ...catalog.items.map((item)=>_ChoiceCard(title:trackText(item,'Name',ar),subtitle:_gradeAge(item,ar),accent:AppColors.stageForIdentity(stageId!,null),selected:selectedTrack==trackNumber(item['Id']),icon:Icons.auto_stories_outlined,onTap:busy?null:()=>setState(()=>selectedTrack=trackNumber(item['Id'])))),
               FilledButton(onPressed:busy||selectedTrack==null||!catalog.items.any((x)=>trackNumber(x['Id'])==selectedTrack)?null:()=>perform(() async{
                 await client.put('/users/learning-track',data:{'TrackId':selectedTrack});
                 await ref.read(authProvider.notifier).refreshProfile();
                 ref.invalidate(trackSelectionProvider);
+                ref.invalidate(trackProgressProvider);
+                ref.invalidate(trackPracticeProvider);
+                ref.invalidate(dashboardProvider);
+                ref.invalidate(learningJourneyProvider);
+                ref.invalidate(premiumProgressReportProvider);
+                ref.invalidate(premiumAnalyticsProvider);
+                ref.invalidate(filteredPremiumAnalyticsProvider);
                 ref.invalidate(studentOnboardingProvider);
                 if(mounted) Navigator.pushNamedAndRemoveUntil(context,AppRoutes.home,(_)=>false);
               }),child:Text(ar?'حفظ والانتقال للرئيسية':'Save and go to home')),

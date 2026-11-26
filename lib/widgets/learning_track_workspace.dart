@@ -12,6 +12,7 @@ import '../providers/dashboard_provider.dart';
 import '../providers/learning_journey_provider.dart';
 import '../providers/daily_challenge_provider.dart';
 import '../providers/premium_analytics_provider.dart';
+import '../providers/premium_reports_provider.dart';
 import '../providers/learning_tracks_provider.dart';
 import '../providers/repositories_provider.dart';
 import '../providers/user_lists_provider.dart';
@@ -57,6 +58,8 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
       ref.invalidate(learningJourneyProvider);
       ref.invalidate(dailyChallengeProvider);
       ref.invalidate(premiumAnalyticsProvider);
+      ref.invalidate(filteredPremiumAnalyticsProvider);
+      ref.invalidate(premiumProgressReportProvider);
       Navigator.pushNamedAndRemoveUntil(context,AppRoutes.home,(_)=>false);
     }catch(error){
       if(mounted)setState(()=>_error=localizedErrorMessage(error));
@@ -75,7 +78,7 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
     final selected=trackNumber(current?['StageId'])==widget.stageId && widget.catalog.items.any((t)=>trackNumber(t['Id'])==id);
     if(selected&&!_changing)return _TrackContent(key:ValueKey(id),id:id,onChange:()=>setState(()=>_changing=true));
     return ListView(padding:const EdgeInsets.all(16),children:[
-      Text(ar?'اختر الصف أو المساق':'Choose grade or course',style:Theme.of(context).textTheme.headlineSmall),
+      Text(ar?'اختر الصف أو المستوى':'Choose grade or level',style:Theme.of(context).textTheme.headlineSmall),
       const SizedBox(height:8),
       const SizedBox(height:4),
       for(final track in widget.catalog.items) Card(color: Theme.of(context).brightness == Brightness.dark ? AppColors.darkSurface : AppColors.lightSurface, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: AppColors.stageForOrder(widget.stageId).withValues(alpha: .4))), child:ListTile(

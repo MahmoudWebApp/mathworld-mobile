@@ -9,6 +9,9 @@ import '../../config/design_tokens.dart';
 import '../../config/app_routes.dart';
 import '../../providers/notification_provider.dart';
 import '../../providers/dashboard_provider.dart';
+import '../../providers/premium_reports_provider.dart';
+import '../../providers/premium_analytics_provider.dart';
+import '../../providers/learning_tracks_provider.dart';
 import '../../providers/stage_category_access_provider.dart';
 import '../../providers/student_badges_provider.dart';
 import '../../providers/learning_journey_provider.dart';
@@ -32,6 +35,9 @@ class MainShell extends ConsumerStatefulWidget {
 
 class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserver {
   int _selectedIndex = 0;
+  final Set<int> _visitedTabs = <int>{};
+
+  void _selectTab(int index) => setState(() => _selectedIndex = index);
   bool _initialTabApplied = false;
   Timer? _notificationRefresh;
   bool _isAppResumed = true;
@@ -109,6 +115,12 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
       ref.invalidate(dashboardProvider);
       ref.invalidate(studentBadgesProvider);
       ref.invalidate(learningJourneyProvider);
+      ref.invalidate(trackSelectionProvider);
+      ref.invalidate(trackProgressProvider);
+      ref.invalidate(trackPracticeProvider);
+      ref.invalidate(premiumProgressReportProvider);
+      ref.invalidate(premiumAnalyticsProvider);
+      ref.invalidate(filteredPremiumAnalyticsProvider);
     }
     _isAppResumed = resumed;
     if (resumed && mounted) {
@@ -129,15 +141,17 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
   }
 
   late final List<Widget> _pages = [
-    HomeScreen(onOpenStages: () => setState(() => _selectedIndex = 1)),
+    HomeScreen(onOpenStages: () => _selectTab(1)),
     const CurrentStageCategoriesScreen(),
-    FavoritesScreen(embedded: true, onOpenStages: () => setState(() => _selectedIndex = 1)),
+    FavoritesScreen(embedded: true, onOpenStages: () => _selectTab(1)),
     const SettingsScreen(embedded: true),
   ];
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Mount only visited tabs; retain their state once opened.
+    _visitedTabs.add(_selectedIndex);
 
     return PopScope(
       canPop: _selectedIndex == 0,
@@ -185,7 +199,10 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
         ),
         // Keep scrollable content above the floating bottom bar.
         extendBody: false,
-        body: IndexedStack(index: _selectedIndex, children: _pages),
+        body: IndexedStack(index: _selectedIndex, children: [
+          for (var i = 0; i < _pages.length; i++)
+            _visitedTabs.contains(i) ? _pages[i] : const SizedBox.shrink(),
+        ]),
         bottomNavigationBar: SafeArea(
           minimum: const EdgeInsets.fromLTRB(14, 0, 14, 12),
           child: Container(
@@ -208,7 +225,7 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
                 child: NavigationBar(
                   selectedIndex: _selectedIndex,
                   onDestinationSelected: (value) {
-                    setState(() => _selectedIndex = value);
+                    _selectTab(value);
                   },
                   destinations: [
                     NavigationDestination(
