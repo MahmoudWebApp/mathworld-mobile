@@ -114,8 +114,7 @@ class _PremiumCheckoutScreenState extends ConsumerState<PremiumCheckoutScreen> {
       await _loadOrders();
     } catch (error) {
       if (!mounted) return;
-      showMathWorldNotice(context,localizedErrorMessage(error,kind:MathWorldNoticeKind.error),
-      );
+      showMathWorldNotice(context,localizedErrorMessage(error),kind:MathWorldNoticeKind.error);
     } finally {
       if (mounted) setState(() => _cancelling = false);
     }

@@ -97,7 +97,7 @@ class StageCategoriesScreen extends ConsumerWidget {
         }
       } catch (error) {
         if (context.mounted) {
-          showMathWorldNotice(context,localizedErrorMessage(error,kind:MathWorldNoticeKind.error));
+          showMathWorldNotice(context,localizedErrorMessage(error),kind:MathWorldNoticeKind.error);
         }
       }
     }
