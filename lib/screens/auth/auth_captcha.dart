@@ -9,9 +9,11 @@ const authCaptchaEnabled = bool.fromEnvironment('MATHWORLD_CAPTCHA_ENABLED');
 Future<String?> requestAuthCaptcha(BuildContext context, String action, bool ar) {
   if (!authCaptchaEnabled) return Future.value(null);
   if (action != 'login' && action != 'register') return Future.value(null);
-  return Navigator.of(context).push<String>(MaterialPageRoute(
+  return showDialog<String>(
+    context: context,
+    barrierDismissible: false,
     builder: (_) => _AuthCaptchaScreen(action: action, ar: ar),
-  ));
+  );
 }
 
 class _AuthCaptchaScreen extends StatefulWidget {
@@ -64,13 +66,23 @@ class _AuthCaptchaScreenState extends State<_AuthCaptchaScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(widget.ar ? 'التحقق من المستخدم' : 'Human verification')),
-    body: _failed
-        ? Center(child: TextButton(onPressed: () {
-            setState(() => _failed = false);
-            _controller.loadRequest(_url);
-          }, child: Text(widget.ar ? 'إعادة المحاولة' : 'Retry')))
-        : WebViewWidget(controller: _controller),
+  Widget build(BuildContext context) => AlertDialog(
+    title: Text(widget.ar ? 'التحقق الأمني' : 'Security verification'),
+    content: SizedBox(
+      width: 360,
+      height: 240,
+      child: _failed
+          ? Center(child: TextButton(onPressed: () {
+              setState(() => _failed = false);
+              _controller.loadRequest(_url);
+            }, child: Text(widget.ar ? 'إعادة المحاولة' : 'Retry')))
+          : WebViewWidget(controller: _controller),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: Text(widget.ar ? 'إلغاء' : 'Cancel'),
+      ),
+    ],
   );
 }
