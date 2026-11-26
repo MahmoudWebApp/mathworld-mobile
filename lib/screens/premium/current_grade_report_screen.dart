@@ -10,7 +10,7 @@ import '../../providers/repositories_provider.dart';
 import '../../providers/learning_tracks_provider.dart';
 import '../../providers/stage_category_access_provider.dart';
 import '../../widgets/app_states.dart';
-import '../../widgets/glass_card.dart';
+import '../../widgets/mobile_section.dart';
 import '../../widgets/math_background.dart';
 
 final currentGradeReportProvider=FutureProvider.autoDispose<Map<String,dynamic>>((ref) async {
@@ -58,10 +58,10 @@ class _ReportBody extends StatelessWidget {
     final track=p['Track'] is Map?Map<String,dynamic>.from(p['Track'] as Map):<String,dynamic>{};
     final categories=trackRows(p['Categories']),recent=trackRows(p['RecentAttempts']);
     final gold=AppColors.pointsGold(context);
-    Widget metric(String label,Object? value,{Color? tint})=>ListTile(contentPadding:EdgeInsets.zero,dense:true,title:Text(label),trailing:Text(value?.toString()??'—',style:TextStyle(fontWeight:FontWeight.bold,color:tint)));
-    Widget section(String title)=>Padding(padding:const EdgeInsets.symmetric(vertical:12),child:Text(title,style:theme.textTheme.titleMedium?.copyWith(fontWeight:FontWeight.bold)));
+    Widget metric(String label,Object? value,{Color? tint})=>Padding(padding:const EdgeInsets.symmetric(vertical:5),child:Row(children:[Expanded(child:Text(label)),const SizedBox(width:12),Text(value?.toString()??'—',style:TextStyle(fontWeight:FontWeight.bold,color:tint))]));
+    Widget section(String title)=>Padding(padding:const EdgeInsets.only(top:24,bottom:12),child:MobileSectionTitle(title:title));
     return RefreshIndicator(onRefresh:onRefresh,child:ListView.builder(physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.all(16),itemCount:categories.length+recent.length+4,itemBuilder:(context,i){
-      if(i==0)return GlassCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      if(i==0)return MobilePanel(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         Text(trackText(track,'Name',ar),style:theme.textTheme.titleLarge),
         if(p['CompletionPercent'] is num)...[const SizedBox(height:12),LinearProgressIndicator(value:((p['CompletionPercent'] as num)/100).clamp(0.0,1.0).toDouble())],
         metric(ar?'نسبة الإنجاز':'Completion',percent(p['CompletionPercent'])),
@@ -76,7 +76,7 @@ class _ReportBody extends StatelessWidget {
         final c=categories[i-2],mastery=c['MasteryPercent'];
         final attempts=trackNumber(c['Attempts']);
         final status=attempts==0?(ar?'لم تبدأ بعد':'Not started'):mastery is num&&mastery>=80?(ar?'نقطة قوة':'Strength'):(ar?'واصل التدريب':'Keep practicing');
-        return Padding(padding:const EdgeInsets.only(bottom:10),child:GlassCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        return Padding(padding:const EdgeInsets.only(bottom:12),child:MobilePanel(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
           Text(trackText(c,'Name',ar),style:theme.textTheme.titleMedium),Text(status,style:theme.textTheme.bodySmall),
           metric(ar?'المسائل المحلولة':'Solved','${c['Solved']} / ${c['ProblemsCount']}'),
           metric(ar?'المحاولات':'Attempts',c['Attempts']),metric(ar?'الإتقان':'Mastery',percent(mastery)),metric(ar?'الدقة':'Accuracy',percent(c['AccuracyPercent'])),

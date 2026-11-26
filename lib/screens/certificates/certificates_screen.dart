@@ -2,8 +2,7 @@ import 'dart:typed_data';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:cross_file/cross_file.dart';
+import 'package:printing/printing.dart';
 import '../../models/learning_journey.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/repositories_provider.dart';
@@ -12,10 +11,52 @@ import '../../core/network/api_envelope.dart';
 import '../../services/learning_session_api.dart';
 import '../../widgets/math_background.dart';
 import '../../config/design_tokens.dart';
+import '../../widgets/mobile_section.dart';
+import '../../widgets/app_states.dart';
+import '../premium/custom_exams_screen.dart';
+
+final certificateListProvider=FutureProvider.autoDispose.family<Map<String,dynamic>,int>((ref,owner) async{
+  final actor=ref.watch(authProvider.select((s)=>s.user?.id));
+  if(actor!=owner)return {};
+  final response=await ref.watch(apiClientProvider).get('/users/certificates');
+  return ApiEnvelope.map(response.data);
+});
+
+/// Fetch only when the summary scrolls into view. Share the same account-scoped
+/// request with the full certificate screen.
+class CertificateHomeSummary extends ConsumerWidget {
+  final LearningJourney? journey;
+  final bool examsEnabled;
+  const CertificateHomeSummary({super.key,this.journey,this.examsEnabled=false});
+  @override Widget build(BuildContext context,WidgetRef ref){
+    final ar=context.locale.languageCode=='ar';
+    final owner=ref.watch(authProvider.select((s)=>s.user?.id));
+    if(owner==null)return const SizedBox.shrink();
+    final learningEnabled=journey?.certificatesEnabled==true;
+    final learning=learningEnabled?ref.watch(certificateListProvider(owner)):null;
+    final exams=examsEnabled?ref.watch(customExamHistoryProvider(owner)):null;
+    final learningItems=sessionRows(learning?.valueOrNull?['Items']);
+    final examHistory=exams?.valueOrNull??[];
+    final examItems=examHistory.where((x)=>x['CertificateIssued']==true).toList();
+    final items=[for(final x in learningItems)(title:sessionText(x,ar?'TitleAr':'TitleEn'),date:DateTime.tryParse(sessionText(x,'IssuedAtUtc'))),for(final x in examItems)(title:sessionText(x,ar?'TitleAr':'TitleEn'),date:DateTime.tryParse(sessionText(x,'FinishedAtUtc')))];
+    items.sort((a,b)=>(b.date??DateTime.fromMillisecondsSinceEpoch(0)).compareTo(a.date??DateTime.fromMillisecondsSinceEpoch(0)));
+    final pending=(learningEnabled&&learning?.valueOrNull==null)||(examsEnabled&&exams?.valueOrNull==null);
+    final failed=learning?.hasError==true||exams?.hasError==true;
+    final summary=pending?(failed?(ar?'تعذّر تحميل الملخص':'Summary unavailable'):(ar?'جارٍ تحميل الشهادات…':'Loading certificates…'))
+      :items.isEmpty?(ar?'لم تصدر شهادات بعد':'No certificates yet')
+      :'${items.length}${examHistory.length>=100?'+':''} ${ar?'شهادة':'certificates'} · ${items.first.title}';
+    return MobilePanel(padding:EdgeInsets.zero,child:MobileActionRow(
+      icon:Icons.workspace_premium_rounded,color:AppColors.pointsGold(context),
+      title:ar?'شهاداتي':'My certificates',subtitle:summary,
+      onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>learningEnabled?CertificatesScreen(journey:journey!,showExams:examsEnabled):const CustomExamsScreen())),
+    ));
+  }
+}
 
 class CertificatesScreen extends ConsumerStatefulWidget {
   final LearningJourney journey;
-  const CertificatesScreen({super.key,required this.journey});
+  final bool showExams;
+  const CertificatesScreen({super.key,required this.journey,this.showExams=false});
   @override ConsumerState<CertificatesScreen> createState()=>_CertificatesScreenState();
 }
 class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
@@ -29,12 +70,14 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
   bool get ar=>context.locale.languageCode=='ar';
   String tr(String a,String e)=>ar?a:e;
   @override void initState(){super.initState();_owner=ref.read(authProvider).user?.id;_load();}
-  Future<void> _load() async{
+  Future<void> _load({bool refresh=false}) async{
     if(!mounted||!_sameOwner)return;
     setState((){_busy=true;_error=false;});
     try{
-      final r=await ref.read(apiClientProvider).get(_root);
-      if(mounted&&_sameOwner)setState(()=>_list=ApiEnvelope.map(r.data));
+      final provider=certificateListProvider(_owner!);
+      if(refresh)ref.invalidate(provider);
+      final data=await ref.read(provider.future);
+      if(mounted&&_sameOwner)setState(()=>_list=data);
     }catch(_){if(mounted&&_sameOwner)setState(()=>_error=true);}
     finally{if(mounted)setState(()=>_busy=false);}
   }
@@ -62,11 +105,11 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
       await ref.read(apiClientProvider).post('$_root/issue',data:_scope);
       if(!mounted||!_sameOwner)return;
       setState((){_choice=null;_eligibility=null;_notice=tr('تم إصدار الشهادة وحفظها.','Certificate issued and saved.');});
-      await _load();
+      await _load(refresh:true);
     }catch(_){if(mounted&&_sameOwner)setState((){_error=true;_eligibility=null;});}
     finally{if(mounted)setState(()=>_busy=false);}
   }
-  Future<void> _share(Map<String,dynamic> cert,String lang) async{
+  Future<void> _preview(Map<String,dynamic> cert,String lang) async{
     if(_busy||!_sameOwner)return;
     final id=sessionText(cert,'Id');
     if(!RegExp(r'^[0-9a-fA-F-]{36}$').hasMatch(id))return;
@@ -75,7 +118,11 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
       final bytes=await ref.read(apiClientProvider).getBinary('$_root/$id/pdf',queryParameters:{'lang':lang});
       if(bytes.length<5||String.fromCharCodes(bytes.take(5))!='%PDF-')throw const FormatException('Invalid PDF');
       if(!mounted||!_sameOwner)return;
-      await SharePlus.instance.share(ShareParams(files:[XFile.fromData(Uint8List.fromList(bytes),mimeType:'application/pdf',name:'mathworld-certificate-$lang.pdf')],fileNameOverrides:['mathworld-certificate-$lang.pdf']));
+      final pdf=Uint8List.fromList(bytes);
+      await Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>Scaffold(
+        appBar:AppBar(title:Text(tr('معاينة الشهادة','Certificate preview'))),
+        body:PdfPreview(build:(_)=>pdf,pdfFileName:'mathworld-certificate-$lang.pdf',canChangePageFormat:false,canChangeOrientation:false,canDebug:false,allowPrinting:true,allowSharing:true),
+      )));
     }catch(_){if(mounted&&_sameOwner)setState(()=>_error=true);}
     finally{if(mounted)setState(()=>_busy=false);}
   }
@@ -88,9 +135,11 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
     final items=sessionRows(_list?['Items']);
     final e=_eligibility;
     return Scaffold(appBar:AppBar(title:Text(tr('شهاداتي التعليمية','My learning certificates'))),body:MathBackground(child:SafeArea(child:ListView(padding:const EdgeInsets.all(16),children:[
-      if(_busy||_checking)const LinearProgressIndicator(),
-      if(_error)Card(child:ListTile(title:Text(tr('تعذّر إكمال الطلب. أعد المحاولة.','Request failed. Please retry.')),trailing:IconButton(onPressed:_busy||_checking?null:() async{await _load();if(mounted&&_choice!=null)await _check(_choice);},icon:const Icon(Icons.refresh)))),
+      if(_busy&&_list==null)const SizedBox(height:220,child:AppContentSkeleton(count:2))else if(_busy||_checking)const LinearProgressIndicator(),
+      if(_error)Card(child:ListTile(title:Text(tr('تعذّر إكمال الطلب. أعد المحاولة.','Request failed. Please retry.')),trailing:IconButton(onPressed:_busy||_checking?null:() async{await _load(refresh:true);if(mounted&&_choice!=null)await _check(_choice);},icon:const Icon(Icons.refresh)))),
       if(_notice!=null)Text(_notice!),
+      if(widget.showExams)MobilePanel(padding:EdgeInsets.zero,child:MobileActionRow(icon:Icons.school_outlined,color:AppColors.pointsGold(context),title:tr('شهادات الامتحانات','Exam certificates'),onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const CustomExamsScreen())))),
+      const SizedBox(height:16),
       if(_list?['IssuanceEnabled']==true&&premium)Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
         Text(tr('استحقاق شهادة جديدة','New certificate eligibility'),style:Theme.of(context).textTheme.titleMedium),
         Text(tr('أكمل جميع مسائل النطاق المعتمد وأثبت الحل المستقل في كل مهارة.','Complete every problem in the approved scope and demonstrate independent solving in every skill.')),
@@ -107,14 +156,14 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
       ]))),
       const SizedBox(height:12),Text(tr('الشهادات الصادرة','Issued certificates'),style:Theme.of(context).textTheme.titleMedium),
       if(_list!=null&&items.isEmpty)Padding(padding:const EdgeInsets.all(12),child:Text(tr('لم تصدر لك شهادات بعد.','No certificates issued yet.'))),
-      for(final c in items)Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      for(final c in items)Padding(padding:const EdgeInsets.only(top:16),child:MobilePanel(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         ListTile(contentPadding:EdgeInsets.zero,leading:const Icon(Icons.workspace_premium_outlined,color:AppColors.rewardGold),title:Text(sessionText(c,ar?'TitleAr':'TitleEn')),subtitle:Text(sessionText(c,'StudentName'))),
         Text(sessionText(c,'IssuedAtUtc').split('T').first),
         Text(tr('رمز التحقق','Verification code')),
         SelectableText(sessionText(c,'VerificationCode')),
         Wrap(spacing:8,children:[
-          OutlinedButton.icon(onPressed:_busy?null:()=>_share(c,'ar'),icon:const Icon(Icons.share_outlined),label:const Text('PDF العربية')),
-          OutlinedButton.icon(onPressed:_busy?null:()=>_share(c,'en'),icon:const Icon(Icons.share_outlined),label:const Text('PDF English')),
+          OutlinedButton.icon(onPressed:_busy?null:()=>_preview(c,'ar'),icon:const Icon(Icons.picture_as_pdf_outlined),label:const Text('PDF العربية')),
+          OutlinedButton.icon(onPressed:_busy?null:()=>_preview(c,'en'),icon:const Icon(Icons.picture_as_pdf_outlined),label:const Text('PDF English')),
         ]),
       ]))),
     ]))));

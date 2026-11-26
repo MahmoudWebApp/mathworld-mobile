@@ -286,9 +286,9 @@ class _ProblemContent extends ConsumerWidget {
           const SizedBox(height: AppSpacing.lg),
           _RetryModeBanner(onCancel: onCancelRetry),
         ],
-        const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: AppSpacing.lg),
         GlassCard(
-          padding: const EdgeInsets.all(AppSpacing.xl),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: RichMathText(
             text: problem.questionText,
             isArabic: isArabic,
@@ -299,16 +299,6 @@ class _ProblemContent extends ConsumerWidget {
           ),
         ),
         _OptionalProblemDiagram(problemId: problem.id, isArabic: isArabic),
-        if (!solved) ...[
-          const SizedBox(height: AppSpacing.md),
-          PremiumHintPanel(
-            key:ValueKey((problem.id,problem.practiceScopeId)),
-            problemId: problem.id,
-            practiceScopeId:problem.practiceScopeId,
-            service: PremiumApiService(ApiService()),
-            isArabic: isArabic,
-          ),
-        ],
         const SizedBox(height: AppSpacing.xl),
         Text(
           'choose_answer'.tr(),
@@ -336,6 +326,10 @@ class _ProblemContent extends ConsumerWidget {
             ],
           ),
         ),
+        if(!solved)...[
+          const SizedBox(height:12),
+          _DeferredHintSection(key:ValueKey((problem.id,problem.practiceScopeId)),problemId:problem.id,practiceScopeId:problem.practiceScopeId,isArabic:isArabic),
+        ],
         if (canSelect) ...[
           const SizedBox(height: AppSpacing.xl),
           PremiumButton(
@@ -417,18 +411,14 @@ class _ProblemContent extends ConsumerWidget {
         ],
         if (solution.isNotEmpty || structure != null) ...[
           const SizedBox(height: AppSpacing.xxl),
-          Text(
-            'detailed_solution'.tr(),
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          GlassCard(
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            border: BorderSide(
-              color:
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.24),
-            ),
-            child: structure==null?RichMathText(
+          Card(child:ExpansionTile(
+            key:ValueKey(('solution',problem.id,solved)),
+            initiallyExpanded:state.answerResult?.isCorrect==true,
+            leading:Icon(Icons.menu_book_outlined,color:Theme.of(context).colorScheme.primary),
+            title:Text('detailed_solution'.tr(),style:Theme.of(context).textTheme.titleMedium),
+            childrenPadding:const EdgeInsets.fromLTRB(16,0,16,16),
+            expandedCrossAxisAlignment:CrossAxisAlignment.stretch,
+            children:[structure==null?RichMathText(
               text: solution,
               isArabic: isArabic,
               style: Theme.of(context).textTheme.bodyLarge,
@@ -443,8 +433,8 @@ class _ProblemContent extends ConsumerWidget {
                 const SizedBox(height:12),Text(entry.$1,style:Theme.of(context).textTheme.titleMedium),
                 RichMathText(text:entry.$2,isArabic:isArabic),
               ],
-            ]),
-          ),
+            ])],
+          )),
         ],
         if (videoUrl?.trim().isNotEmpty == true && !state.isRetryMode) ...[
           const SizedBox(height: AppSpacing.lg),
@@ -531,6 +521,25 @@ class _ProblemContent extends ConsumerWidget {
       showMathWorldNotice(context,'unable_to_open_link'.tr(),kind:MathWorldNoticeKind.error);
     }
   }
+}
+
+/// Defer entitlement and hint reads until the learner actually expands hints.
+class _DeferredHintSection extends StatefulWidget{
+  final int problemId;
+  final int? practiceScopeId;
+  final bool isArabic;
+  const _DeferredHintSection({super.key,required this.problemId,this.practiceScopeId,required this.isArabic});
+  @override State<_DeferredHintSection> createState()=>_DeferredHintSectionState();
+}
+class _DeferredHintSectionState extends State<_DeferredHintSection>{
+  bool _opened=false;
+  @override Widget build(BuildContext context)=>Card(child:ExpansionTile(
+    leading:const Icon(Icons.lightbulb_outline_rounded,color:AppColors.rewardGold),
+    title:Text(widget.isArabic?'التلميحات':'Hints'),
+    maintainState:_opened,
+    onExpansionChanged:(open){if(open&&!_opened)setState(()=>_opened=true);},
+    children:[if(_opened)PremiumHintPanel(problemId:widget.problemId,practiceScopeId:widget.practiceScopeId,service:PremiumApiService(ApiService()),isArabic:widget.isArabic)],
+  ));
 }
 
 class _LearningSummaryCard extends StatelessWidget {

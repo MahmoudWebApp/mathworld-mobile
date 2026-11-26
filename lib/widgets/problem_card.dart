@@ -27,7 +27,7 @@ class ProblemCard extends StatelessWidget {
     return GlassCard(
       onTap: onTap,
       color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -35,17 +35,17 @@ class ProblemCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 36,
+                height: 36,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: stageAccent,
-                  borderRadius: BorderRadius.circular(15),
+                  color: stageAccent.withValues(alpha:.12),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.functions_rounded,
-                  color: Colors.white,
-                  size: 24,
+                  color: stageAccent,
+                  size: 20,
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -53,9 +53,9 @@ class ProblemCard extends StatelessWidget {
                 child: RichMathText(
                   text: problem.title,
                   inline: true,
-                  maxLines: 3,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         color: titleColor,
                         fontWeight: FontWeight.w800,
                       ),
@@ -106,7 +106,7 @@ class ProblemCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.sm),
           Wrap(
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
@@ -154,7 +154,7 @@ class _MetaPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.09),
         borderRadius: BorderRadius.circular(99),

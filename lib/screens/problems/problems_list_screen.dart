@@ -123,7 +123,7 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
               child: SearchBar(
                 controller: _searchController,
                 hintText: 'search_placeholder'.tr(),
-                leading: const Icon(Icons.search_rounded),
+                leading: searching||problemsState.isLoading&&_query!=null?const AppInlineLoader(size:18):const Icon(Icons.search_rounded),
                 elevation: const WidgetStatePropertyAll(0),
                 trailing: [
                   if (_searchController.text.isNotEmpty)
@@ -174,8 +174,8 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
               ),
             ),
             Expanded(
-              child: searching ? const AppLoadingView(mode:AppLoadingMode.search) : problemsState.when(
-                skipLoadingOnRefresh:false,skipLoadingOnReload:false,
+              child: problemsState.when(
+                skipLoadingOnRefresh:true,skipLoadingOnReload:false,
                 loading: () => _query != null || _hideSolved ? AppLoadingView(mode:_query != null ? AppLoadingMode.search : AppLoadingMode.filter) : const AppContentSkeleton(),
                 error: (error, __) {
                   if (error is AppException &&
@@ -282,7 +282,7 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                       ),
                       itemCount: result.problems.length + 1,
                       separatorBuilder: (_, __) =>
-                          const SizedBox(height: AppSpacing.lg),
+                          const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         if (index == result.problems.length) {
                           return Padding(padding:const EdgeInsets.symmetric(vertical:AppSpacing.lg),child:MathWorldPagination(
@@ -295,14 +295,14 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                         return ProblemCard(
                           problem: problem,
                           onTap: () async {
-                            await Navigator.pushNamed(
+                            final submitted=await Navigator.pushNamed(
                               context,
                               AppRoutes.problemDetails,
                               arguments: problem.id,
                             );
                             // The solved tag and server-wide unsolved-first order
                             // must refresh when returning from an answer.
-                            if (context.mounted) {
+                            if (context.mounted&&submitted==true) {
                               ref.invalidate(problemsProvider(parameters));
                             }
                           },

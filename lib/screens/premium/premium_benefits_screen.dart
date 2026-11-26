@@ -9,6 +9,7 @@ import '../../config/design_tokens.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
+import 'custom_exams_screen.dart';
 
 /// The single membership entry point for Free and Premium learners.
 /// Payment is deliberately not offered until a verified payment flow exists.
@@ -39,6 +40,7 @@ class _PremiumBenefitsScreenState
       (state) => state.user?.subscriptionType.toLowerCase() == 'premium',
     ));
     final theme = Theme.of(context);
+    final examsEnabled=ref.watch(customExamAvailabilityProvider).valueOrNull==true;
 
     return Scaffold(
       appBar: AppBar(title: Text(
@@ -66,7 +68,7 @@ class _PremiumBenefitsScreenState
                 selected: !premium,
                 icon: Icons.school_outlined,
                 features: [
-                  ar ? 'أول فئتين من كل مرحلة' : 'First two categories in every stage',
+                  ar ? 'أول فئتين في صفك أو مستواك الحالي' : 'First two topics in your current grade or level',
                   ar ? 'حل عدد غير محدود من المسائل' : 'Unlimited practice in open categories',
                   ar ? 'تقدمك محفوظ عند تغيير المرحلة' : 'Progress is kept when you change stages',
                 ],
@@ -78,12 +80,13 @@ class _PremiumBenefitsScreenState
                 selected: premium,
                 icon: Icons.workspace_premium_rounded,
                 features: [
-                  ar ? 'كل فئات المرحلة التعليمية المختارة' : 'Every topic in your selected stage',
+                  ar ? 'كل فئات صفك أو مستواك الحالي' : 'Every topic in your current grade or level',
                   ar ? 'حل عدد غير محدود من المسائل' : 'Unlimited problem solving',
                   ar ? 'تلميحان متدرجان قبل الحل' : 'Two progressive hints before solving',
                   ar ? 'تقارير تقدم تفصيلية وإحصائيات خاصة' : 'Detailed private progress analytics',
                   ar ? 'تصدير نتائجك PDF أو CSV المتوافق مع Excel'
                      : 'Export results to PDF or Excel-compatible CSV',
+                  if(examsEnabled) ar?'امتحانات مخصصة وشهادات عند النجاح':'Custom exams and certificates on passing',
                   ar ? 'بدون إعلانات داخل MathWorld' : 'No ads inside MathWorld',
                 ],
               ),
@@ -130,7 +133,7 @@ class _PremiumBenefitsScreenState
     required List<String> features,
   }) {
     final theme = Theme.of(context);
-    final accent = theme.colorScheme.primary;
+    final accent = title=='Premium'?AppColors.pointsGold(context):theme.colorScheme.primary;
     final ar = context.locale.languageCode == 'ar';
     return GlassCard(
       padding: const EdgeInsets.all(AppSpacing.lg),

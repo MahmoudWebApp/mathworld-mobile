@@ -25,7 +25,7 @@ class GlassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final scheme = Theme.of(context).colorScheme;
-    final radius = BorderRadius.circular(AppRadius.lg);
+    final radius = BorderRadius.circular(AppRadius.md);
     final effectiveBorder =
         border ?? BorderSide(color: scheme.outline.withValues(alpha: 0.88));
     final decoration = BoxDecoration(
@@ -39,13 +39,6 @@ class GlassCard extends StatelessWidget {
         gradient: gradient,
         borderRadius: radius,
         border: Border.fromBorderSide(effectiveBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.11 : 0.032),
-            blurRadius: 16,
-            offset: const Offset(0, 5),
-          ),
-        ],
       );
     // Ink is painted on its Material ancestor, so taps, keyboard focus
     // and ripples stay visible ABOVE the opaque/gradient card background.

@@ -12,7 +12,7 @@ import '../../widgets/app_states.dart';
 import '../../widgets/math_background.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/mathworld_pagination.dart';
-import '../../widgets/animated_entry.dart';
+import '../../widgets/mobile_section.dart';
 
 /// Read-only stage leaderboard, with anonymous peers and the learner's own rank.
 class LeaderboardScreen extends ConsumerStatefulWidget {
@@ -158,6 +158,8 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                             (leaderboard.pageSize <= 0 ? 20 : leaderboard.pageSize))
                         .ceil()
                         .clamp(1, 1000000);
+                    final top=leaderboard.entries.where((e)=>e.rank>=1&&e.rank<=3).toList();
+                    final podium=top.length==3&&top.map((e)=>e.rank).toSet().length==3;
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -182,7 +184,27 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                           ),
-                        ...leaderboard.entries.map((entry) {
+                        if(podium)...[
+                          const SizedBox(height:16),
+                          MobilePanel(child:Row(crossAxisAlignment:CrossAxisAlignment.end,children:[
+                            for(final rank in [2,1,3])Expanded(child:Builder(builder:(context){
+                              final entry=top.firstWhere((e)=>e.rank==rank);
+                              final color=rank==1?AppColors.rewardGold:rank==2?const Color(0xFF8491A3):const Color(0xFFB87333);
+                              return Semantics(label:'#$rank · ${_peerDisplayName(entry.displayName,isArabic)} · ${entry.points}',child:Padding(padding:const EdgeInsets.symmetric(horizontal:3),child:Column(mainAxisSize:MainAxisSize.min,children:[
+                                if(rank==1)const MobileMedal(icon:Icons.emoji_events_rounded,size:52)
+                                else Icon(Icons.workspace_premium_rounded,color:color,size:42),
+                                const SizedBox(height:8),Text('#$rank',style:const TextStyle(fontWeight:FontWeight.w800)),
+                                Text(_peerDisplayName(entry.displayName,isArabic),textAlign:TextAlign.center,maxLines:2,overflow:TextOverflow.ellipsis,style:Theme.of(context).textTheme.labelMedium),
+                                Text('${entry.points}',style:TextStyle(color:AppColors.pointsGold(context),fontWeight:FontWeight.w800)),
+                                Text('${entry.solvedProblems} ${'leaderboard_solved'.tr()}',textAlign:TextAlign.center,style:Theme.of(context).textTheme.labelSmall),
+                                if(entry.isCurrentUser)Icon(Icons.verified_rounded,color:Theme.of(context).colorScheme.primary,size:17),
+                                const SizedBox(height:8),Container(height:rank==1?44:28,width:double.infinity,decoration:BoxDecoration(color:color.withValues(alpha:.16),borderRadius:BorderRadius.circular(8))),
+                              ])));
+                            })),
+                          ])),
+                          const SizedBox(height:16),
+                        ],
+                        ...leaderboard.entries.where((entry)=>!podium||entry.rank>3).map((entry) {
                           final theme = Theme.of(context);
                           final scheme = theme.colorScheme;
                           final dark = theme.brightness == Brightness.dark;
@@ -215,15 +237,16 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                                   color: medalColor?.withValues(alpha: 0.70) ??
                                       scheme.outline.withValues(alpha: 0.65),
                                 );
-                          return AnimatedEntry(index:entry.rank-1,child: Padding(
+                          return Padding(
                             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                             child: GlassCard(
                               color: cardBackground,
                               border: cardBorder,
+                              padding:const EdgeInsets.all(12),
                               child: Row(
                                 children: [
                                   CircleAvatar(
-                                    radius: 25,
+                                    radius: 19,
                                     backgroundColor: medalColor == null
                                         ? scheme.surfaceContainerHighest
                                         : medalColor.withValues(alpha: dark ? 0.32 : 0.26),
@@ -298,7 +321,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                                 ],
                               ),
                             ),
-                          ));
+                          );
                         }),
                         const SizedBox(height: AppSpacing.md),
                         MathWorldPagination(page:_page,pageCount:maxPage,arabic:isArabic,onChanged:(p)=>setState(()=>_page=p)),

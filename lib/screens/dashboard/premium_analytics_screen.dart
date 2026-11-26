@@ -62,7 +62,7 @@ class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen>
                     for(final d in [7,30,90,365])DropdownMenuItem(value:d,child:Text(ar?'آخر $d يوم':'Last $d days')),
                   ]),
                 ])),
-                Expanded(child:ref.watch(reportProvider).when(skipLoadingOnRefresh:false,skipLoadingOnReload:false,
+                Expanded(child:ref.watch(reportProvider).when(skipLoadingOnRefresh:true,skipLoadingOnReload:false,
                 loading: () => const AppLoadingView(mode:AppLoadingMode.filter),
                 error: (error, _) => AppErrorView(
                   message: localizedErrorMessage(error),

@@ -7,7 +7,7 @@ import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
 import '../../core/utils/validators.dart';
 import '../../providers/auth_provider.dart';
-import '../../widgets/glass_card.dart';
+import '../../widgets/mobile_section.dart';
 import '../../widgets/brand_logo.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/premium_button.dart';
@@ -77,6 +77,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return Scaffold(
       appBar: AppBar(),
       body: MathBackground(
+        showSymbols:false,
         child: SafeArea(
           top: false,
           child: Center(
@@ -84,9 +85,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               padding: const EdgeInsets.all(AppSpacing.xl),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 460),
-                child: GlassCard(
-                  blur: 18,
-                  padding: const EdgeInsets.all(AppSpacing.xl),
+                child: MobilePanel(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Form(
                     key: _formKey,
                     child: Column(
