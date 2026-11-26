@@ -44,7 +44,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final j=journeyState.valueOrNull;
     final dashboardState=ref.watch(dashboardProvider);
     final dashboard=dashboardState.valueOrNull;
-    final examsEnabled=ref.watch(customExamAvailabilityProvider).valueOrNull==true;
+    // Optional requests must not compete with the initial core reads.
+    // If both fail, still allow the independent tools to recover.
+    final primaryReady=j!=null||dashboard!=null||(!journeyState.isLoading&&!dashboardState.isLoading);
+    final examsEnabled=primaryReady&&ref.watch(customExamAvailabilityProvider).valueOrNull==true;
     final primary=Theme.of(context).colorScheme.primary;
     final gold=AppColors.pointsGold(context);
     final stageAccent=j==null?primary:AppColors.stageForIdentity(j.stageId,j.nameEn.isNotEmpty?j.nameEn:j.nameAr);
@@ -158,8 +161,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ])),
       ]),
       if(!user.premium)MobilePanel(padding:EdgeInsets.zero,child:MobileActionRow(icon:Icons.workspace_premium_rounded,color:gold,title:tr('مميزات Premium','Premium benefits'),subtitle:tr('افتح جميع الفئات والتقارير والحلول','Unlock topics, reports and solutions'),onTap:()=>Navigator.pushNamed(context,AppRoutes.premiumBenefits))),
-      StudentBadgesCard(loadSummary:j!=null||dashboard!=null),
-      if(j?.certificatesEnabled==true||examsEnabled)CertificateHomeSummary(journey:j,examsEnabled:examsEnabled,loadSummary:j!=null||dashboard!=null),
+      StudentBadgesCard(loadSummary:primaryReady),
+      if(j?.certificatesEnabled==true||examsEnabled)CertificateHomeSummary(journey:j,examsEnabled:examsEnabled,loadSummary:primaryReady),
       Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         MobileSectionTitle(title:tr('آخر النشاطات','Recent activity'),actionLabel:tr('عرض الكل','View all'),onAction:()=>Navigator.pushNamed(context,AppRoutes.solved)),
         if(dashboardState.isLoading&&dashboard==null)const Padding(padding:EdgeInsets.symmetric(vertical:12),child:Center(child:AppInlineLoader(size:18)))
@@ -178,8 +181,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ];
     return MathBackground(showSymbols:true,child:SafeArea(bottom:false,child:RefreshIndicator(
       onRefresh:()async{
-        ref.invalidate(studentBadgesProvider);
         try{await Future.wait([ref.refresh(dashboardProvider.future),ref.refresh(learningJourneyProvider.future)]);}catch(_){}
+        if(mounted){
+          ref.invalidate(studentBadgesProvider);
+          ref.invalidate(customExamAvailabilityProvider);
+        }
       },
       child:ListView.separated(physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.fromLTRB(16,16,16,24),
         itemCount:sections.length,itemBuilder:(_,i)=>sections[i],separatorBuilder:(_,__)=>const SizedBox(height:16)),
