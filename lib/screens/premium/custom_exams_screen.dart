@@ -19,6 +19,11 @@ final customExamAvailabilityProvider=FutureProvider.autoDispose<bool>((ref) asyn
   final r=await ref.watch(apiClientProvider).get('/users/custom-exams/availability',handleUnauthorized:false);
   return ApiEnvelope.map(r.data)['Enabled']==true;
 });
+final customExamHistoryProvider=FutureProvider.autoDispose.family<List<Map<String,dynamic>>,int>((ref,owner) async{
+  if(ref.watch(authProvider.select((s)=>s.user?.id))!=owner)return [];
+  final response=await ref.watch(apiClientProvider).get('/users/custom-exams');
+  return rows(ApiEnvelope.map(response.data)['Items']);
+});
 List<Map<String,dynamic>> rows(Object? raw)=>raw is List?raw.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList():[];
 Map<String,dynamic>? asMap(Object? raw)=>raw is Map?Map<String,dynamic>.from(raw):null;
 String requestId(){
@@ -60,12 +65,13 @@ class _ExamWorkspaceState extends ConsumerState<_ExamWorkspace>{
   }
   Future<Map<String,dynamic>> get(String path)async=>ApiEnvelope.map((await ref.read(apiClientProvider).get(path)).data);
   Future<Map<String,dynamic>> post(String path,[Map<String,dynamic>? data])async=>ApiEnvelope.map((await ref.read(apiClientProvider).post(path,data:data)).data);
-  Future<void> reload()async{final h=await get(root);if(active)setState(()=>history=rows(h['Items']));}
+  Future<void> reload({bool refresh=true})async{final provider=customExamHistoryProvider(widget.owner);if(refresh)ref.invalidate(provider);final items=await ref.read(provider.future);if(active)setState(()=>history=items);}
   Future<void> load()=>run(()async{
-    final premium=await ref.read(studentPremiumProvider.future);
+    // History is safe for all signed-in students and independent of entitlement.
+    // Start both reads together; retain existing history while setup refreshes.
+    final results=await Future.wait<Object?>([ref.read(studentPremiumProvider.future),reload(refresh:loaded).then<Object?>((_)=>null)]);
     if(!active)return;
-    await reload();if(!active)return;
-    final s=premium?await get('$root/setup'):null;
+    final s=results.first==true?await get('$root/setup'):null;
     if(active)setState((){setup=s;loaded=true;});
   });
   void show(Map<String,dynamic> value){if(active)setState((){exam=value;chosen=null;});}
