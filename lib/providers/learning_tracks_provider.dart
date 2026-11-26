@@ -69,6 +69,22 @@ typedef TrackPracticeKey=({int trackId,int categoryId,int page,bool hideSolved})
 final trackPracticeProvider=FutureProvider.autoDispose.family<Map<String,dynamic>,TrackPracticeKey>((ref,key) async {
   final account=ref.watch(authProvider.select((s)=>(id:s.user?.id,role:s.user?.role.toLowerCase(),stage:s.user?.currentStageId)));
   if(account.id==null||account.role!='student')return {};
-  final response=await ref.watch(apiClientProvider).get('/users/learning-tracks/${key.trackId}/categories/${key.categoryId}/problems',queryParameters:{'page':key.page,'hideSolved':key.hideSolved});
-  return ApiEnvelope.map(response.data);
+  final client=ref.watch(apiClientProvider);
+  const size=5;
+  final path='/users/learning-tracks/${key.trackId}/categories/${key.categoryId}/problems';
+  Future<Map<String,dynamic>> fetch(int page) async => ApiEnvelope.map((await client.get(path,queryParameters:{'page':page,'pageSize':size,'hideSolved':key.hideSolved})).data);
+  var data=await fetch(key.page);
+  final serverSize=trackNumber(data['PageSize']);
+  if(serverSize==size||serverSize<=0)return data;
+  // Compatibility with old deployments that return 50 rows per page.
+  final offset=(key.page-1)*size;
+  final serverPage=offset~/serverSize+1;
+  if(serverPage!=key.page)data=await fetch(serverPage);
+  final start=offset%serverSize;
+  final visible=trackRows(data['Items']).skip(start).take(size).toList();
+  if(visible.length<size&&offset+visible.length<trackNumber(data['Total'])){
+    final next=await fetch(serverPage+1);
+    visible.addAll(trackRows(next['Items']).take(size-visible.length));
+  }
+  return {...data,'Page':key.page,'PageSize':size,'Items':visible};
 });

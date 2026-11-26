@@ -18,8 +18,6 @@ import '../../widgets/mobile_section.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/account_password_dialog.dart';
-import '../../widgets/email_preferences_dialog.dart';
-import '../../widgets/leaderboard_name_preference.dart';
 import '../../widgets/platform_contact_card.dart';
 
 /// Displays appearance, language, legal, and account preferences.
@@ -139,10 +137,7 @@ class SettingsScreen extends ConsumerWidget {
               Navigator.pushNamedAndRemoveUntil(context,AppRoutes.login,(_)=>false);
               showMathWorldNotice(context,tr('تم تغيير كلمة المرور. سجّل الدخول مجدداً.','Password changed. Please sign in again.'),kind:MathWorldNoticeKind.success);
             }),
-            MobileActionRow(icon:Icons.email_outlined,color:primary,title:tr('تفضيلات البريد الإلكتروني','Email preferences'),onTap:()=>showDialog<void>(context:context,builder:(_)=>EmailPreferencesDialog(userId:currentUser!.id))),
           ]),
-          const SizedBox(height:12),
-          LeaderboardNamePreference(key:ValueKey(currentUser!.id),userId:currentUser.id),
           const SizedBox(height:24),
         ],
         group(tr('المظهر واللغة','Appearance & language'),[

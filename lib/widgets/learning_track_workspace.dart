@@ -77,12 +77,12 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
   Widget build(BuildContext context){
     final ar=context.locale.languageCode=='ar';
     final selection=ref.watch(trackSelectionProvider);
-    if(selection.isLoading&&!selection.hasValue)return const AppContentSkeleton(cards:true);
+    if(selection.isLoading&&!selection.hasValue)return AppContentSkeleton(cards:true,title:ar?'اختر الصف أو المستوى':'Choose grade or level',sectionTitle:ar?'الفئات التعليمية':'Learning topics',cardExtent:236);
     if(selection.hasError)return AppErrorView(message:localizedErrorMessage(selection.error!),onRetry:()=>ref.invalidate(trackSelectionProvider));
     final current=selection.valueOrNull;
     final id=trackNumber(current?['TrackId']);
     final selected=trackNumber(current?['StageId'])==widget.stageId && widget.catalog.items.any((t)=>trackNumber(t['Id'])==id);
-    if(selected&&!_changing)return _TrackContent(key:ValueKey(id),id:id,onChange:()=>setState(()=>_changing=true));
+    if(selected&&!_changing)return _TrackContent(key:ValueKey(id),id:id,title:trackText(widget.catalog.items.firstWhere((t)=>trackNumber(t['Id'])==id),'Name',ar),onChange:()=>setState(()=>_changing=true));
     return ListView(padding:const EdgeInsets.all(16),children:[
       Text(ar?'اختر الصف أو المستوى':'Choose grade or level',style:Theme.of(context).textTheme.headlineSmall),
       const SizedBox(height:8),
@@ -102,8 +102,8 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
 }
 
 class _TrackContent extends ConsumerStatefulWidget{
-  final int id;final VoidCallback onChange;
-  const _TrackContent({super.key,required this.id,required this.onChange});
+  final int id;final String title;final VoidCallback onChange;
+  const _TrackContent({super.key,required this.id,required this.title,required this.onChange});
   @override
   ConsumerState<_TrackContent> createState()=>_TrackContentState();
 }
@@ -143,7 +143,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
     void reload(){ref.invalidate(trackDetailsProvider(id));ref.invalidate(trackProgressProvider(id));}
     if(detail.hasError&&!detail.hasValue)return AppErrorView(message:localizedErrorMessage(detail.error!),onRetry:reload);
     final d=detail.valueOrNull;
-    if(d==null)return const AppContentSkeleton(cards:true);
+    if(d==null)return AppContentSkeleton(cards:true,title:widget.title,sectionTitle:ar?'الفئات التعليمية':'Learning topics',cardExtent:236);
     final p=progress.valueOrNull;
     final rawTrack=d['Track'];
     if(rawTrack is! Map)return AppErrorView(onRetry:reload,message:ar?'تعذّر قراءة بيانات الصف أو المستوى':'Could not read grade or level data');
@@ -177,7 +177,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
             else const AppLoadingView(mode:AppLoadingMode.section)
           else MobilePanel(child:Column(children:[
             Row(children:[Expanded(child:Text(ar?'التقدم':'Progress')),Text('${trackNumber(p['Solved'])}/${trackNumber(p['ProblemsCount'])} · ${percent.toStringAsFixed(1)}%',style:TextStyle(color:accent,fontWeight:FontWeight.w700))]),
-            const SizedBox(height:8),LinearProgressIndicator(value:(percent/100).clamp(0.0,1.0).toDouble(),color:accent,borderRadius:BorderRadius.circular(8)),
+            const SizedBox(height:8),LearningProgressBar(value:(percent/100).clamp(0.0,1.0).toDouble()),
           ])),
           if(p?['TrackPracticeIsolationEnabled']==true&&stats.values.any((c)=>trackNumber(c['Attempted'])>0))
             Align(alignment:AlignmentDirectional.centerEnd,child:TextButton.icon(onPressed:_resetting?null:()=>_reset(trackNumber(p?['StageId']),trackText(track,'Name',ar)),icon:const Icon(Icons.restart_alt),label:Text(ar?'إعادة تدريب الصف':'Restart grade practice'))),
@@ -190,7 +190,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
           return SliverGrid(delegate:SliverChildBuilderDelegate((context,i){
             final c=ordered[i],s=stats[trackNumber(ordered[i]['Id'])];
             final locked=s?['IsLocked'];final count=trackNumber(c['ProblemsCount']);final solved=trackNumber(s?['Solved']);
-            return MobilePanel(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            return MobilePanel(borderColor:accent.withValues(alpha:.4),padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
               Row(children:[_TrackTopicIcon(value:c['Icon']?.toString()??'',accent:accent),const Spacer(),
                 if(locked==true)Icon(Icons.lock_outline,color:AppColors.pointsGold(context),size:18)
                 else if(c['IsFree']==true)Text(ar?'مجاني':'Free',style:const TextStyle(color:AppColors.success,fontSize:11,fontWeight:FontWeight.w700)),
@@ -202,7 +202,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
               const Spacer(),
               if(s!=null)...[
                 Text('$solved/$count',style:Theme.of(context).textTheme.labelSmall),
-                const SizedBox(height:4),LinearProgressIndicator(value:count>0?(solved/count).clamp(0.0,1.0).toDouble():0,color:AppColors.success,borderRadius:BorderRadius.circular(8)),
+                const SizedBox(height:4),LearningProgressBar(value:count>0?(solved/count).clamp(0.0,1.0).toDouble():0),
               ]else const SizedBox(height:18),
               const SizedBox(height:6),
               Row(children:[
@@ -252,9 +252,9 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
     final data=state.valueOrNull;
     final rows=trackRows(data?['Items']);
     final visible=rows;
-    return Scaffold(appBar:AppBar(title:Text(widget.name)),body:MathBackground(showSymbols:false,child:Column(children:[
+    return Scaffold(appBar:AppBar(title:Text(widget.name)),body:MathBackground(showSymbols:false,child:SafeArea(top:false,child:Column(children:[
       Padding(padding:const EdgeInsets.fromLTRB(16,8,16,8),child:Align(alignment:AlignmentDirectional.centerStart,child:FilterChip(label:Text(ar?'إخفاء المحلولة':'Hide solved'),selected:_hideSolved,onSelected:(value)=>setState((){_hideSolved=value;_page=1;})))),
-      Expanded(child:state.hasError&&!state.hasValue?AppErrorView(message:localizedErrorMessage(state.error!),onRetry:()=>ref.invalidate(trackPracticeProvider(key))):data==null?const Center(child:AppInlineLoader(size:28)):RefreshIndicator(onRefresh:()async{ref.invalidate(trackPracticeProvider(key));try{await ref.read(trackPracticeProvider(key).future);}catch(_){}},child:ListView.separated(
+      Expanded(child:state.hasError&&!state.hasValue?AppErrorView(message:localizedErrorMessage(state.error!),onRetry:()=>ref.invalidate(trackPracticeProvider(key))):data==null?const AppContentSkeleton(count:5):RefreshIndicator(onRefresh:()async{ref.invalidate(trackPracticeProvider(key));try{await ref.read(trackPracticeProvider(key).future);}catch(_){}},child:ListView.separated(
         physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.fromLTRB(16,0,16,20),
         itemCount:visible.isEmpty?1:visible.length+1,separatorBuilder:(_,__)=>const SizedBox(height:12),
         itemBuilder:(context,i){
@@ -273,6 +273,6 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
           ));
         },
       ))),
-    ])));
+    ]))));
   }
 }

@@ -98,6 +98,7 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
       stageId: effectiveStageId,
       hideSolved: _hideSolved,
       page: _page,
+      pageSize: 5,
     );
     final problemsState = ref.watch(problemsProvider(parameters));
     final searching = _searchController.text.trim() != (_query ?? '');

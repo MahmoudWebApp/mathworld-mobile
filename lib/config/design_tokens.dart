@@ -53,7 +53,7 @@ class AppColors {
   /// Preserve white glyphs and alpha while tinting the icon shading to its stage.
   static ColorFilter topicArtworkFilter(Color accent) {
     List<double> channel(double value) {
-      final base = value * 255 * .32;
+      final base = value * 255;
       final gain = 1 - base / 255;
       return [.2126 * gain, .7152 * gain, .0722 * gain, 0, base];
     }

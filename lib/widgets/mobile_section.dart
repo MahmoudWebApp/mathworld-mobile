@@ -7,10 +7,11 @@ class MobilePanel extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final Gradient? gradient;
-  const MobilePanel({super.key,required this.child,this.padding=const EdgeInsets.all(14),this.gradient});
+  final Color? borderColor;
+  const MobilePanel({super.key,required this.child,this.padding=const EdgeInsets.all(14),this.gradient,this.borderColor});
   @override Widget build(BuildContext context) => DecoratedBox(
     decoration:BoxDecoration(color:gradient==null?Theme.of(context).colorScheme.surface:null,gradient:gradient,
-      border:Border.all(color:Theme.of(context).brightness==Brightness.dark?AppColors.darkBorder:AppColors.lightBorder),
+      border:Border.all(color:borderColor??(Theme.of(context).brightness==Brightness.dark?AppColors.darkBorder:AppColors.lightBorder)),
       borderRadius:BorderRadius.circular(16)),
     child:Padding(padding:padding,child:child),
   );
@@ -61,4 +62,19 @@ class MobileMedal extends StatelessWidget {
       if(locked)PositionedDirectional(end:-2,bottom:-1,child:Icon(Icons.lock_rounded,color:Theme.of(context).colorScheme.onSurfaceVariant,size:size*.32)),
     ],
   ));
+}
+
+/// Determinate learning progress: zero has no colored fill.
+class LearningProgressBar extends StatelessWidget {
+  final double value;
+  final double height;
+  const LearningProgressBar({super.key,required this.value,this.height=5});
+  @override Widget build(BuildContext context){
+    final fraction=value.isFinite?value.clamp(0.0,1.0).toDouble():0.0;
+    final track=Theme.of(context).brightness==Brightness.dark?AppColors.darkBorder:AppColors.lightBorder;
+    return Semantics(value:'${(fraction*100).round()}%',child:ClipRRect(
+      borderRadius:BorderRadius.circular(99),child:SizedBox(height:height,child:ColoredBox(color:track,
+        child:Align(alignment:AlignmentDirectional.centerStart,child:FractionallySizedBox(widthFactor:fraction,heightFactor:1,
+          child:ColoredBox(color:fraction>=1?AppColors.success:AppColors.rewardGold)))))));
+  }
 }

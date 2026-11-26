@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/app_routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_states.dart';
+import '../../widgets/brand_logo.dart';
+import '../../widgets/math_background.dart';
 
-/// Validates the stored session with one compact unbranded loader.
+/// Validates the stored session with the branded launch experience.
 /// The native launch screen remains unchanged.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -38,6 +40,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     ref.listen<AuthState>(authProvider, (_, next) => _navigate(next.status));
     final authState = ref.watch(authProvider);
     _navigate(authState.status);
-    return const Scaffold(body: SafeArea(child: Center(child: AppInlineLoader(size:28))));
+    return const Scaffold(body:MathBackground(showSymbols:true,child:SafeArea(child:Center(child:Column(mainAxisSize:MainAxisSize.min,children:[BrandLogo(width:220,height:56),SizedBox(height:24),AppInlineLoader(size:26)])))));
   }
 }
