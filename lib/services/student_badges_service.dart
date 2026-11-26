@@ -13,6 +13,7 @@ class MathBadge {
     this.icon = 'medal',
     this.descriptionAr = '',
     this.descriptionEn = '',
+    this.milestoneReachedAtUtc,
   });
   final String key;
   final String titleAr;
@@ -22,6 +23,7 @@ class MathBadge {
   final bool isAvailable;
   final int currentProgress;
   final String unit, icon, descriptionAr, descriptionEn;
+  final DateTime? milestoneReachedAtUtc;
 
   factory MathBadge.fromJson(Map<String, dynamic> json) => MathBadge(
         key: json['Key'] as String? ?? '',
@@ -35,6 +37,7 @@ class MathBadge {
         icon: json['Icon'] as String? ?? 'medal',
         descriptionAr: json['DescriptionAr'] as String? ?? '',
         descriptionEn: json['DescriptionEn'] as String? ?? '',
+        milestoneReachedAtUtc: DateTime.tryParse(json['MilestoneReachedAtUtc']?.toString() ?? ''),
       );
 }
 
