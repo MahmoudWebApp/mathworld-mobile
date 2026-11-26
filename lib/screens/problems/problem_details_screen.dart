@@ -274,7 +274,6 @@ class _ProblemContent extends ConsumerWidget {
       children: [
         _ProblemHeader(
           problem: problem,
-          isArabic: isArabic,
           isFavoriteBusy: state.isFavoriteBusy,
           onToggleFavorite: onToggleFavorite,
         ),
@@ -610,13 +609,11 @@ class _RetryModeBanner extends StatelessWidget {
 
 class _ProblemHeader extends StatelessWidget {
   final Problem problem;
-  final bool isArabic;
   final bool isFavoriteBusy;
   final VoidCallback onToggleFavorite;
 
   const _ProblemHeader({
     required this.problem,
-    required this.isArabic,
     required this.isFavoriteBusy,
     required this.onToggleFavorite,
   });
@@ -629,14 +626,7 @@ class _ProblemHeader extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: RichMathText(
-                text: problem.title,
-                isArabic: isArabic,
-                inline: true,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-              ),
-            ),
+            const Spacer(),
             const SizedBox(width: AppSpacing.sm),
             IconButton.filledTonal(
               iconSize: 28,
