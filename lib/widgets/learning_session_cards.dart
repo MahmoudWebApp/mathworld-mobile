@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import '../config/design_tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/learning_journey.dart';
 import '../providers/auth_provider.dart';
@@ -51,7 +52,7 @@ class LearningSessionCards extends ConsumerWidget{
     final complete=daily?.valueOrNull?['IsComplete']==true;
     return Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
       Card(child:ListTile(leading:const Icon(Icons.school_outlined),title:Text(ar?'جلسة تدريب':'Practice session'),subtitle:Text(ar?'من 5 إلى 10 مسائل':'5 to 10 questions'),onTap:()=>open('practice'),trailing:const Icon(Icons.chevron_right))),
-      if(premium&&!complete)Card(child:ListTile(leading:const Icon(Icons.emoji_events_outlined,color:Color(0xFFF59E0B)),title:Text(ar?'تحدي اليوم':'Daily challenge'),subtitle:Text(daily?.isLoading==true?(ar?'جارٍ التحقق…':'Checking…'):daily?.hasError==true?(ar?'تعذّر تحميل التحدي':'Challenge unavailable'):daily?.valueOrNull!=null?'${daily!.valueOrNull!['Completed']} / 5':ar?'5 مسائل':'5 questions'),onTap:()=>open('daily'),trailing:const Icon(Icons.chevron_right))),
+      if(premium&&!complete)Card(child:ListTile(leading:const Icon(Icons.emoji_events_outlined,color:AppColors.rewardGold),title:Text(ar?'تحدي اليوم':'Daily challenge'),subtitle:Text(daily?.isLoading==true?(ar?'جارٍ التحقق…':'Checking…'):daily?.hasError==true?(ar?'تعذّر تحميل التحدي':'Challenge unavailable'):daily?.valueOrNull!=null?'${daily!.valueOrNull!['Completed']} / 5':ar?'5 مسائل':'5 questions'),onTap:()=>open('daily'),trailing:const Icon(Icons.chevron_right))),
       Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         Text(ar?'إنجازات التدريب والتحديات':'Practice and challenge achievements',style:Theme.of(context).textTheme.titleMedium),
         achievements.when(loading:()=>const LinearProgressIndicator(),error:(_,__)=>TextButton(onPressed:()=>ref.invalidate(_sessionAchievementsProvider(user.id)),child:Text(ar?'إعادة المحاولة':'Retry')),data:(data)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
