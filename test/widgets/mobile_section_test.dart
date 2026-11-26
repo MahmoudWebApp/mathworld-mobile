@@ -30,4 +30,16 @@ void main(){
     expect(find.text('Current grade reports'),findsOneWidget);
     expect(tester.takeException(),isNull);
   });
+
+  testWidgets('learning progress is empty at zero, yellow in progress, green at completion',(tester)async{
+    for(final value in [0.0,.4,1.0]){
+      await tester.pumpWidget(MaterialApp(home:Scaffold(body:Align(alignment:Alignment.topCenter,child:SizedBox(width:200,child:LearningProgressBar(value:value))))));
+      final fill=find.descendant(of:find.byType(LearningProgressBar),matching:find.byType(FractionallySizedBox));
+      expect(tester.widget<FractionallySizedBox>(fill).widthFactor,value);
+      final color=find.descendant(of:fill,matching:find.byType(ColoredBox));
+      expect(tester.widget<ColoredBox>(color).color,value==1?AppColors.success:AppColors.rewardGold);
+      expect(tester.getSize(color).width,closeTo(200*value,.01));
+      expect(tester.takeException(),isNull);
+    }
+  });
 }

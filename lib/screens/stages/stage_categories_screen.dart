@@ -26,6 +26,7 @@ import '../../providers/leaderboard_provider.dart';
 import '../../utils/category_grid_layout.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/app_states.dart';
+import '../../widgets/mobile_section.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/stage_math_glyph.dart';
@@ -110,7 +111,7 @@ class StageCategoriesScreen extends ConsumerWidget {
         top: embedded,
         bottom: false,
         child: accessState.when(
-          loading: () => const AppContentSkeleton(cards:true,count:4),
+          loading: () => AppContentSkeleton(cards:true,count:4,title:stage.getName(localeCode),sectionTitle:localeCode=='ar'?'الفئات التعليمية':'Learning topics',cardExtent:236),
           error: (error, __) => AppErrorView(
             message: localizedErrorMessage(error),
             onRetry: () => ref.invalidate(
@@ -380,7 +381,7 @@ class CurrentStageCategoriesScreen extends ConsumerWidget {
     // An explicit disabled/legacy API response preserves existing stage UI.
     // A temporary failure must not silently switch a selected track to a stage.
     if (trackCatalog.isLoading && !trackCatalog.hasValue) {
-      return const AppContentSkeleton(cards:true);
+      return AppContentSkeleton(cards:true,title:context.locale.languageCode=='ar'?'الفئات التعليمية':'Learning topics',cardExtent:236);
     }
     if (trackCatalog.hasError) {
       return AppErrorView(onRetry: () => ref.invalidate(publishedTracksProvider(stageId)));
@@ -391,7 +392,7 @@ class CurrentStageCategoriesScreen extends ConsumerWidget {
     }
 
     return ref.watch(stagesProvider).when(
-      loading: () => const AppContentSkeleton(cards:true,count:4),
+      loading: () => AppContentSkeleton(cards:true,count:4,title:context.locale.languageCode=='ar'?'الفئات التعليمية':'Learning topics',cardExtent:236),
       error: (error, _) => AppErrorView(
         message: localizedErrorMessage(error),
         onRetry: () => ref.invalidate(stagesProvider),
@@ -552,12 +553,7 @@ class _CategoryCard extends StatelessWidget {
               value: '${(category.progress! * 100).round()}%',
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(99),
-                child: LinearProgressIndicator(
-                  minHeight: 5,
-                  value: category.progress!.clamp(0.0, 1.0).toDouble(),
-                  backgroundColor: accent.withValues(alpha: 0.18),
-                  valueColor: AlwaysStoppedAnimation<Color>(accent),
-                ),
+                child: LearningProgressBar(value:category.progress!),
               ),
             ),
           ],

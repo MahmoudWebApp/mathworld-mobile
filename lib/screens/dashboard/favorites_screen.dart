@@ -30,8 +30,8 @@ class FavoritesScreen extends ConsumerWidget {
       child: SafeArea(
         bottom: false,
         child: favoritesState.when(
-            skipLoadingOnRefresh:false,skipLoadingOnReload:false,
-          loading: () => const AppContentSkeleton(),
+            skipLoadingOnRefresh:true,skipLoadingOnReload:false,
+          loading: () => AppContentSkeleton(title:embedded?'favorites'.tr():null,count:5),
           error: (error, __) => AppErrorView(
             message: localizedErrorMessage(error),
             onRetry: () => ref.invalidate(favoritesProvider),
