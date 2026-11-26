@@ -207,11 +207,10 @@ class _CategoryReport extends StatelessWidget {
               '${category.solvedProblems}/${category.totalProblems} '
               '· ${category.completionPercent}%',
             ),
-            Text(
-              '${'premium_report_mastered'.tr()}: ${category.masteredProblems} '
-              '· ${'premium_report_points'.tr()}: ${category.officialPoints}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            Text.rich(TextSpan(style: Theme.of(context).textTheme.bodySmall,children:[
+              TextSpan(text: '${'premium_report_mastered'.tr()}: ${category.masteredProblems} · '),
+              TextSpan(text: '${'premium_report_points'.tr()}: ${category.officialPoints}',style:TextStyle(fontWeight:FontWeight.w700,color:Theme.of(context).brightness == Brightness.dark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk)),
+            ])),
           ],
         ),
       );

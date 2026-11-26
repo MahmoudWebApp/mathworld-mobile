@@ -39,6 +39,22 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      pageTransitionsTheme: const PageTransitionsTheme(builders: {
+        TargetPlatform.android: MathWorldPageTransition(),
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.fuchsia: MathWorldPageTransition(),
+        TargetPlatform.linux: MathWorldPageTransition(),
+        TargetPlatform.macOS: MathWorldPageTransition(),
+        TargetPlatform.windows: MathWorldPageTransition(),
+      }),
+      dialogTheme: DialogThemeData(
+        backgroundColor: surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg),side: BorderSide(color:border)),
+        titleTextStyle: baseTextTheme.titleLarge?.copyWith(color:text,fontWeight:FontWeight.w800),
+        contentTextStyle: baseTextTheme.bodyMedium?.copyWith(color:text),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      ),
       brightness: brightness,
       scaffoldBackgroundColor: background,
       colorScheme: ColorScheme(
@@ -218,6 +234,22 @@ class AppTheme {
     return OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppRadius.md),
       borderSide: BorderSide(color: color, width: width),
+    );
+  }
+}
+
+// Shared, short entrance motion; honor platform accessibility settings.
+// Keep native iOS swipe-back via CupertinoPageTransitionsBuilder.
+class MathWorldPageTransition extends PageTransitionsBuilder {
+  const MathWorldPageTransition();
+  @override
+  Widget buildTransitions<T>(PageRoute<T> route, BuildContext context,
+      Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
+    if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) return child;
+    final curved = animation.drive(CurveTween(curve: Curves.easeOutCubic));
+    return FadeTransition(
+      opacity: curved.drive(Tween<double>(begin: .86,end: 1)),
+      child: SlideTransition(position: curved.drive(Tween<Offset>(begin: const Offset(0,.015),end: Offset.zero)),child:child),
     );
   }
 }

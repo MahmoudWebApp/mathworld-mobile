@@ -543,7 +543,7 @@ class _DailyPracticeCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Icon(Icons.emoji_events_outlined,
-                  size: 34, color: AppColors.success),
+                  size: 34, color: AppColors.rewardGold),
                 const SizedBox(height: AppSpacing.sm),
                 Text(ar ? 'أكملت تحدي اليوم!' : 'Daily challenge complete!',
                   style: Theme.of(context).textTheme.titleMedium),
@@ -754,10 +754,10 @@ class _StatsGrid extends StatelessWidget {
         AppColors.success,
       ),
       _StatData(
-        Icons.auto_awesome_rounded,
+        Icons.star_rounded,
         '${journey.displayedPoints}',
         'stage_points'.tr(),
-        AppColors.warning,
+        AppColors.rewardGold,
       ),
       _StatData(
         Icons.trending_up_rounded,
@@ -804,7 +804,9 @@ class _StatsGrid extends StatelessWidget {
                       child: Icon(item.icon, color: item.color),
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    ShaderMask(
+                    if (item.color == AppColors.rewardGold)
+                      Text(item.value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800,color: Theme.of(context).brightness == Brightness.dark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk))
+                    else ShaderMask(
                       shaderCallback: AppGradients.primary.createShader,
                       blendMode: BlendMode.srcIn,
                       child: Text(
@@ -988,6 +990,7 @@ class _LearningJourneyCard extends StatelessWidget {
               _StageStat(
                 title: 'stage_points'.tr(),
                 value: '${journey.displayedPoints}',
+                gold: true,
               ),
             ],
           ),
@@ -1014,14 +1017,15 @@ class _StageStat extends StatelessWidget {
   final String title;
   final String value;
 
-  const _StageStat({required this.title, required this.value});
+  final bool gold;
+  const _StageStat({required this.title, required this.value,this.gold=false});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(value, style: Theme.of(context).textTheme.titleLarge),
+        Text(value, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: gold ? (Theme.of(context).brightness == Brightness.dark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk) : null)),
         Text(title, style: Theme.of(context).textTheme.bodySmall),
       ],
     );

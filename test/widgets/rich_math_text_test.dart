@@ -157,4 +157,18 @@ void main() {
     expect(find.textContaining(r'\('), findsNothing);
   });
 
+  testWidgets('renders relation symbols and radicals in both directions', (tester) async {
+    const expressions = [r'a\neq0',r'x\leq2',r'x\geq0',r'x\approx1',r'x\in A',r'x\notin A',r'\frac{1}{2}',r'\sqrt{x}'];
+    for (final direction in [TextDirection.ltr,TextDirection.rtl]) {
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body:Directionality(textDirection:direction,child:Column(children: [
+        for(final expression in expressions) RichMathText(text:'\$'+expression+'\$',isArabic:direction==TextDirection.rtl),
+      ])))));
+      expect(find.byType(Math),findsNWidgets(expressions.length));
+      for(final expression in expressions) {
+        expect(find.text(expression),findsNothing,reason:'Raw TeX fallback: '+expression);
+      }
+      expect(tester.takeException(),isNull);
+    }
+  });
+
 }
