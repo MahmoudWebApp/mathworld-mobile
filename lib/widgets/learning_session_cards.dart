@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import '../config/design_tokens.dart';
 import 'mobile_section.dart';
+import '../utils/layout_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/learning_journey.dart';
 import '../providers/auth_provider.dart';
@@ -52,7 +53,7 @@ class LearningSessionCards extends ConsumerWidget{
     }
     final complete=daily?.valueOrNull?['IsComplete']==true;
     return Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-      Card(child:ListTile(leading:const Icon(Icons.school_outlined),title:Text(ar?'جلسة تدريب':'Practice session'),subtitle:Text(ar?'من 5 إلى 10 مسائل':'5 to 10 questions'),onTap:()=>open('practice'),trailing:Icon(Directionality.of(context)==TextDirection.rtl?Icons.chevron_left:Icons.chevron_right,textDirection:TextDirection.ltr))),
+      Card(child:ListTile(leading:const Icon(Icons.school_outlined),title:Text(ar?'جلسة تدريب':'Practice session'),subtitle:Text(ar?'من 5 إلى 10 مسائل':'5 to 10 questions'),onTap:()=>open('practice'),trailing:LayoutUtils.forwardIcon(context))),
       if(premium&&!complete)Card(child:ListTile(leading:const Icon(Icons.emoji_events_outlined,color:AppColors.rewardGold),title:Text(ar?'تحدي اليوم':'Daily challenge'),subtitle:Text(daily?.isLoading==true?(ar?'جارٍ التحقق…':'Checking…'):daily?.hasError==true?(ar?'تعذّر تحميل التحدي':'Challenge unavailable'):daily?.valueOrNull!=null?'${daily!.valueOrNull!['Completed']} / 5':ar?'5 مسائل':'5 questions'),onTap:()=>open('daily'),trailing:const Icon(Icons.chevron_right))),
       const SizedBox(height:12),
       MobilePanel(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
