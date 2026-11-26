@@ -4,7 +4,7 @@ import '../../config/app_routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_states.dart';
 
-/// Validates the stored session with the same unbranded content skeleton.
+/// Validates the stored session with one compact unbranded loader.
 /// The native launch screen remains unchanged.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -38,6 +38,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     ref.listen<AuthState>(authProvider, (_, next) => _navigate(next.status));
     final authState = ref.watch(authProvider);
     _navigate(authState.status);
-    return const Scaffold(body: SafeArea(child: AppContentSkeleton(count:4)));
+    return const Scaffold(body: SafeArea(child: Center(child: AppInlineLoader(size:28))));
   }
 }
