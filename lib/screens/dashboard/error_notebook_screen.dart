@@ -7,7 +7,7 @@ import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
 import '../../models/problem.dart';
 import '../../providers/learning_provider.dart';
-import '../../providers/auth_provider.dart';
+import '../../widgets/mathworld_pagination.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
@@ -23,17 +23,10 @@ class ErrorNotebookScreen extends ConsumerStatefulWidget {
 }
 
 class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
-  bool _dueOnly = false;
-
-  bool _isDue(ErrorNotebookProblem problem, DateTime now) =>
-      problem.nextReviewAt != null &&
-      !problem.nextReviewAt!.isAfter(now);
-
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(errorNotebookProvider);
     final notifier = ref.read(errorNotebookProvider.notifier);
-    final stageId = ref.watch(authProvider.select((state) => state.user?.currentStageId));
 
     return Scaffold(
       appBar: AppBar(title: Text('error_notebook'.tr())),
@@ -59,7 +52,6 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
                     initialIndex: state.includeArchived ? 1 : 0,
                     child: TabBar(
                       onTap: (index) {
-                        setState(() => _dueOnly = false);
                         notifier.setIncludeArchived(index == 1);
                       },
                       tabs: [
@@ -73,31 +65,15 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
               Expanded(
                 child: state.problems.when(
                   skipLoadingOnRefresh:false,skipLoadingOnReload:false,
-                  loading: () => const AppContentSkeleton(count:4),
+                  loading: () => const AppContentSkeleton(count:5),
                   error: (error, _) => AppErrorView(
                     message: localizedErrorMessage(error),
                     onRetry: notifier.load,
                   ),
                   data: (problems) {
-                    final now = DateTime.now();
-                    final dueCount = problems.where((problem) =>
-                        !problem.isArchived &&
-                        (stageId != null && problem.stageId == stageId) &&
-                        _isDue(problem, now)).length;
-                    final visible = problems.where((problem) =>
-                        (stageId != null && problem.stageId == stageId) &&
-                        problem.isArchived == state.includeArchived &&
-                        (!_dueOnly || (!problem.isArchived && _isDue(problem, now)))).toList()
-                      ..sort((a, b) {
-                        final first = a.nextReviewAt?.millisecondsSinceEpoch ??
-                            9223372036854775807;
-                        final second = b.nextReviewAt?.millisecondsSinceEpoch ??
-                            9223372036854775807;
-                        final dateOrder = first.compareTo(second);
-                        if (dateOrder != 0) return dateOrder;
-                        return a.id.compareTo(b.id);
-                      });
-                    final hasFilter = _dueOnly;
+                    final dueCount=state.dueCount;
+                    final visible=problems;
+                    final hasFilter=state.dueOnly;
 
                     return Column(
                       children: [
@@ -116,10 +92,8 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
                               runSpacing: AppSpacing.sm,
                               children: [
                                 FilterChip(
-                                  selected: _dueOnly,
-                                  onSelected: (value) => setState(() {
-                                    _dueOnly = value;
-                                  }),
+                                  selected: state.dueOnly,
+                                  onSelected: notifier.setDueOnly,
                                   label: Text(context.locale.languageCode == 'ar'
                                       ? 'المراجعة المستحقة ($dueCount)'
                                       : 'Due for review ($dueCount)'),
@@ -128,9 +102,7 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
                                 ),
                                 if (hasFilter)
                                   TextButton(
-                                    onPressed: () => setState(() {
-                                      _dueOnly = false;
-                                    }),
+                                    onPressed: () => notifier.setDueOnly(false),
                                     child: Text(context.locale.languageCode == 'ar'
                                         ? 'إلغاء التصفية' : 'Clear filters'),
                                   ),
@@ -140,7 +112,7 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
                         ),
                         Expanded(child: _buildNotebookList(
                           context, visible, hasFilter, notifier,
-                          state.busyProblemIds,
+                          state.busyProblemIds,state.page,state.totalPages,
                         )),
                       ],
                     );
@@ -159,7 +131,7 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
     List<ErrorNotebookProblem> problems,
     bool hasFilter,
     ErrorNotebookNotifier notifier,
-    Set<int> busyProblemIds,
+    Set<int> busyProblemIds,int page,int totalPages,
   ) {
     if (problems.isEmpty) {
       return RefreshIndicator(
@@ -193,10 +165,11 @@ class _ErrorNotebookScreenState extends ConsumerState<ErrorNotebookScreen> {
                           AppSpacing.lg,
                           AppSpacing.xxxl,
                         ),
-                        itemCount: problems.length,
+                        itemCount: problems.length+1,
                         separatorBuilder: (_, __) =>
                             const SizedBox(height: AppSpacing.md),
                         itemBuilder: (context, index) {
+                          if(index==problems.length)return MathWorldPagination(page:page,pageCount:totalPages,arabic:context.locale.languageCode=='ar',onChanged:notifier.setPage);
                           final problem = problems[index];
                           return _ErrorNotebookCard(
                             problem: problem,
