@@ -55,10 +55,10 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
     if (mounted) setState(() => _challengeAdvancePaused = true);
   }
 
-  ({int? problemId, bool retry, bool dailyChallenge}) _readArguments() {
+  ({int? problemId, bool retry, bool dailyChallenge, int? nextProblemId}) _readArguments() {
     final arguments = ModalRoute.of(context)?.settings.arguments;
     if (arguments is int) {
-      return (problemId: arguments, retry: false, dailyChallenge: false);
+      return (problemId: arguments, retry: false, dailyChallenge: false, nextProblemId: null);
     }
     if (arguments is Map) {
       final rawId = arguments['problemId'] ?? arguments['id'];
@@ -67,9 +67,10 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
         problemId: id,
         retry: arguments['retry'] == true,
         dailyChallenge: arguments['dailyChallenge'] == true,
+        nextProblemId: arguments['nextProblemId'] is int ? arguments['nextProblemId'] as int : null,
       );
     }
-    return (problemId: null, retry: false, dailyChallenge: false);
+    return (problemId: null, retry: false, dailyChallenge: false, nextProblemId: null);
   }
 
   @override
@@ -183,6 +184,7 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
             challengeAdvancePaused: _challengeAdvancePaused,
             onPauseChallengeAdvance: _pauseChallengeAdvance,
             onContinueChallenge: _continueChallenge,
+            onNextProblem: routeArguments.nextProblemId == null ? null : () => Navigator.pop(context, 'nextProblem'),
             onSubmit: () => _runAction(context, () async {
               await notifier.submitAnswer();
               if (!mounted || !routeArguments.dailyChallenge) return;
@@ -231,6 +233,7 @@ class _ProblemContent extends ConsumerWidget {
   final bool challengeAdvancePaused;
   final VoidCallback onPauseChallengeAdvance;
   final VoidCallback onContinueChallenge;
+  final VoidCallback? onNextProblem;
   final ValueChanged<int?> onOptionChanged;
   final VoidCallback onSubmit;
   final VoidCallback onStartRetry;
@@ -245,6 +248,7 @@ class _ProblemContent extends ConsumerWidget {
     required this.challengeAdvancePaused,
     required this.onPauseChallengeAdvance,
     required this.onContinueChallenge,
+    required this.onNextProblem,
     required this.onOptionChanged,
     required this.onSubmit,
     required this.onStartRetry,
@@ -389,12 +393,15 @@ class _ProblemContent extends ConsumerWidget {
                 ],
               ),
             ),
-          ] else
-            FilledButton.icon(
+          ] else ...[
+            if (!isDailyChallenge && state.answerResult!.isCorrect && onNextProblem != null)
+              FilledButton.icon(onPressed: onNextProblem, icon: LayoutUtils.forwardIcon(context), label: Text(isArabic ? 'المسألة التالية' : 'Next problem')),
+            TextButton.icon(
               onPressed: () => Navigator.maybePop(context),
               icon: const Icon(Icons.list_alt_rounded),
               label: Text('back_to_problems'.tr()),
             ),
+          ],
         ],
         if ((allowNotebookRetry || !isDailyChallenge || state.answerResult?.isCorrect == false) && problem.hasAttempted &&
             problem.isInErrorNotebook && problem.canRetry &&
