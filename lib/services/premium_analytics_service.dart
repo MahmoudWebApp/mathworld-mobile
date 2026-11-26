@@ -35,6 +35,7 @@ class PremiumCategoryStatistics {
     required this.categoryNameEn,
     required this.attemptedProblems,
     this.totalProblems,
+    this.masteredProblems,
     required this.solvedProblems,
     required this.errorNotebookProblems,
     required this.attempts,
@@ -53,6 +54,7 @@ class PremiumCategoryStatistics {
   final String categoryNameEn;
   final int attemptedProblems;
   final int? totalProblems;
+  final int? masteredProblems;
   final int solvedProblems;
   final int errorNotebookProblems;
   final int attempts;
@@ -72,6 +74,7 @@ class PremiumCategoryStatistics {
         categoryNameEn: _requiredText(json, 'CategoryNameEn'),
         attemptedProblems: _nonnegativeInt(json, 'AttemptedProblems'),
         totalProblems: _field(json, 'TotalProblems') == null ? null : _nonnegativeInt(json, 'TotalProblems'),
+        masteredProblems: _field(json, 'MasteredProblems') == null ? null : _nonnegativeInt(json, 'MasteredProblems'),
         solvedProblems: _nonnegativeInt(json, 'SolvedProblems'),
         errorNotebookProblems: _nonnegativeInt(json, 'ErrorNotebookProblems'),
         attempts: _nonnegativeInt(json, 'Attempts'),

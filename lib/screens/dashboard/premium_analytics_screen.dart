@@ -256,6 +256,13 @@ class _ReportBody extends ConsumerWidget {
                             style: TextStyle(fontWeight: FontWeight.bold, color: color),
                           ),
                         ),
+                        if (category.masteredProblems != null) Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(children: [
+                            Expanded(child: Text(ar ? 'الإتقان الحالي' : 'Current mastery')),
+                            Text('${category.masteredProblems} / ${category.totalProblems ?? "—"}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                          ]),
+                        ),
                         const Divider(height: 1),
                       ],
                     )),
