@@ -15,6 +15,7 @@ import '../../core/utils/error_message.dart';
 import '../../core/errors/app_exception.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/glass_card.dart';
+import '../../widgets/app_states.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/account_password_dialog.dart';
 import '../../widgets/email_preferences_dialog.dart';
@@ -254,7 +255,7 @@ ListView(key: const PageStorageKey('settings-2'),padding:const EdgeInsets.all(16
                   trailing: googleLinkState?.isLoading == true
                       ? const SizedBox.square(
                           dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: AppInlineLoader(size:18),
                         )
                       : Icon(googleLinkState?.valueOrNull == true
                           ? Icons.check_circle_rounded
