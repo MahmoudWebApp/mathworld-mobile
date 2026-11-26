@@ -263,6 +263,13 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 if (learningJourney.valueOrNull?.learningSessionsEnabled == true)
                   LearningSessionCards(journey: learningJourney.valueOrNull!),
+                Card(child:ListTile(
+                  leading:const Icon(Icons.insights_rounded,color:Color(0xFF0F766E)),
+                  title:Text(context.locale.languageCode=='ar'?'التقارير والإحصائيات':'Reports & analytics'),
+                  subtitle:Text(context.locale.languageCode=='ar'?'تقدمك في الصف الحالي':'Your current grade progress'),
+                  trailing:const Icon(Icons.arrow_forward_ios,size:16),
+                  onTap:()=>Navigator.pushNamed(context,AppRoutes.premiumReport),
+                )),
                 if(examsEnabled)
                   Card(child:ListTile(
                     leading:Icon(Icons.school_outlined,color:Theme.of(context).colorScheme.primary),
