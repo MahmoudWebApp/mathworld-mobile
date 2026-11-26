@@ -155,7 +155,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
       if(p['TrackPracticeIsolationEnabled']==true&&stats.values.any((c)=>trackNumber(c['Attempted'])>0))
         OutlinedButton.icon(onPressed:_resetting?null:()=>_reset(trackNumber(p['StageId']),trackText(track,'Name',ar)),icon:const Icon(Icons.restart_alt),label:Text(ar?'إعادة تدريب الصف أو المساق':'Restart grade or course')),
       const SizedBox(height:16),
-      for(final c in trackRows(d['Categories'])) Card(color:Theme.of(context).brightness==Brightness.dark ? AppColors.darkSurface : AppColors.lightSurface,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(16),side:BorderSide(color:accent.withValues(alpha:.45))),child:Padding(padding:const EdgeInsets.all(14),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      for(final c in [...trackRows(d['Categories']).where((c)=>c['IsFree']==true),...trackRows(d['Categories']).where((c)=>c['IsFree']!=true)]) Card(color:Theme.of(context).brightness==Brightness.dark ? AppColors.darkSurface : AppColors.lightSurface,shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(16),side:BorderSide(color:accent.withValues(alpha:.45))),child:Padding(padding:const EdgeInsets.all(14),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         Row(children:[_TrackTopicIcon(value:c['Icon']?.toString()??'',accent:accent),const SizedBox(width:10),Expanded(child:Text(trackText(c,'Name',ar),style:Theme.of(context).textTheme.titleMedium?.copyWith(color:accent,fontWeight:FontWeight.w800))),const SizedBox(width:8),Container(padding:const EdgeInsets.symmetric(horizontal:8,vertical:6),decoration:BoxDecoration(color:accent.withValues(alpha:.12),borderRadius:BorderRadius.circular(8)),child:Text('${trackNumber(c['ProblemsCount'])} ${ar?'مسألة':'problems'}',style:TextStyle(color:accent,fontSize:12,fontWeight:FontWeight.w700)))]),
         const SizedBox(height:8),
         if(trackText(c,'Description',ar).isNotEmpty)Text(trackText(c,'Description',ar)),
@@ -165,9 +165,10 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
         LinearProgressIndicator(value:trackNumber(c['ProblemsCount'])>0?(trackNumber(stats[trackNumber(c['Id'])]?['Solved'])/trackNumber(c['ProblemsCount'])).clamp(0.0,1.0).toDouble():0,color:accent,borderRadius:BorderRadius.circular(8)),
         const SizedBox(height:6),
         Wrap(spacing:8,children:[
-          TextButton(style:TextButton.styleFrom(foregroundColor:accent),onPressed:()=>showDialog<void>(context:context,builder:(ctx)=>AlertDialog(title:Text(ar?'المهارات':'Skills'),content:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
-            for(final skill in trackRows(d['Skills']).where((s)=>s['CategoryId']==c['Id'])) ListTile(title:Text(trackText(skill,'Name',ar)),subtitle:Text(trackText(skill,'Description',ar))),
-          ])),actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:Text(ar?'إغلاق':'Close'))])),child:Text(ar?'عرض المهارات':'View skills')),
+          TextButton(style:TextButton.styleFrom(foregroundColor:accent),onPressed:()=>showModalBottomSheet<void>(context:context,showDragHandle:true,isScrollControlled:true,builder:(ctx)=>SafeArea(child:FractionallySizedBox(heightFactor:.62,child:Column(children:[
+            Padding(padding:const EdgeInsets.all(12),child:Text(ar?'المهارات':'Skills',style:Theme.of(ctx).textTheme.titleLarge)),
+            Expanded(child:ListView(children:[for(final skill in trackRows(d['Skills']).where((s)=>s['CategoryId']==c['Id'])) ListTile(title:Text(trackText(skill,'Name',ar)),subtitle:Text(trackText(skill,'Description',ar)))])),
+          ])))),child:Text(ar?'عرض المهارات':'View skills')),
           if(stats[trackNumber(c['Id'])]?['IsLocked']==false)
             FilledButton(style:FilledButton.styleFrom(backgroundColor:accent,foregroundColor:Colors.white),onPressed:()async{await Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>_TrackPractice(id:id,categoryId:trackNumber(c['Id']),name:trackText(c,'Name',ar))));if(context.mounted)ref.invalidate(trackProgressProvider(id));},child:Text(ar?'عرض المسائل':'View problems'))
           else TextButton(style:TextButton.styleFrom(foregroundColor:accent),onPressed:()=>Navigator.pushNamed(context,AppRoutes.premiumBenefits),child:Text(ar?'ترقية الحساب':'Upgrade account')),

@@ -298,7 +298,7 @@ class _ErrorNotebookCard extends StatelessWidget {
                 icon: isBusy
                     ? const SizedBox.square(
                         dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: AppInlineLoader(size:18),
                       )
                     : Icon(
                         problem.isArchived

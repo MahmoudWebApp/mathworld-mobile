@@ -8,6 +8,7 @@ import '../../core/utils/error_message.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/stages_provider.dart';
 import '../../widgets/glass_card.dart';
+import '../../widgets/app_states.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/stage_math_glyph.dart';
 import '../../widgets/premium_button.dart';
@@ -94,7 +95,7 @@ class _LearningStageScreenState extends ConsumerState<LearningStageScreen> {
         showSymbols: true,
         child: SafeArea(
           child: stages.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const AppContentSkeleton(cards:true,count:4),
             error: (error, _) => Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,

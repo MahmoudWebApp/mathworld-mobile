@@ -27,9 +27,9 @@ class ApiService implements ApiClient {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiConstants.baseUrl,
-        connectTimeout: const Duration(seconds: 60),
-        sendTimeout: const Duration(seconds: 60),
-        receiveTimeout: const Duration(seconds: 60),
+        connectTimeout: const Duration(seconds: 15),
+        sendTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 15),
         headers: const {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -221,9 +221,8 @@ class ApiService implements ApiClient {
         (status != null && status >= 520 && status < 600)) {
       return true;
     }
-    return error.type == DioExceptionType.connectionTimeout ||
-        error.type == DioExceptionType.receiveTimeout ||
-        error.type == DioExceptionType.connectionError;
+    // Do not extend a timed-out request with another 15-second attempt.
+    return error.type == DioExceptionType.connectionError;
   }
 
   AppException _mapError(

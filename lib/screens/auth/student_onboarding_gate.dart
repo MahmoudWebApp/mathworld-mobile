@@ -8,6 +8,7 @@ import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
 import '../../widgets/brand_logo.dart';
+import '../../widgets/app_states.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/animated_entry.dart';
 import '../../core/errors/app_exception.dart';
@@ -44,7 +45,7 @@ class StudentOnboardingGate extends ConsumerWidget {
     final ar = context.locale.languageCode == 'ar';
     final status = ref.watch(studentOnboardingProvider);
     return status.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () => const Scaffold(body: SafeArea(child: AppContentSkeleton())),
       error: (error, _) => Scaffold(body: SafeArea(child: Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
         const BrandMark(size: 64),
         const SizedBox(height: 20),
@@ -150,7 +151,7 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
         ] else ...[
           Text(stage?(ar?'اختر مرحلتك التعليمية':'Choose your learning stage'):(ar?'اختر الصف أو المستوى':'Choose grade or level'),style: Theme.of(context).textTheme.headlineSmall),
           if(stages != null) stages.when(
-            loading:()=>const Center(child:CircularProgressIndicator()),
+            loading:()=>const SizedBox(height:260,child:AppContentSkeleton(count:3)),
             error:(_,__)=>TextButton(onPressed:()=>ref.invalidate(stagesProvider),child:Text(ar?'إعادة المحاولة':'Retry')),
             data:(items)=>Column(children:[
               if(items.isEmpty) Text(ar?'لا توجد مراحل متاحة':'No available stages'),
@@ -163,7 +164,7 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
             if(mounted) Navigator.pushNamedAndRemoveUntil(context,AppRoutes.home,(_)=>false);
           }),child:Text(ar?'حفظ المرحلة والمتابعة':'Save stage and continue')),
           if(!stage && tracks!=null) tracks.when(
-            loading:()=>const Center(child:CircularProgressIndicator()),
+            loading:()=>const SizedBox(height:260,child:AppContentSkeleton(count:3)),
             error:(_,__)=>TextButton(onPressed:()=>ref.invalidate(publishedTracksProvider(stageId!)),child:Text(ar?'إعادة المحاولة':'Retry')),
             data:(catalog)=>Column(children:[
               if(catalog.items.isEmpty) Text(ar?'لا توجد صفوف أو مستويات منشورة حالياً.':'No published grades or levels yet.'),

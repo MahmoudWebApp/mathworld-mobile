@@ -31,6 +31,9 @@ class AppColors {
   static const Color rewardGold = Color(0xFFF5C518);
   static const Color rewardGoldBright = Color(0xFFFACC15);
   static const Color rewardGoldInk = Color(0xFF806000);
+  // Same accessible gold foreground for every point value and its icon.
+  static Color pointsGold(BuildContext context) => Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFFF7C948) : const Color(0xFFA66B00);
   static const Color error = Color(0xFFEF476F);
 
   static const Color lightBackground = Color(0xFFFAF8FF);

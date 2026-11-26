@@ -643,7 +643,7 @@ class _ProblemHeader extends StatelessWidget {
               icon: isFavoriteBusy
                   ? const SizedBox.square(
                       dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: AppInlineLoader(size:18),
                     )
                   : Icon(
                       problem.isFavorite
@@ -669,7 +669,7 @@ class _ProblemHeader extends StatelessWidget {
               label: 'points_value'.tr(
                 namedArgs: {'count': '${problem.points}'},
               ),
-              color: AppColors.rewardGold,
+              color: AppColors.pointsGold(context),
             ),
           ],
         ),
@@ -781,6 +781,7 @@ class _InfoPill extends StatelessWidget {
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w700,
+                  color: icon == Icons.star_rounded ? effectiveColor : null,
                 ),
           ),
         ],
@@ -845,8 +846,7 @@ class _AnswerResultCard extends StatelessWidget {
                     ),
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.rewardGoldBright : AppColors.rewardGoldInk,
+                      color: AppColors.pointsGold(context),
                     ),
                   ),
                 ],

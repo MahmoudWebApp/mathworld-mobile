@@ -280,7 +280,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                                           children: [
                                             TextSpan(text: '${entry.solvedProblems} ${'leaderboard_solved'.tr()} · '),
                                             TextSpan(text: '${entry.points} ${'leaderboard_points'.tr()}',
-                                              style: TextStyle(fontWeight: FontWeight.w700, color: dark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk)),
+                                              style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.pointsGold(context))),
                                           ],
                                         )),
                                         Text(

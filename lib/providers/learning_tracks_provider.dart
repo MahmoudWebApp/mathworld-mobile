@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/errors/app_exception.dart';
 import '../core/network/api_envelope.dart';
@@ -22,6 +23,10 @@ class TrackCatalog {
 
 final publishedTracksProvider=FutureProvider.autoDispose.family<TrackCatalog,int>((ref,stageId) async {
   final client=ref.watch(apiClientProvider);
+  // Public catalog only; never retain private progress or entitlement data.
+  final lease=ref.keepAlive();
+  final timer=Timer(const Duration(minutes:2),lease.close);
+  ref.onDispose(timer.cancel);
   try {
     final response=await client.get('/stages/$stageId/tracks',handleUnauthorized:false);
     return TrackCatalog.fromJson(ApiEnvelope.map(response.data));
@@ -29,6 +34,7 @@ final publishedTracksProvider=FutureProvider.autoDispose.family<TrackCatalog,int
     if(error.statusCode==404 || error.type==AppExceptionType.notFound) {
       return const TrackCatalog(false,[]);
     }
+    lease.close();
     rethrow;
   }
 });

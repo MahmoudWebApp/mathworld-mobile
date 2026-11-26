@@ -677,7 +677,7 @@ class _CategoryCard extends StatelessWidget {
       return ColorFiltered(colorFilter: AppColors.topicArtworkFilter(accent), child: SvgPicture.network(value, width: 34, height: 34,
         placeholderBuilder: (_) => SizedBox.square(
           dimension: 24,
-          child: CircularProgressIndicator(strokeWidth: 2, color: accent),
+          child: AppInlineLoader(size:20),
         ),
         errorBuilder: (context, error, stackTrace) =>
           Icon(Icons.calculate_outlined, color: accent, size: 26),

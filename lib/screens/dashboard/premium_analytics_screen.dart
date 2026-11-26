@@ -220,10 +220,10 @@ class _ReportBody extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(stat.$3, color: index == 3 ? AppColors.rewardGold : color, size: 23),
+                      Icon(stat.$3, color: index == 3 ? AppColors.pointsGold(context) : color, size: 23),
                       const SizedBox(height: AppSpacing.sm),
                       Text('${stat.$2}', style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w800, color: index == 3 ? (Theme.of(context).brightness == Brightness.dark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk) : null)),
+                          ?.copyWith(fontWeight: FontWeight.w800, color: index == 3 ? (AppColors.pointsGold(context)) : null)),
                       Text(
                         stat.$1,
                         maxLines: 2,
@@ -411,7 +411,7 @@ class _XlsxDownloadButtonState extends ConsumerState<_XlsxDownloadButton> {
           ? const SizedBox(
               width: 18,
               height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: AppInlineLoader(size:18),
             )
           : const Icon(Icons.table_chart_outlined),
       label: Text(_sharing
@@ -473,7 +473,7 @@ class _PdfShareButtonState extends ConsumerState<_PdfShareButton> {
       onPressed: _sharing ? null : _sharePdf,
       icon: _sharing
           ? const SizedBox(width: 18, height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2))
+              child: AppInlineLoader(size:18))
           : const Icon(Icons.picture_as_pdf_outlined),
       label: Text(_sharing
           ? (ar ? 'جارٍ تجهيز PDF…' : 'Preparing PDF…')

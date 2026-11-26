@@ -7,6 +7,8 @@ import '../config/app_routes.dart';
 import '../config/design_tokens.dart';
 import '../providers/student_badges_provider.dart';
 import 'glass_card.dart';
+import 'app_states.dart';
+import '../services/student_badges_service.dart';
 
 IconData _badgeIcon(String icon) => switch (icon) {
   'graduation' => Icons.school_rounded,
@@ -30,7 +32,8 @@ String _badgeUnit(String unit, bool ar) => switch (unit) {
 };
 
 class StudentBadgesCard extends ConsumerWidget {
-  const StudentBadgesCard({super.key});
+  const StudentBadgesCard({super.key,this.showAll=false});
+  final bool showAll;
 
   void _showPremiumBadge(BuildContext context, String badgeName, bool ar) {
     showModalBottomSheet<void>(
@@ -81,204 +84,75 @@ class StudentBadgesCard extends ConsumerWidget {
     );
   }
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final ar = context.locale.languageCode == 'ar';
-    final badgesState = ref.watch(studentBadgesProvider);
-
-    return GlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.military_tech_rounded,
-                  color: AppColors.rewardGold, size: 27),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: ShaderMask(
-                  shaderCallback: AppGradients.primary.createShader,
-                  blendMode: BlendMode.srcIn,
-                  child: Text(
-                    ar ? 'الشارات والإنجازات' : 'Badges & achievements',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              IconButton(
-                onPressed: () => ref.invalidate(studentBadgesProvider),
-                tooltip: ar ? 'تحديث الشارات' : 'Refresh badges',
-                icon: const Icon(Icons.refresh_rounded),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          badgesState.when(
-            loading: () => const Center(
-              child: Padding(
-                padding: EdgeInsets.all(AppSpacing.md),
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-            error: (_, __) => Text(
-              ar ? 'تعذّر تحميل الشارات. اضغط تحديث.'
-                  : 'Could not load badges. Tap refresh.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            data: (result) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  spacing: AppSpacing.sm,
-                  children: [
-                    Text(ar ? 'الشارات المكتسبة من المتاحة' : 'Earned from available badges',
-                      style: Theme.of(context).textTheme.bodyMedium),
-                    Directionality(
-                      textDirection: ui.TextDirection.ltr,
-                      child: Text(
-                        '${result.earnedCount} / ${result.badges.where((badge) => badge.isAvailable).length}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? AppColors.rewardGoldBright : AppColors.rewardGoldInk,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                // Keep Premium badges visible to Free learners. An unavailable
-                // badge is locked, not an earned or progress-bearing badge.
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: result.badges.map((badge) {
-                    final locked = !badge.isAvailable;
-                    final name = ar ? badge.titleAr : badge.titleEn;
-                    final earned = !locked && badge.earned;
-                    final description = ar ? badge.descriptionAr : badge.descriptionEn;
-                    final color = AppColors.rewardGold;
-                    final progress = badge.requiredSolved > 0
-                        ? (badge.currentProgress / badge.requiredSolved)
-                            .clamp(0.0, 1.0)
-                        : 0.0;
-                    return Semantics(
-                      button: locked,
-                      hint: description.isEmpty ? null : description,
-                      label: locked
-                          ? '$name: ${ar ? "شارة Premium مقفولة" : "Locked Premium badge"}'
-                          : '$name: ${badge.currentProgress}/${badge.requiredSolved}',
-                      child: InkWell(
-                        onTap: locked
-                            ? () => _showPremiumBadge(context, name, ar)
-                            : null,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                        child: Container(
-                          width: 136,
-                          constraints: const BoxConstraints(minHeight: 138),
-                          padding: const EdgeInsets.all(AppSpacing.sm),
-                          decoration: BoxDecoration(
-                            color: color.withValues(alpha: earned ? 0.10 : 0.04),
-                            border: Border.all(color: color.withValues(alpha: earned ? .85:.3),width:earned?1.6:1),
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 52, height: 52,
-                                decoration: BoxDecoration(
-                                  color: color.withValues(alpha: earned ? .24 : .10),
-                                  border: Border.all(color: color.withValues(alpha: .45)),
-                                  borderRadius: BorderRadius.circular(16)),
-                                child: Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [
-                                  Icon(_badgeIcon(badge.icon), color: color, size: 32),
-                                  if (locked || earned) PositionedDirectional(end: -4, bottom: -4,
-                                    child: Container(decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, shape: BoxShape.circle),
-                                      child: Icon(locked ? Icons.lock_rounded : Icons.check_circle_rounded,
-                                        size: 18, color: locked ? Theme.of(context).colorScheme.onSurfaceVariant : AppColors.success))),
-                                ]),
-                              ),
-                              const SizedBox(height: AppSpacing.xs),
-                              Text(
-                                name,
-                                maxLines: 2,
-                                textAlign: TextAlign.center,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.labelMedium,
-                              ),
-                              if (description.isNotEmpty) ...[
-                                const SizedBox(height: AppSpacing.xs),
-                                Text(description, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall),
-                              ],
-                              if (locked) ...[
-                                const SizedBox(height: AppSpacing.sm),
-                                Text(
-                                  ar ? 'Premium · مقفولة' : 'Premium · Locked',
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.brandViolet,
-                                  ),
-                                ),
-                              ] else ...[
-                                Directionality(
-                                  textDirection: ui.TextDirection.ltr,
-                                  child: Text(
-                                    '${badge.currentProgress}/${badge.requiredSolved}',
-                                    style: Theme.of(context).textTheme.bodySmall,
-                                  ),
-                                ),
-                                Text(_badgeUnit(badge.unit, ar), textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall),
-                                const SizedBox(height: 6),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: SizedBox(
-                                    height: 5,
-                                    child: LayoutBuilder(
-                                      builder: (context, limits) => Stack(
-                                        children: [
-                                          Container(color: color.withValues(alpha: 0.10)),
-                                          Align(
-                                            alignment: AlignmentDirectional.centerStart,
-                                            child: Container(
-                                              width: limits.maxWidth * progress,
-                                              decoration: BoxDecoration(
-                                                color: progress >= 1.0 ? AppColors.success : AppColors.rewardGold,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                if (result.nextMilestone != null) ...[
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    ar
-                        ? 'الشارة التالية عند حل ${result.nextMilestone} مسألة مختلفة.'
-                        : 'Next badge after ${result.nextMilestone} unique solves.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
+  double _progress(MathBadge badge)=>badge.requiredSolved>0?(badge.currentProgress/badge.requiredSolved).clamp(0.0,1.0).toDouble():0;
+  List<MathBadge> _featured(List<MathBadge> badges){
+    final earned=badges.where((b)=>b.isAvailable&&b.earned).toList()..sort((a,b){
+      final x=a.milestoneReachedAtUtc,y=b.milestoneReachedAtUtc;
+      if(x!=null&&y!=null)return y.compareTo(x);
+      if(x!=null)return -1;
+      if(y!=null)return 1;
+      return b.requiredSolved.compareTo(a.requiredSolved);
+    });
+    final pending=badges.where((b)=>b.isAvailable&&!b.earned).toList()..sort((a,b)=>_progress(b).compareTo(_progress(a)));
+    return [...earned.take(1),...pending].take(4).toList();
+  }
+  Widget _tile(BuildContext context,MathBadge badge,bool ar){
+    final locked=!badge.isAvailable,earned=badge.isAvailable&&badge.earned;
+    final name=ar?badge.titleAr:badge.titleEn,description=ar?badge.descriptionAr:badge.descriptionEn;
+    final gold=AppColors.pointsGold(context);
+    final progress=_progress(badge);
+    return Semantics(label:name,hint:description,button:locked,child:InkWell(
+      borderRadius:BorderRadius.circular(14),onTap:locked?()=>_showPremiumBadge(context,name,ar):null,
+      child:Container(padding:const EdgeInsets.all(12),decoration:BoxDecoration(
+        color:gold.withValues(alpha:.06),borderRadius:BorderRadius.circular(14),border:Border.all(color:gold.withValues(alpha:.32))),
+        child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          Row(children:[Icon(_badgeIcon(badge.icon),color:gold,size:28),const Spacer(),if(earned)const Icon(Icons.check_circle_rounded,color:AppColors.success,size:18) else if(locked)const Icon(Icons.lock_outline,size:18)]),
+          const SizedBox(height:8),Text(name,style:Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight:FontWeight.w800),maxLines:2,overflow:TextOverflow.ellipsis),
+          if(earned&&badge.milestoneReachedAtUtc!=null)
+            Padding(padding:const EdgeInsets.only(top:4),child:Text(
+              (ar?'بلوغ الهدف: ':'Milestone reached: ')+DateFormat.yMMMd(context.locale.languageCode).format(badge.milestoneReachedAtUtc!.toLocal()),
+              style:Theme.of(context).textTheme.bodySmall,
+            )),
+          if(showAll&&description.isNotEmpty)Padding(padding:const EdgeInsets.only(top:4),child:Text(description,style:Theme.of(context).textTheme.bodySmall)),
+          const SizedBox(height:8),
+          if(locked)Text('Premium',style:TextStyle(color:gold,fontWeight:FontWeight.w700))else...[
+            Directionality(textDirection:ui.TextDirection.ltr,child:Text('${badge.currentProgress}/${badge.requiredSolved}',style:TextStyle(color:gold,fontWeight:FontWeight.w700))),
+            if(showAll)Text(_badgeUnit(badge.unit,ar),style:Theme.of(context).textTheme.labelSmall),
+            const SizedBox(height:6),
+            LinearProgressIndicator(value:progress,color:earned?AppColors.success:AppColors.rewardGoldBright,backgroundColor:gold.withValues(alpha:.12),borderRadius:BorderRadius.circular(8)),
+          ],
+        ]),
       ),
-    );
+    ));
+  }
+  Widget _grid(BuildContext context,List<MathBadge> badges,bool ar)=>LayoutBuilder(builder:(context,limits){
+    final columns=limits.maxWidth>=520?3:2;
+    final width=(limits.maxWidth-(columns-1)*8)/columns;
+    return Wrap(spacing:8,runSpacing:8,children:[for(final b in badges)SizedBox(width:width,child:_tile(context,b,ar))]);
+  });
+  @override Widget build(BuildContext context,WidgetRef ref){
+    final ar=context.locale.languageCode=='ar';
+    final state=ref.watch(studentBadgesProvider);
+    return GlassCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Row(children:[Icon(Icons.military_tech_rounded,color:AppColors.pointsGold(context),size:28),const SizedBox(width:8),Expanded(child:Text(ar?'الشارات والإنجازات':'Badges & achievements',style:Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight:FontWeight.w800))),IconButton(onPressed:()=>ref.invalidate(studentBadgesProvider),tooltip:ar?'تحديث':'Refresh',icon:const Icon(Icons.refresh))]),
+      state.when(loading:()=>const SizedBox(height:180,child:AppContentSkeleton(cards:true,count:4)),error:(_,__)=>Text(ar?'تعذر تحميل الشارات. اضغط تحديث.':'Could not load badges. Tap refresh.'),data:(result){
+        final badges=result.badges;
+        final featured=_featured(badges);
+        final groups=<String,List<MathBadge>>{
+          ar?'مكتسبة':'Earned':badges.where((b)=>b.isAvailable&&b.earned).toList(),
+          ar?'قيد الإنجاز':'In progress':badges.where((b)=>b.isAvailable&&!b.earned).toList(),
+          ar?'شارات Premium':'Premium badges':badges.where((b)=>!b.isAvailable).toList(),
+        };
+        return Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          Text('${result.earnedCount} / ${badges.where((b)=>b.isAvailable).length}',style:TextStyle(color:AppColors.pointsGold(context),fontWeight:FontWeight.bold)),
+          const SizedBox(height:12),
+          if(showAll)...[for(final group in groups.entries)if(group.value.isNotEmpty)...[Text(group.key,style:Theme.of(context).textTheme.titleMedium),const SizedBox(height:8),_grid(context,group.value,ar),const SizedBox(height:16)]]else...[
+            if(featured.isEmpty)Text(ar?'ابدأ التدريب لجمع الشارات.':'Start practicing to earn badges.')else _grid(context,featured,ar),
+            const SizedBox(height:8),
+            TextButton(onPressed:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>Scaffold(appBar:AppBar(title:Text(ar?'جميع الشارات':'All badges')),body:SafeArea(child:SingleChildScrollView(padding:const EdgeInsets.all(16),child:const StudentBadgesCard(showAll:true)))))),child:Text(ar?'عرض جميع الشارات':'View all badges')),
+          ],
+        ]);
+      }),
+    ]));
   }
 }
