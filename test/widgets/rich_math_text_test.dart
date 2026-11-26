@@ -171,4 +171,18 @@ void main() {
     }
   });
 
+  testWidgets('renders unwrapped relation commands and aligns Arabic block prose to the start', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: Column(children: [
+      RichMathText(text: r'x\approx 1'),
+      RichMathText(text: r'x\in A'),
+      RichMathText(text: r'x\notin A'),
+      RichMathText(text: r'نحسب \[x=2\] ثم نتابع',isArabic:true),
+    ]))));
+    expect(find.byType(Math), findsNWidgets(4));
+    final columns = tester.widgetList<Column>(find.descendant(
+      of:find.byType(RichMathText),matching:find.byType(Column)));
+    expect(columns.single.crossAxisAlignment,CrossAxisAlignment.start);
+    expect(tester.takeException(),isNull);
+  });
+
 }
