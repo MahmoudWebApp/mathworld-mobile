@@ -26,6 +26,7 @@ import '../../providers/leaderboard_provider.dart';
 import '../../utils/category_grid_layout.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/app_states.dart';
+import '../../widgets/mobile_section.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/stage_math_glyph.dart';
@@ -377,6 +378,8 @@ class CurrentStageCategoriesScreen extends ConsumerWidget {
     }
 
     final trackCatalog = ref.watch(publishedTracksProvider(stageId));
+    // Start independent reads together; the workspace reuses the same selection.
+    ref.watch(trackSelectionProvider.select((state)=>state.isLoading));
     // An explicit disabled/legacy API response preserves existing stage UI.
     // A temporary failure must not silently switch a selected track to a stage.
     if (trackCatalog.isLoading && !trackCatalog.hasValue) {
@@ -552,12 +555,7 @@ class _CategoryCard extends StatelessWidget {
               value: '${(category.progress! * 100).round()}%',
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(99),
-                child: LinearProgressIndicator(
-                  minHeight: 5,
-                  value: category.progress!.clamp(0.0, 1.0).toDouble(),
-                  backgroundColor: AppColors.progressTrack(context),
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.progressFill(category.progress!)),
-                ),
+                child: LearningProgressBar(value:category.progress!),
               ),
             ),
           ],

@@ -63,3 +63,18 @@ class MobileMedal extends StatelessWidget {
     ],
   ));
 }
+
+/// Determinate learning progress: zero has no colored fill.
+class LearningProgressBar extends StatelessWidget {
+  final double value;
+  final double height;
+  const LearningProgressBar({super.key,required this.value,this.height=5});
+  @override Widget build(BuildContext context){
+    final fraction=value.isFinite?value.clamp(0.0,1.0).toDouble():0.0;
+    final track=AppColors.progressTrack(context);
+    return Semantics(value:'${(fraction*100).round()}%',child:ClipRRect(
+      borderRadius:BorderRadius.circular(99),child:SizedBox(height:height,child:ColoredBox(color:track,
+        child:Align(alignment:AlignmentDirectional.centerStart,child:FractionallySizedBox(widthFactor:fraction,heightFactor:1,
+          child:ColoredBox(color:AppColors.progressFill(fraction))))))));
+  }
+}
