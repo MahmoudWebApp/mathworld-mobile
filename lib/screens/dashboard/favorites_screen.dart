@@ -10,9 +10,10 @@ import '../../widgets/app_states.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/problem_card.dart';
 import '../../widgets/compact_problem_count.dart';
+import '../../widgets/mathworld_pagination.dart';
 
 /// Displays localized favorite problems with consistent spacing.
-class FavoritesScreen extends ConsumerWidget {
+class FavoritesScreen extends ConsumerStatefulWidget {
   final bool embedded;
   final VoidCallback? onOpenStages;
 
@@ -23,8 +24,15 @@ class FavoritesScreen extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final favoritesState = ref.watch(favoritesProvider);
+  ConsumerState<FavoritesScreen> createState()=>_FavoritesScreenState();
+}
+class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
+  int _page=1;
+  @override
+  Widget build(BuildContext context) {
+    final embedded=widget.embedded;
+    final onOpenStages=widget.onOpenStages;
+    final favoritesState = ref.watch(favoritesProvider(_page));
 
     final body = MathBackground(
       child: SafeArea(
@@ -36,7 +44,11 @@ class FavoritesScreen extends ConsumerWidget {
             message: localizedErrorMessage(error),
             onRetry: () => ref.invalidate(favoritesProvider),
           ),
-          data: (items) {
+          data: (result) {
+            final items=result.problems;
+            if(items.isEmpty&&_page>1) {
+              return Center(child:TextButton(onPressed:()=>setState(()=>_page=1),child:Text(context.locale.languageCode=='ar'?'العودة لأول صفحة':'Back to first page')));
+            }
             if (items.isEmpty) {
               return ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -77,7 +89,7 @@ class FavoritesScreen extends ConsumerWidget {
             final headerOffset = embedded ? 2 : 1;
 
             return RefreshIndicator(
-              onRefresh: () => ref.refresh(favoritesProvider.future),
+              onRefresh: () => ref.refresh(favoritesProvider(_page).future),
               child: ListView.separated(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: EdgeInsets.fromLTRB(
@@ -86,7 +98,7 @@ class FavoritesScreen extends ConsumerWidget {
                   AppSpacing.lg,
                   embedded ? 132 : AppSpacing.xxl,
                 ),
-                itemCount: items.length + headerOffset,
+                itemCount: items.length + headerOffset + 1,
                 separatorBuilder: (_, __) =>
                     const SizedBox(height: AppSpacing.lg),
                 itemBuilder: (context, index) {
@@ -102,13 +114,14 @@ class FavoritesScreen extends ConsumerWidget {
 
                   if (index == (embedded ? 1 : 0)) {
                     return CompactProblemCount(
-                      count: items.length,
+                      count: result.total,
                       label: context.locale.languageCode == 'ar'
                           ? 'إجمالي المفضلة' : 'Favorites',
                       icon: Icons.favorite_rounded,
                       accent: AppColors.error,
                     );
                   }
+                  if(index==items.length+headerOffset)return MathWorldPagination(page:result.page,pageCount:result.totalPages,arabic:context.locale.languageCode=='ar',onChanged:(p)=>setState(()=>_page=p));
                   final problem = items[index - headerOffset];
                   return ProblemCard(
                     problem: problem,
