@@ -133,7 +133,7 @@ class _ManagedInboxState extends ConsumerState<_ManagedInbox>{
           ],
         )),
         if(_error!=null)Padding(padding:const EdgeInsets.all(8),child:Text(_error!,style:TextStyle(color:scheme.error))),
-        Expanded(child:_page==null&&_busy?const AppContentSkeleton():_page==null?AppErrorView(message:_error,onRetry:_refresh):
+        Expanded(child:_page==null&&(_busy||_error==null)?const AppContentSkeleton():_page==null?AppErrorView(message:_error,onRetry:_refresh):
           RefreshIndicator(onRefresh:_refresh,child:ListView.builder(
             controller:_scroll,physics:const AlwaysScrollableScrollPhysics(),
             padding:const EdgeInsets.all(AppSpacing.md),
