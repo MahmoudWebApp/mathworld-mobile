@@ -159,14 +159,14 @@ class _AppContentSkeletonState extends State<AppContentSkeleton> with SingleTick
     final highlight=colors.onSurface.withValues(alpha:.15);
     Widget bar(double width,double height)=>AnimatedBuilder(animation:_pulse,builder:(_,__) {
       final offset=-2.0+3.0*_pulse.value;
-      return Container(width:width,height:height,decoration:BoxDecoration(
+      return RepaintBoundary(child:Container(width:width,height:height,decoration:BoxDecoration(
         color:reduceMotion?base:null,
         gradient:reduceMotion?null:LinearGradient(begin:Alignment(offset,0),end:Alignment(offset+1,0),colors:[base,highlight,base]),
         borderRadius:BorderRadius.circular(7),
-      ));
+      )));
     });
     Widget item()=>Card(elevation:0,child:Padding(padding:const EdgeInsets.all(16),child:Row(children:[bar(42,42),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[bar(140,14),const SizedBox(height:12),bar(double.infinity,10),const SizedBox(height:8),bar(90,10)]))])));
-    final ar=context.locale.languageCode=='ar';
+    final ar=Localizations.localeOf(context).languageCode=='ar';
     return Semantics(label:ar?'جارٍ تحميل المحتوى':'Loading content',liveRegion:true,child:ExcludeSemantics(child:widget.cards?GridView.builder(padding:const EdgeInsets.all(12),gridDelegate:const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent:320,mainAxisExtent:120),itemCount:widget.count,itemBuilder:(_,__)=>item()):ListView.builder(padding:const EdgeInsets.all(12),itemCount:widget.count,itemBuilder:(_,__)=>item()),
     ));
   }
