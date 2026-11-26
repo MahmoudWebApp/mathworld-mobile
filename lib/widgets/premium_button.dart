@@ -65,7 +65,7 @@ class _PremiumButtonState extends State<PremiumButton>{
                 children: [
                   if (leadingIcon != null) ...[
                     Icon(
-                      LayoutUtils.resolveSemanticIcon(context, leadingIcon!),
+                      LayoutUtils.resolveSemanticIcon(context, leadingIcon),
                       size: 19,
                       color: foreground,
                       textDirection: TextDirection.ltr,
@@ -87,7 +87,7 @@ class _PremiumButtonState extends State<PremiumButton>{
                   if (trailingIcon != null) ...[
                     const SizedBox(width: 8),
                     Icon(
-                      LayoutUtils.resolveSemanticIcon(context, trailingIcon!),
+                      LayoutUtils.resolveSemanticIcon(context, trailingIcon),
                       size: 19,
                       color: foreground,
                       textDirection: TextDirection.ltr,
