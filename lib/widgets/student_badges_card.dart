@@ -8,6 +8,27 @@ import '../config/design_tokens.dart';
 import '../providers/student_badges_provider.dart';
 import 'glass_card.dart';
 
+IconData _badgeIcon(String icon) => switch (icon) {
+  'graduation' => Icons.school_rounded,
+  'trophy' => Icons.emoji_events_rounded,
+  'crown' => Icons.workspace_premium_rounded,
+  'puzzle' => Icons.extension_rounded,
+  'gem' => Icons.diamond_rounded,
+  'target' => Icons.gps_fixed_rounded,
+  'flame' => Icons.local_fire_department_rounded,
+  'bolt' => Icons.bolt_rounded,
+  'globe' => Icons.public_rounded,
+  _ => Icons.military_tech_rounded,
+};
+
+String _badgeUnit(String unit, bool ar) => switch (unit) {
+  'days' => ar ? 'أيام متتالية' : 'Consecutive days',
+  'categories' => ar ? 'فئات مكتملة' : 'Completed categories',
+  'mastered' => ar ? 'مسائل متقنة' : 'Mastered problems',
+  'stages' => ar ? 'مراحل' : 'Stages',
+  _ => ar ? 'مسائل' : 'Problems',
+};
+
 class StudentBadgesCard extends ConsumerWidget {
   const StudentBadgesCard({super.key});
 
@@ -139,15 +160,15 @@ class StudentBadgesCard extends ConsumerWidget {
                     final locked = !badge.isAvailable;
                     final name = ar ? badge.titleAr : badge.titleEn;
                     final earned = !locked && badge.earned;
-                    final color = locked
-                        ? Theme.of(context).colorScheme.outline
-                        : AppColors.rewardGold;
+                    final description = ar ? badge.descriptionAr : badge.descriptionEn;
+                    final color = AppColors.rewardGold;
                     final progress = badge.requiredSolved > 0
                         ? (badge.currentProgress / badge.requiredSolved)
                             .clamp(0.0, 1.0)
                         : 0.0;
                     return Semantics(
                       button: locked,
+                      hint: description.isEmpty ? null : description,
                       label: locked
                           ? '$name: ${ar ? "شارة Premium مقفولة" : "Locked Premium badge"}'
                           : '$name: ${badge.currentProgress}/${badge.requiredSolved}',
@@ -168,14 +189,19 @@ class StudentBadgesCard extends ConsumerWidget {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                locked
-                                    ? Icons.lock_rounded
-                                    : earned
-                                        ? Icons.verified_rounded
-                                        : Icons.military_tech_outlined,
-                                color: color,
-                                size: 26,
+                              Container(
+                                width: 52, height: 52,
+                                decoration: BoxDecoration(
+                                  color: color.withValues(alpha: earned ? .24 : .10),
+                                  border: Border.all(color: color.withValues(alpha: .45)),
+                                  borderRadius: BorderRadius.circular(16)),
+                                child: Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [
+                                  Icon(_badgeIcon(badge.icon), color: color, size: 32),
+                                  if (locked || earned) PositionedDirectional(end: -4, bottom: -4,
+                                    child: Container(decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, shape: BoxShape.circle),
+                                      child: Icon(locked ? Icons.lock_rounded : Icons.check_circle_rounded,
+                                        size: 18, color: locked ? Theme.of(context).colorScheme.onSurfaceVariant : AppColors.success))),
+                                ]),
                               ),
                               const SizedBox(height: AppSpacing.xs),
                               Text(
@@ -185,6 +211,10 @@ class StudentBadgesCard extends ConsumerWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: Theme.of(context).textTheme.labelMedium,
                               ),
+                              if (description.isNotEmpty) ...[
+                                const SizedBox(height: AppSpacing.xs),
+                                Text(description, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall),
+                              ],
                               if (locked) ...[
                                 const SizedBox(height: AppSpacing.sm),
                                 Text(
@@ -203,6 +233,7 @@ class StudentBadgesCard extends ConsumerWidget {
                                     style: Theme.of(context).textTheme.bodySmall,
                                   ),
                                 ),
+                                Text(_badgeUnit(badge.unit, ar), textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall),
                                 const SizedBox(height: 6),
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
@@ -217,7 +248,7 @@ class StudentBadgesCard extends ConsumerWidget {
                                             child: Container(
                                               width: limits.maxWidth * progress,
                                               decoration: BoxDecoration(
-                                                color: progress >= 1.0 ? AppColors.success : const Color(0xFFF59E0B),
+                                                color: progress >= 1.0 ? AppColors.success : AppColors.rewardGold,
                                               ),
                                             ),
                                           ),
