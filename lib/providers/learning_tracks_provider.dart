@@ -46,13 +46,18 @@ final trackSelectionProvider=FutureProvider.autoDispose<Map<String,dynamic>>((re
   return ApiEnvelope.map(response.data);
 });
 final trackDetailsProvider=FutureProvider.autoDispose.family<Map<String,dynamic>,int>((ref,id) async {
-  final response=await ref.watch(apiClientProvider).get('/learning-tracks/$id',handleUnauthorized:false);
-  final data=ApiEnvelope.map(response.data);
-  // Only successful, anonymous catalog details are retained, never private progress.
+  final client=ref.watch(apiClientProvider);
+  // Keep only successful anonymous catalog details for a short revisit window.
   final lease=ref.keepAlive();
   final timer=Timer(const Duration(minutes:2),lease.close);
   ref.onDispose(timer.cancel);
-  return data;
+  try{
+    final response=await client.get('/learning-tracks/$id',handleUnauthorized:false);
+    return ApiEnvelope.map(response.data);
+  }catch(_){
+    lease.close();
+    rethrow;
+  }
 });
 final trackProgressProvider=FutureProvider.autoDispose.family<Map<String,dynamic>,int>((ref,id) async {
   final account=ref.watch(authProvider.select((s)=>(id:s.user?.id,role:s.user?.role.toLowerCase(),stage:s.user?.currentStageId)));
