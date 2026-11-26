@@ -8,6 +8,8 @@ import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
 import '../../widgets/brand_logo.dart';
+import '../../widgets/math_background.dart';
+import '../../widgets/animated_entry.dart';
 import '../../core/errors/app_exception.dart';
 import '../../core/network/api_envelope.dart';
 import '../../providers/auth_provider.dart';
@@ -104,7 +106,7 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
     final tracks = !verify && !stage && stageId != null ? ref.watch(publishedTracksProvider(stageId)) : null;
     return PopScope(canPop: false, child: Scaffold(
       appBar: AppBar(title: Text(ar?'إكمال إعداد الحساب':'Complete account setup'), automaticallyImplyLeading: false),
-      body: SafeArea(child: ListView(padding: const EdgeInsets.all(24), children: [
+      body: MathBackground(child:SafeArea(child: ListView(padding: const EdgeInsets.all(24), children: [
         const Center(child: BrandMark(size: 64)),
         const SizedBox(height: 16),
         if (widget.step != 'SignedOut') ...[
@@ -188,7 +190,7 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
           await ref.read(authProvider.notifier).logout();
           if(mounted) Navigator.pushNamedAndRemoveUntil(context,AppRoutes.login,(_)=>false);
         }),child:Text(ar?'تسجيل الخروج':'Sign out')),
-      ])),
+      ]))),
     ));
   }
 }
@@ -210,7 +212,7 @@ class _ChoiceCard extends StatelessWidget {
   final VoidCallback? onTap;
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return AnimatedEntry(child:Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       color: Theme.of(context).colorScheme.surface,
       elevation: 0,
@@ -224,6 +226,6 @@ class _ChoiceCard extends StatelessWidget {
         trailing:Icon(selected?Icons.check_circle:Icons.radio_button_unchecked,color:selected?accent:Theme.of(context).colorScheme.onSurfaceVariant),
         onTap:onTap,
       ),
-    );
+    ));
   }
 }

@@ -183,7 +183,7 @@ class StudentBadgesCard extends ConsumerWidget {
                           padding: const EdgeInsets.all(AppSpacing.sm),
                           decoration: BoxDecoration(
                             color: color.withValues(alpha: earned ? 0.10 : 0.04),
-                            border: Border.all(color: color.withValues(alpha: 0.3)),
+                            border: Border.all(color: color.withValues(alpha: earned ? .85:.3),width:earned?1.6:1),
                             borderRadius: BorderRadius.circular(AppRadius.md),
                           ),
                           child: Column(

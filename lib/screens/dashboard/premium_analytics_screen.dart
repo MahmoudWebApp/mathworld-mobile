@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/mathworld_feedback.dart';
 import 'dart:convert';
 
 import 'package:cross_file/cross_file.dart';
@@ -313,11 +314,9 @@ class _ReportBody extends ConsumerWidget {
                   );
                 } catch (_) {
                   if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(ar
+                  showMathWorldNotice(context,ar
                         ? 'تعذّر مشاركة الملف. يمكنك نسخ البيانات بدلاً منها.'
-                        : 'Unable to share the CSV file. Try copying the table.')),
-                  );
+                        : 'Unable to share the CSV file. Try copying the table.',kind:MathWorldNoticeKind.error);
                 }
               },
               icon: const Icon(Icons.ios_share_rounded),
@@ -332,13 +331,11 @@ class _ReportBody extends ConsumerWidget {
                   final bytes=await ref.read(premiumAnalyticsServiceProvider).exportCsv(language:ar?'ar':'en',filter:report.filter);
                   if(!context.mounted)return;
                   await Clipboard.setData(ClipboardData(text:utf8.decode(bytes.sublist(3))));
-                }catch(_){if(context.mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(ar?'تعذّر تحميل التقرير':'Could not load report')));return;}
+                }catch(_){if(context.mounted)showMathWorldNotice(context,ar?'تعذّر تحميل التقرير':'Could not load report',kind:MathWorldNoticeKind.error);return;}
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(ar
+                showMathWorldNotice(context,ar
                       ? 'تم نسخ جدول CSV؛ يمكنك لصقه في برنامج جداول.'
-                      : 'CSV copied; paste it into your spreadsheet app.')),
-                );
+                      : 'CSV copied; paste it into your spreadsheet app.',kind:MathWorldNoticeKind.success);
               },
               icon: const Icon(Icons.content_copy_rounded),
               label: Text(ar ? 'نسخ جدول CSV' : 'Copy CSV table'),
@@ -397,11 +394,9 @@ class _XlsxDownloadButtonState extends ConsumerState<_XlsxDownloadButton> {
       ));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(ar
+      showMathWorldNotice(context,ar
             ? 'تعذّر تجهيز ملف Excel. تأكد من اشتراك Premium والاتصال.'
-            : 'Could not export Excel. Check Premium access and your connection.'),
-      ));
+            : 'Could not export Excel. Check Premium access and your connection.',kind:MathWorldNoticeKind.error);
     } finally {
       if (mounted) setState(() => _sharing = false);
     }
@@ -463,11 +458,9 @@ class _PdfShareButtonState extends ConsumerState<_PdfShareButton> {
       ));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(ar
+      showMathWorldNotice(context,ar
             ? 'تعذّر إنشاء PDF. تأكد من الاتصال بالإنترنت، ثم أعد المحاولة.'
-            : 'Could not create the PDF. Check your connection and retry.'),
-      ));
+            : 'Could not create the PDF. Check your connection and retry.',kind:MathWorldNoticeKind.error);
     } finally {
       if (mounted) setState(() => _sharing = false);
     }

@@ -2,6 +2,8 @@ import 'dart:ui' as ui;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/mathworld_feedback.dart';
+import '../../widgets/mathworld_pagination.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/app_routes.dart';
@@ -100,21 +102,10 @@ class _PremiumCheckoutScreenState extends ConsumerState<PremiumCheckoutScreen> {
   Future<void> _cancel(PremiumCheckoutOrder order) async {
     if (_cancelling) return;
     final ar = _ar;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(ar ? 'إلغاء طلب الاشتراك؟' : 'Cancel checkout order?'),
-        content: Text(ar
-            ? 'يمكن إلغاء الطلب المبدئي غير المدفوع فقط.'
-            : 'Only unpaid checkout drafts can be cancelled.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false),
-              child: Text(ar ? 'رجوع' : 'Back')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true),
-              child: Text(ar ? 'تأكيد' : 'Confirm')),
-        ],
-      ),
-    );
+    final confirm=await showMathWorldConfirmation(context,
+      title:ar?'إلغاء طلب الاشتراك؟':'Cancel checkout order?',
+      message:ar?'يمكن إلغاء الطلب المبدئي غير المدفوع فقط.':'Only unpaid checkout drafts can be cancelled.',
+      cancel:ar?'رجوع':'Back',confirm:ar?'تأكيد':'Confirm');
     if (confirm != true || !mounted) return;
     setState(() => _cancelling = true);
     try {
@@ -123,8 +114,7 @@ class _PremiumCheckoutScreenState extends ConsumerState<PremiumCheckoutScreen> {
       await _loadOrders();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizedErrorMessage(error))),
+      showMathWorldNotice(context,localizedErrorMessage(error,kind:MathWorldNoticeKind.error),
       );
     } finally {
       if (mounted) setState(() => _cancelling = false);
@@ -255,23 +245,8 @@ class _PremiumCheckoutScreenState extends ConsumerState<PremiumCheckoutScreen> {
                       child: Text(ar ? 'إلغاء الطلب' : 'Cancel draft'),
                     )),
               ])),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                TextButton(
-                  onPressed: _loading || _page <= 1 ? null : () {
-                    setState(() => _page--);
-                    _loadOrders();
-                  },
-                  child: Text(ar ? 'السابق' : 'Previous'),
-                ),
-                Text('' + _page.toString() + ' / ' + pages.toString()),
-                TextButton(
-                  onPressed: _loading || _history == null || _page >= pages ? null : () {
-                    setState(() => _page++);
-                    _loadOrders();
-                  },
-                  child: Text(ar ? 'التالي' : 'Next'),
-                ),
-              ]),
+              MathWorldPagination(page:_page,pageCount:pages,arabic:ar,disabled:_loading||_history==null,onChanged:(p){setState(()=>_page=p);_loadOrders();}),
+
             ])),
           ],
         ),
