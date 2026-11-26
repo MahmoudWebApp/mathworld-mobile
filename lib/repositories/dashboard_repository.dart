@@ -56,7 +56,7 @@ class DashboardRepository {
         'stageId': stageId,
         'period': period,
         'page': page,
-        'pageSize': 20,
+        'pageSize': 5,
       },
     );
     return LeaderboardData.fromJson(ApiEnvelope.map(response.data));

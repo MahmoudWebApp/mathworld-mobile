@@ -70,6 +70,15 @@ typedef TrackPracticeKey=({int trackId,int categoryId,int page,bool hideSolved})
 final trackPracticeProvider=FutureProvider.autoDispose.family<Map<String,dynamic>,TrackPracticeKey>((ref,key) async {
   final account=ref.watch(authProvider.select((s)=>(id:s.user?.id,role:s.user?.role.toLowerCase(),stage:s.user?.currentStageId)));
   if(account.id==null||account.role!='student')return {};
-  final response=await ref.watch(apiClientProvider).get('/users/learning-tracks/${key.trackId}/categories/${key.categoryId}/problems',queryParameters:{'page':key.page,'pageSize':AppConstants.pageSize,'hideSolved':key.hideSolved});
-  return ApiEnvelope.map(response.data);
+  final client=ref.watch(apiClientProvider);
+  final lease=ref.keepAlive();
+  final timer=Timer(const Duration(seconds:30),lease.close);
+  ref.onDispose(timer.cancel);
+  try {
+    final response=await client.get('/users/learning-tracks/${key.trackId}/categories/${key.categoryId}/problems',queryParameters:{'page':key.page,'pageSize':AppConstants.pageSize,'hideSolved':key.hideSolved});
+    return ApiEnvelope.map(response.data);
+  } catch (_) {
+    lease.close();
+    rethrow;
+  }
 });
