@@ -70,12 +70,12 @@ class ProblemCard extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.star_rounded,
-                        size: 17, color: AppColors.rewardGold),
+                      Icon(Icons.star_rounded,
+                        size: 17, color: AppColors.pointsGold(context)),
                       const SizedBox(width: 3),
                       Text('${problem.points}',
                         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: isDark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk, fontWeight: FontWeight.w800)),
+                          color: AppColors.pointsGold(context), fontWeight: FontWeight.w800)),
                     ],
                   ),
                   if (problem.isSolved)
