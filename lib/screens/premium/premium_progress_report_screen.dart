@@ -119,6 +119,7 @@ class _PremiumProgressReportScreenState
                                 _Metric(
                                   label: 'premium_report_points'.tr(),
                                   value: '${report.officialPoints}',
+                                  gold: true,
                                 ),
                               ],
                             ),
@@ -159,7 +160,8 @@ class _PremiumProgressReportScreenState
 class _Metric extends StatelessWidget {
   final String label;
   final String value;
-  const _Metric({required this.label, required this.value});
+  final bool gold;
+  const _Metric({required this.label, required this.value, this.gold = false});
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -173,6 +175,7 @@ class _Metric extends StatelessWidget {
               Text(value,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w800,
+                        color: gold ? (Theme.of(context).brightness == Brightness.dark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk) : null,
                       )),
             ],
           ),

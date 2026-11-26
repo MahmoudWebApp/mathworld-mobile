@@ -119,6 +119,8 @@ class _ReportBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ar = context.locale.languageCode == 'ar';
     final color = Theme.of(context).colorScheme.primary;
+    final total = report.totalProblems;
+    final completion = total != null && total > 0 ? (report.solvedProblems / total).clamp(0.0, 1.0).toDouble() : 0.0;
     final correctness = report.attempts <= 0
         ? 0.0
         : 100 * report.correctAttempts / report.attempts;
@@ -172,6 +174,13 @@ class _ReportBody extends ConsumerWidget {
                       : 'Stats are calculated from saved attempts, not estimates.'),
                   if(report.scoreBasis=='PermanentAchievements')Text(ar?'النقاط حسب تاريخ اكتسابها، ودفتر الأخطاء يعرض الحالة الحالية. زمن الجلسات الموجهة غير مقاس.':'Points follow original earn dates; review errors show current state. Guided-session time is not measured.'),
                   const SizedBox(height: AppSpacing.md),
+                  if (total != null) ...[
+                    Text(ar ? 'الإنجاز: ${report.solvedProblems} / $total' : 'Completion: ${report.solvedProblems} / $total'),
+                    const SizedBox(height: AppSpacing.sm),
+                    LinearProgressIndicator(value: completion),
+                    Text('${(completion * 100).toStringAsFixed(1)}%'),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
                   Text(
                     ar ? 'دقة المحاولات: ${correctness.toStringAsFixed(1)}%'
                         : 'Attempt accuracy: ${correctness.toStringAsFixed(1)}%',
@@ -205,10 +214,10 @@ class _ReportBody extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(stat.$3, color: color, size: 23),
+                      Icon(stat.$3, color: index == 3 ? AppColors.rewardGold : color, size: 23),
                       const SizedBox(height: AppSpacing.sm),
                       Text('${stat.$2}', style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w800)),
+                          ?.copyWith(fontWeight: FontWeight.w800, color: index == 3 ? (Theme.of(context).brightness == Brightness.dark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk) : null)),
                       Text(
                         stat.$1,
                         maxLines: 2,
@@ -239,10 +248,11 @@ class _ReportBody extends ConsumerWidget {
                           title: Text(ar ? category.categoryNameAr
                               : category.categoryNameEn,
                               style: const TextStyle(fontWeight: FontWeight.w700)),
-                          subtitle: Text(ar ? category.stageNameAr
-                              : category.stageNameEn),
+                          subtitle: Text(ar
+                              ? 'المحاولات: ${category.attempts} · الدقة: ${category.attempts == 0 ? "—" : "${(100 * category.correctAttempts / category.attempts).toStringAsFixed(0)}%"}'
+                              : 'Attempts: ${category.attempts} · Accuracy: ${category.attempts == 0 ? "—" : "${(100 * category.correctAttempts / category.attempts).toStringAsFixed(0)}%"}'),
                           trailing: Text(
-                            '${category.solvedProblems}/${category.attemptedProblems}',
+                            '${category.solvedProblems}/${category.totalProblems ?? category.attemptedProblems}',
                             style: TextStyle(fontWeight: FontWeight.bold, color: color),
                           ),
                         ),
@@ -253,6 +263,20 @@ class _ReportBody extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
+            if (report.recentAttempts != null) ...[
+              GlassCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(ar ? 'آخر المحاولات' : 'Recent attempts', style: Theme.of(context).textTheme.titleLarge),
+                if (report.recentAttempts!.isEmpty) Text(ar ? 'لا توجد محاولات في هذا النطاق.' : 'No attempts in this scope.'),
+                for (final attempt in report.recentAttempts!)
+                  ListTile(contentPadding: EdgeInsets.zero,
+                    leading: Icon(attempt.isCorrect ? Icons.check_circle_outline : Icons.cancel_outlined,
+                      color: attempt.isCorrect ? Colors.green : Theme.of(context).colorScheme.error),
+                    title: Text(ar ? attempt.titleAr : attempt.titleEn),
+                    subtitle: Text(DateFormat.yMMMd(context.locale.languageCode).add_jm().format(attempt.submittedAtUtc.toLocal())),
+                    trailing: Text(attempt.isCorrect ? (ar ? 'صحيحة' : 'Correct') : (ar ? 'خاطئة' : 'Incorrect'))),
+              ])),
+              const SizedBox(height: AppSpacing.lg),
+            ],
             _PdfShareButton(report: report),
             const SizedBox(height: AppSpacing.sm),
             OutlinedButton.icon(
