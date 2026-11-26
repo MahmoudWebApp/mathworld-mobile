@@ -185,4 +185,26 @@ void main() {
     expect(tester.takeException(),isNull);
   });
 
+
+  testWidgets('keeps signed numeric answers left-to-right in Arabic', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: Column(children: [
+      RichMathText(text: '-5', isArabic: true, inline: true),
+      RichMathText(text: '−12.5', isArabic: true, inline: true),
+    ]))));
+    final matches=find.byType(Math);
+    expect(matches,findsNWidgets(2));
+    for(final element in matches.evaluate()){
+      expect(Directionality.of(element),TextDirection.ltr);
+    }
+    expect(tester.takeException(),isNull);
+  });
+
+  testWidgets('matrix TeX renders without showing its source', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home:Scaffold(body:
+      RichMathText(text:r'نحسب المحدد: \[\begin{vmatrix}2&3\\1&4\end{vmatrix}\]',isArabic:true),
+    )));
+    expect(find.byType(Math),findsOneWidget);
+    expect(find.textContaining(r'\begin'),findsNothing);
+    expect(tester.takeException(),isNull);
+  });
 }
