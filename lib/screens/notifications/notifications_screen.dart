@@ -55,7 +55,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       }
       // Only this existing in-app destination is supported by the mobile
       // navigation tree; all other URL strings are ignored, never launched.
-      if (targetPath == '/dashboard' && mounted) {
+      if (targetPath == '/dashboard/daily-challenge' && mounted) {
+        Navigator.pop(context, 'daily-challenge');
+      } else if (targetPath == '/dashboard' && mounted) {
         Navigator.maybePop(context);
       }
     } catch (error) {

@@ -139,9 +139,7 @@ class StudentBadgesCard extends ConsumerWidget {
                     final earned = !locked && badge.earned;
                     final color = locked
                         ? Theme.of(context).colorScheme.outline
-                        : earned
-                            ? AppColors.brandViolet
-                            : Theme.of(context).colorScheme.outline;
+                        : const Color(0xFFF59E0B);
                     final progress = badge.requiredSolved > 0
                         ? (badge.currentProgress / badge.requiredSolved)
                             .clamp(0.0, 1.0)
@@ -216,8 +214,8 @@ class StudentBadgesCard extends ConsumerWidget {
                                             alignment: AlignmentDirectional.centerStart,
                                             child: Container(
                                               width: limits.maxWidth * progress,
-                                              decoration: const BoxDecoration(
-                                                color: AppColors.success,
+                                              decoration: BoxDecoration(
+                                                color: progress >= 1.0 ? AppColors.success : const Color(0xFFF59E0B),
                                               ),
                                             ),
                                           ),
