@@ -1,10 +1,8 @@
-import 'dart:ui' as ui;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../config/design_tokens.dart';
 import 'glass_card.dart';
-import 'brand_logo.dart';
 
 /// Standard error state used across the application.
 class AppErrorView extends StatelessWidget {
@@ -109,27 +107,30 @@ class AppEmptyView extends StatelessWidget {
   }
 }
 
-/// Same branded loading state for data, search, filters and section changes.
+/// Shared content loading state: animated placeholders, never a branded spinner.
 enum AppLoadingMode { data, search, filter, section }
 class AppLoadingView extends StatelessWidget {
   const AppLoadingView({super.key,this.mode=AppLoadingMode.data});
   final AppLoadingMode mode;
   @override
-  Widget build(BuildContext context){
-    final ar=context.locale.languageCode=='ar';
-    final label=switch(mode){
-      AppLoadingMode.data=>ar?'جارٍ تحميل البيانات…':'Loading data…',
-      AppLoadingMode.search=>ar?'جارٍ البحث…':'Searching…',
-      AppLoadingMode.filter=>ar?'جارٍ تصفية النتائج…':'Filtering results…',
-      AppLoadingMode.section=>ar?'جارٍ تحميل القسم…':'Loading section…',
-    };
-    return Semantics(label:label,liveRegion:true,child:ExcludeSemantics(child:Center(child:Padding(padding:const EdgeInsets.all(20),child:Column(mainAxisSize:MainAxisSize.min,children:[
-      SizedBox(width:72,height:72,child:Stack(alignment:Alignment.center,children:[
-        SizedBox(width:70,height:70,child:CircularProgressIndicator(value:MediaQuery.disableAnimationsOf(context)?0.7:null,strokeWidth:2.5,color:AppColors.brandPurple,backgroundColor:AppColors.brandPink.withValues(alpha:0.14))),
-        const BrandMark(size:48),
-      ])),const SizedBox(height:12),const Text.rich(TextSpan(children:[TextSpan(text:'Math',style:TextStyle(color:AppColors.brandPurple)),TextSpan(text:'World',style:TextStyle(color:AppColors.brandPink))]),textDirection:ui.TextDirection.ltr,style:TextStyle(fontWeight:FontWeight.w800)),const SizedBox(height:6),Text(label,textAlign:TextAlign.center),
-    ])))));
-  }
+  Widget build(BuildContext context) => LayoutBuilder(builder:(context, constraints) {
+    return SizedBox(
+      height:constraints.hasBoundedHeight?constraints.maxHeight:320,
+      child:AppContentSkeleton(count:mode==AppLoadingMode.section?3:5),
+    );
+  });
+}
+
+/// Compact indeterminate action loader, with no logo or icon.
+class AppInlineLoader extends StatelessWidget {
+  const AppInlineLoader({super.key,this.size=20});
+  final double size;
+  @override Widget build(BuildContext context)=>SizedBox.square(
+    dimension:size,
+    child:CircularProgressIndicator(strokeWidth:2.5,
+      color:Theme.of(context).colorScheme.primary,
+      value:MediaQuery.disableAnimationsOf(context)?0.7:null),
+  );
 }
 
 /// Loading placeholders follow the eventual content layout; no fake counts.
@@ -146,20 +147,27 @@ class _AppContentSkeletonState extends State<AppContentSkeleton> with SingleTick
   void didChangeDependencies(){
     super.didChangeDependencies();
     if(MediaQuery.disableAnimationsOf(context)){_pulse.stop();_pulse.value=1;}
-    else if(!_pulse.isAnimating){_pulse.repeat(reverse:true);}
+    else if(!_pulse.isAnimating){_pulse.repeat();}
   }
   @override
   void dispose(){_pulse.dispose();super.dispose();}
   @override
   Widget build(BuildContext context) {
     final colors=Theme.of(context).colorScheme;
-    Widget bar(double width,double height)=>Container(width:width,height:height,decoration:BoxDecoration(color:colors.onSurface.withValues(alpha:.09),borderRadius:BorderRadius.circular(7)));
+    final reduceMotion=MediaQuery.disableAnimationsOf(context);
+    final base=colors.onSurface.withValues(alpha:.075);
+    final highlight=colors.onSurface.withValues(alpha:.15);
+    Widget bar(double width,double height)=>AnimatedBuilder(animation:_pulse,builder:(_,__) {
+      final offset=-2.0+3.0*_pulse.value;
+      return Container(width:width,height:height,decoration:BoxDecoration(
+        color:reduceMotion?base:null,
+        gradient:reduceMotion?null:LinearGradient(begin:Alignment(offset,0),end:Alignment(offset+1,0),colors:[base,highlight,base]),
+        borderRadius:BorderRadius.circular(7),
+      ));
+    });
     Widget item()=>Card(elevation:0,child:Padding(padding:const EdgeInsets.all(16),child:Row(children:[bar(42,42),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[bar(140,14),const SizedBox(height:12),bar(double.infinity,10),const SizedBox(height:8),bar(90,10)]))])));
     final ar=context.locale.languageCode=='ar';
-    return Semantics(label:ar?'جارٍ تحميل المحتوى':'Loading content',liveRegion:true,child:ExcludeSemantics(child:AnimatedBuilder(
-      animation:_pulse,
-      builder:(_,child)=>Opacity(opacity:.72+.28*_pulse.value,child:child),
-      child:widget.cards?GridView.builder(padding:const EdgeInsets.all(12),gridDelegate:const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent:320,mainAxisExtent:120),itemCount:widget.count,itemBuilder:(_,__)=>item()):ListView.builder(padding:const EdgeInsets.all(12),itemCount:widget.count,itemBuilder:(_,__)=>item()),
-    )));
+    return Semantics(label:ar?'جارٍ تحميل المحتوى':'Loading content',liveRegion:true,child:ExcludeSemantics(child:widget.cards?GridView.builder(padding:const EdgeInsets.all(12),gridDelegate:const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent:320,mainAxisExtent:120),itemCount:widget.count,itemBuilder:(_,__)=>item()):ListView.builder(padding:const EdgeInsets.all(12),itemCount:widget.count,itemBuilder:(_,__)=>item()),
+    ));
   }
 }
