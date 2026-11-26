@@ -120,7 +120,7 @@ class _ManagedInboxState extends ConsumerState<_ManagedInbox>{
       appBar:AppBar(title:Text(tr('الإشعارات','Notifications')),actions:[
         IconButton(onPressed:_busy?null:_refresh,tooltip:tr('تحديث','Refresh'),icon:const Icon(Icons.refresh)),
       ]),
-      body:MathBackground(child:SafeArea(child:Column(children:[
+      body:MathBackground(showSymbols:false,child:SafeArea(child:Column(children:[
         Padding(padding:const EdgeInsets.symmetric(horizontal:AppSpacing.md),child:Wrap(
           spacing:8,runSpacing:4,crossAxisAlignment:WrapCrossAlignment.center,children:[
             Row(mainAxisSize:MainAxisSize.min,children:[
@@ -134,17 +134,18 @@ class _ManagedInboxState extends ConsumerState<_ManagedInbox>{
         )),
         if(_error!=null)Padding(padding:const EdgeInsets.all(8),child:Text(_error!,style:TextStyle(color:scheme.error))),
         Expanded(child:_page==null&&(_busy||_error==null)?const AppContentSkeleton():_page==null?AppErrorView(message:_error,onRetry:_refresh):
-          RefreshIndicator(onRefresh:_refresh,child:ListView.builder(
+          RefreshIndicator(onRefresh:_refresh,child:ListView.separated(
             controller:_scroll,physics:const AlwaysScrollableScrollPhysics(),
             padding:const EdgeInsets.all(AppSpacing.md),
             itemCount:_items.length+1,
+            separatorBuilder:(_,__)=>const Divider(height:1,indent:16,endIndent:16),
             itemBuilder:(context,index){
               if(index==_items.length){
                 if(_page?.hasMore==true)return Padding(padding:const EdgeInsets.all(12),child:Center(child:_busy?const AppInlineLoader():TextButton(onPressed:_more,child:Text(tr('عرض المزيد','Load more')))));
                 return Padding(padding:const EdgeInsets.all(16),child:Center(child:Text(_items.isEmpty?tr('لا توجد إشعارات','No notifications'):tr('نهاية إشعارات آخر 30 يوماً','End of 30-day notifications'))));
               }
               final n=_items[index],unread=n.isUnread&&!_read.contains(n.id);
-              return Card(key:ValueKey(n.id),color:unread?scheme.primaryContainer.withValues(alpha:.35):null,child:ListTile(
+              return Material(key:ValueKey(n.id),color:unread?scheme.primaryContainer.withValues(alpha:.25):scheme.surface,child:ListTile(
                 leading:Checkbox(value:_all||_selected.contains(n.id),onChanged:_busy||_all?null:(v)=>setState((){if(v==true){_selected.add(n.id);}else{_selected.remove(n.id);}})),
                 title:Text(_ar?n.titleAr:n.titleEn,style:TextStyle(fontWeight:unread?FontWeight.w800:FontWeight.w600)),
                 subtitle:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
