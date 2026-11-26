@@ -267,8 +267,20 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
             subtitle:Text(problem['IsSolved']==true?(ar?'محلولة':'Solved'):(ar?'غير محلولة':'Unsolved')),
             trailing:Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.star_rounded,size:16,color:AppColors.pointsGold(context)),const SizedBox(width:3),Text('${trackNumber(problem['Points'])}',style:TextStyle(color:AppColors.pointsGold(context),fontWeight:FontWeight.w700)),LayoutUtils.forwardIcon(context,size:18)]),
             onTap:()async{
-              final submitted=await Navigator.pushNamed(context,AppRoutes.problemDetails,arguments:trackNumber(problem['Id']));
-              if(mounted&&submitted==true){ref.invalidate(trackPracticeProvider);ref.invalidate(trackProgressProvider(widget.id));ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}
+              var index=i;
+              var completed=false;
+              while(mounted&&index<visible.length){
+                final current=visible[index];
+                final next=visible.indexWhere((item)=>item['IsSolved']!=true,index+1);
+                final result=await Navigator.pushNamed(context,AppRoutes.problemDetails,arguments:{
+                  'problemId':trackNumber(current['Id']),
+                  if(next>=0)'nextProblemId':trackNumber(visible[next]['Id']),
+                });
+                completed=completed||result==true||result=='nextProblem';
+                if(!mounted||result!='nextProblem'||next<0)break;
+                index=next;
+              }
+              if(mounted&&completed){ref.invalidate(trackPracticeProvider);ref.invalidate(trackProgressProvider(widget.id));ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}
             },
           ));
         },
