@@ -22,7 +22,7 @@ class PremiumAnalyticsScreen extends ConsumerStatefulWidget {
   @override ConsumerState<PremiumAnalyticsScreen> createState()=>_PremiumAnalyticsScreenState();
 }
 class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen>{
-  String _scope='all';
+  String _scope='track';
   int _days=0;
   @override
   Widget build(BuildContext context) {
@@ -32,8 +32,8 @@ class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen>
     final enabled=j?.learningSessionsEnabled==true;
     final category=_scope.startsWith('category:')?int.tryParse(_scope.substring(9)):null;
     final validCategory=enabled&&j!.categories.any((c)=>c.categoryId==category)?category:null;
-    final scope=enabled?(_scope=='stage'||(_scope=='track'&&j!.trackId!=null)||validCategory!=null?_scope:'all'):'all';
-    final AnalyticsFilter filter=enabled?(stageId:scope=='all'?null:j!.stageId,categoryId:validCategory,trackId:scope=='track'||validCategory!=null?j!.trackId:null,days:_days==0?null:_days):allAnalytics;
+    final scope=validCategory!=null?_scope:'track';
+    final AnalyticsFilter filter=enabled?(stageId:j!.stageId,categoryId:validCategory,trackId:j.trackId,days:_days==0?null:_days):allAnalytics;
     final reportProvider=filter==allAnalytics?premiumAnalyticsProvider:filteredPremiumAnalyticsProvider(filter);
 
     return Scaffold(
@@ -49,10 +49,10 @@ class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen>
         data: (premium) => premium
             ? Column(children:[
                 if(enabled&&j!=null)Padding(padding:const EdgeInsets.symmetric(horizontal:16,vertical:8),child:Column(children:[
-                  DropdownButtonFormField<String>(decoration:InputDecoration(labelText:ar?'النطاق':'Scope',border:OutlineInputBorder(borderRadius:BorderRadius.circular(12))),isExpanded:true,initialValue:scope,key:ValueKey(scope),onChanged:(v)=>setState(()=>_scope=v??'all'),items:[
-                    DropdownMenuItem(value:'all',child:Text(ar?'جميع المراحل':'All stages')),
-                    DropdownMenuItem(value:'stage',child:Text(ar?'المرحلة الحالية':'Current stage')),
-                    if(j.trackId!=null)DropdownMenuItem(value:'track',child:Text(ar?'الصف أو المساق الحالي':'Current grade or course')),
+                  DropdownButtonFormField<String>(decoration:InputDecoration(labelText:ar?'النطاق':'Scope',border:OutlineInputBorder(borderRadius:BorderRadius.circular(12))),isExpanded:true,initialValue:scope,key:ValueKey(scope),onChanged:(v)=>setState(()=>_scope=v??'track'),items:[
+                    DropdownMenuItem(value:'track',child:Text(ar?'الصف أو المساق الحالي':'Current grade or course')),
+                    
+                    
                     for(final c in j.categories)DropdownMenuItem(value:'category:'+c.categoryId.toString(),child:Text(c.getName(context.locale.languageCode),overflow:TextOverflow.ellipsis)),
                   ]),
                   const SizedBox(height:12),
