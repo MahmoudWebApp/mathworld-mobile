@@ -424,11 +424,16 @@ class _ProblemContent extends ConsumerWidget {
             title:Text('detailed_solution'.tr(),style:Theme.of(context).textTheme.titleMedium),
             childrenPadding:const EdgeInsets.fromLTRB(16,0,16,16),
             expandedCrossAxisAlignment:CrossAxisAlignment.stretch,
-            children:[structure==null?RichMathText(
-              text: solution,
-              isArabic: isArabic,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ):Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            children:[solution.trim().isNotEmpty ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final paragraph in solution.split(RegExp(r'\n\s*\n')).where((part) => part.trim().isNotEmpty))
+                  Padding(padding: const EdgeInsets.only(bottom: 12), child: RichMathText(
+                    text: paragraph.trim(), isArabic: isArabic,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  )),
+              ],
+            ) : structure==null ? const SizedBox.shrink() : Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
               Text(isArabic?'الفكرة والقانون':'Idea and formula',style:Theme.of(context).textTheme.titleMedium),
               RichMathText(text:structure.idea,isArabic:isArabic),
               RichMathText(text:structure.formulaLatex,isArabic:isArabic,inline:true),
