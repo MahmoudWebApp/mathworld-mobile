@@ -13,6 +13,7 @@ import '../../widgets/math_background.dart';
 import '../../config/design_tokens.dart';
 import '../../widgets/mobile_section.dart';
 import '../../widgets/app_states.dart';
+import '../premium/custom_exams_screen.dart';
 
 final certificateListProvider=FutureProvider.autoDispose.family<Map<String,dynamic>,int>((ref,owner) async{
   final actor=ref.watch(authProvider.select((s)=>s.user?.id));
@@ -24,29 +25,38 @@ final certificateListProvider=FutureProvider.autoDispose.family<Map<String,dynam
 /// Fetch only when the summary scrolls into view. Share the same account-scoped
 /// request with the full certificate screen.
 class CertificateHomeSummary extends ConsumerWidget {
-  final LearningJourney journey;
-  const CertificateHomeSummary({super.key,required this.journey});
+  final LearningJourney? journey;
+  final bool examsEnabled;
+  const CertificateHomeSummary({super.key,this.journey,this.examsEnabled=false});
   @override Widget build(BuildContext context,WidgetRef ref){
     final ar=context.locale.languageCode=='ar';
     final owner=ref.watch(authProvider.select((s)=>s.user?.id));
     if(owner==null)return const SizedBox.shrink();
-    final state=ref.watch(certificateListProvider(owner));
-    final data=state.valueOrNull;
-    final items=sessionRows(data?['Items']);
+    final learningEnabled=journey?.certificatesEnabled==true;
+    final learning=learningEnabled?ref.watch(certificateListProvider(owner)):null;
+    final exams=examsEnabled?ref.watch(customExamHistoryProvider(owner)):null;
+    final learningItems=sessionRows(learning?.valueOrNull?['Items']);
+    final examHistory=exams?.valueOrNull??[];
+    final examItems=examHistory.where((x)=>x['CertificateIssued']==true).toList();
+    final items=[for(final x in learningItems)(title:sessionText(x,ar?'TitleAr':'TitleEn'),date:DateTime.tryParse(sessionText(x,'IssuedAtUtc'))),for(final x in examItems)(title:sessionText(x,ar?'TitleAr':'TitleEn'),date:DateTime.tryParse(sessionText(x,'FinishedAtUtc')))];
+    items.sort((a,b)=>(b.date??DateTime.fromMillisecondsSinceEpoch(0)).compareTo(a.date??DateTime.fromMillisecondsSinceEpoch(0)));
+    final pending=(learningEnabled&&learning?.valueOrNull==null)||(examsEnabled&&exams?.valueOrNull==null);
+    final failed=learning?.hasError==true||exams?.hasError==true;
+    final summary=pending?(failed?(ar?'تعذّر تحميل الملخص':'Summary unavailable'):(ar?'جارٍ تحميل الشهادات…':'Loading certificates…'))
+      :items.isEmpty?(ar?'لم تصدر شهادات بعد':'No certificates yet')
+      :'${items.length}${examHistory.length>=100?'+':''} ${ar?'شهادة':'certificates'} · ${items.first.title}';
     return MobilePanel(padding:EdgeInsets.zero,child:MobileActionRow(
       icon:Icons.workspace_premium_rounded,color:AppColors.pointsGold(context),
-      title:ar?'شهاداتي':'My certificates',
-      subtitle:data==null?(state.hasError?(ar?'تعذّر تحميل الملخص':'Summary unavailable'):(ar?'جارٍ تحميل الشهادات…':'Loading certificates…'))
-        :items.isEmpty?(ar?'لم تصدر شهادات بعد':'No certificates yet')
-        :'${items.length} ${ar?'شهادة':'certificates'} · ${sessionText(items.first,ar?'TitleAr':'TitleEn')}',
-      onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>CertificatesScreen(journey:journey))),
+      title:ar?'شهاداتي':'My certificates',subtitle:summary,
+      onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>learningEnabled?CertificatesScreen(journey:journey!,showExams:examsEnabled):const CustomExamsScreen())),
     ));
   }
 }
 
 class CertificatesScreen extends ConsumerStatefulWidget {
   final LearningJourney journey;
-  const CertificatesScreen({super.key,required this.journey});
+  final bool showExams;
+  const CertificatesScreen({super.key,required this.journey,this.showExams=false});
   @override ConsumerState<CertificatesScreen> createState()=>_CertificatesScreenState();
 }
 class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
@@ -128,6 +138,8 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
       if(_busy&&_list==null)const SizedBox(height:220,child:AppContentSkeleton(count:2))else if(_busy||_checking)const LinearProgressIndicator(),
       if(_error)Card(child:ListTile(title:Text(tr('تعذّر إكمال الطلب. أعد المحاولة.','Request failed. Please retry.')),trailing:IconButton(onPressed:_busy||_checking?null:() async{await _load(refresh:true);if(mounted&&_choice!=null)await _check(_choice);},icon:const Icon(Icons.refresh)))),
       if(_notice!=null)Text(_notice!),
+      if(widget.showExams)MobilePanel(padding:EdgeInsets.zero,child:MobileActionRow(icon:Icons.school_outlined,color:AppColors.pointsGold(context),title:tr('شهادات الامتحانات','Exam certificates'),onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const CustomExamsScreen())))),
+      const SizedBox(height:16),
       if(_list?['IssuanceEnabled']==true&&premium)Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
         Text(tr('استحقاق شهادة جديدة','New certificate eligibility'),style:Theme.of(context).textTheme.titleMedium),
         Text(tr('أكمل جميع مسائل النطاق المعتمد وأثبت الحل المستقل في كل مهارة.','Complete every problem in the approved scope and demonstrate independent solving in every skill.')),
