@@ -267,20 +267,21 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
             subtitle:Text(problem['IsSolved']==true?(ar?'محلولة':'Solved'):(ar?'غير محلولة':'Unsolved')),
             trailing:Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.star_rounded,size:16,color:AppColors.pointsGold(context)),const SizedBox(width:3),Text('${trackNumber(problem['Points'])}',style:TextStyle(color:AppColors.pointsGold(context),fontWeight:FontWeight.w700)),LayoutUtils.forwardIcon(context,size:18)]),
             onTap:()async{
-              var index=i;
+              var currentId=trackNumber(problem['Id']);
               var completed=false;
-              while(mounted&&index<visible.length){
-                final current=visible[index];
-                final next=visible.indexWhere((item)=>item['IsSolved']!=true,index+1);
-                final result=await Navigator.pushNamed(context,AppRoutes.problemDetails,arguments:{
-                  'problemId':trackNumber(current['Id']),
-                  if(next>=0)'nextProblemId':trackNumber(visible[next]['Id']),
+              final owner=ref.read(authProvider).user?.id;
+              final visited=<int>{};
+              while(mounted&&owner!=null&&ref.read(authProvider).user?.id==owner&&currentId>0&&visited.add(currentId)){
+                final result=await Navigator.pushNamed(this.context,AppRoutes.problemDetails,arguments:{
+                  'problemId':currentId,
+                  'trackId':widget.id,
+                  'categoryId':widget.categoryId,
                 });
-                completed=completed||result==true||result=='nextProblem';
-                if(!mounted||result!='nextProblem'||next<0)break;
-                index=next;
+                completed=completed||result==true||result is int;
+                if(!mounted||ref.read(authProvider).user?.id!=owner||result is! int)break;
+                currentId=result;
               }
-              if(mounted&&completed){ref.invalidate(trackPracticeProvider);ref.invalidate(trackProgressProvider(widget.id));ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}
+              if(mounted&&completed&&ref.read(authProvider).user?.id==owner){ref.invalidate(trackPracticeProvider);ref.invalidate(trackProgressProvider(widget.id));ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}
             },
           ));
         },
