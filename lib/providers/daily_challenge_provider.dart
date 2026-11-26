@@ -9,9 +9,9 @@ import 'learning_journey_provider.dart';
 /// Recreates the daily-practice request after login or stage switching.
 /// The server decides which published, currently unlocked problems are safe.
 final dailyChallengeProvider = FutureProvider.autoDispose<DailyChallenge?>((ref) async {
-  final user = ref.watch(authProvider.select((state) => state.user));
-  final stageId = user?.currentStageId;
-  if (user?.role != 'Student' || stageId == null || stageId <= 0) {
+  final account = ref.watch(authProvider.select((s)=>(id:s.user?.id,role:s.user?.role,stageId:s.user?.currentStageId)));
+  final stageId = account.stageId;
+  if (account.id==null || account.role != 'Student' || stageId == null || stageId <= 0) {
     return null;
   }
   // The daily challenge is an upgrade benefit. Fail closed while account
