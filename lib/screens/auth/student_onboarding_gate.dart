@@ -10,7 +10,6 @@ import '../../core/utils/error_message.dart';
 import '../../widgets/brand_logo.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/math_background.dart';
-import '../../widgets/animated_entry.dart';
 import '../../core/errors/app_exception.dart';
 import '../../core/network/api_envelope.dart';
 import '../../providers/auth_provider.dart';
@@ -45,7 +44,7 @@ class StudentOnboardingGate extends ConsumerWidget {
     final ar = context.locale.languageCode == 'ar';
     final status = ref.watch(studentOnboardingProvider);
     return status.when(
-      loading: () => const Scaffold(body: SafeArea(child: AppContentSkeleton())),
+      loading: () => const Scaffold(body: SafeArea(child: Center(child:AppInlineLoader(size:28)))),
       error: (error, _) => Scaffold(body: SafeArea(child: Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
         const BrandMark(size: 64),
         const SizedBox(height: 20),
@@ -192,7 +191,7 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
           if(mounted) Navigator.pushNamedAndRemoveUntil(context,AppRoutes.login,(_)=>false);
         }),child:Text(ar?'تسجيل الخروج':'Sign out')),
       ]))),
-    ));
+    );
   }
 }
 
@@ -213,7 +212,7 @@ class _ChoiceCard extends StatelessWidget {
   final VoidCallback? onTap;
   @override
   Widget build(BuildContext context) {
-    return AnimatedEntry(child:Card(
+    return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       color: Theme.of(context).colorScheme.surface,
       elevation: 0,
