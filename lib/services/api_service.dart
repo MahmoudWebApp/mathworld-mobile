@@ -108,11 +108,15 @@ class ApiService implements ApiClient {
     Map<String, dynamic>? queryParameters,
     bool handleUnauthorized = true,
   }) {
+    final cancel=CancelToken();
     return _execute(
-      () => _dio.get(path, queryParameters: queryParameters),
+      () => _dio.get(path, queryParameters: queryParameters,cancelToken:cancel),
       handleUnauthorized: handleUnauthorized,
       transientGetRetries: 1,
-    );
+    ).timeout(const Duration(seconds:15),onTimeout:(){
+      cancel.cancel('Read deadline exceeded');
+      throw const AppException(type:AppExceptionType.timeout,messageKey:'connection_timeout');
+    });
   }
 
   @override
