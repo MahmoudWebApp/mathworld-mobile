@@ -628,11 +628,17 @@ class _ProblemHeader extends StatelessWidget {
                 text: problem.title,
                 isArabic: isArabic,
                 inline: true,
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
             IconButton.filledTonal(
+              iconSize: 28,
+              style: IconButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                backgroundColor: AppColors.error.withValues(alpha: 0.08),
+                side: const BorderSide(color: AppColors.error),
+              ),
               onPressed: isFavoriteBusy ? null : onToggleFavorite,
               tooltip: problem.isFavorite
                   ? 'remove_from_favorites'.tr()
@@ -666,7 +672,7 @@ class _ProblemHeader extends StatelessWidget {
               label: 'points_value'.tr(
                 namedArgs: {'count': '${problem.points}'},
               ),
-              color: AppColors.warning,
+              color: AppColors.rewardGold,
             ),
           ],
         ),
@@ -839,6 +845,11 @@ class _AnswerResultCard extends StatelessWidget {
                   Text(
                     'points_earned_value'.tr(
                       namedArgs: {'count': '${result.pointsEarned}'},
+                    ),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.rewardGoldBright : AppColors.rewardGoldInk,
                     ),
                   ),
                 ],

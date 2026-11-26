@@ -28,6 +28,9 @@ class AppColors {
   static const Color cyan = brandPink;
   static const Color success = Color(0xFF27866B);
   static const Color warning = Color(0xFFF59E0B);
+  static const Color rewardGold = Color(0xFFF5C518);
+  static const Color rewardGoldBright = Color(0xFFFACC15);
+  static const Color rewardGoldInk = Color(0xFF806000);
   static const Color error = Color(0xFFEF476F);
 
   static const Color lightBackground = Color(0xFFFAF8FF);

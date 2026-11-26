@@ -72,7 +72,7 @@ class StudentBadgesCard extends ConsumerWidget {
           Row(
             children: [
               const Icon(Icons.military_tech_rounded,
-                  color: AppColors.primary, size: 27),
+                  color: AppColors.rewardGold, size: 27),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: ShaderMask(
@@ -121,6 +121,8 @@ class StudentBadgesCard extends ConsumerWidget {
                       child: Text(
                         '${result.earnedCount} / ${result.badges.where((badge) => badge.isAvailable).length}',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.rewardGoldBright : AppColors.rewardGoldInk,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -139,7 +141,7 @@ class StudentBadgesCard extends ConsumerWidget {
                     final earned = !locked && badge.earned;
                     final color = locked
                         ? Theme.of(context).colorScheme.outline
-                        : const Color(0xFFF59E0B);
+                        : AppColors.rewardGold;
                     final progress = badge.requiredSolved > 0
                         ? (badge.currentProgress / badge.requiredSolved)
                             .clamp(0.0, 1.0)
