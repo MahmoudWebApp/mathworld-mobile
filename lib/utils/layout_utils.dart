@@ -15,12 +15,13 @@ class LayoutUtils {
 
   /// Returns true when the active locale uses a right-to-left script.
   static bool isRtl(BuildContext context) {
-    final languageCode = Localizations.localeOf(context).languageCode;
-    if (_rtlLanguageCodes.contains(languageCode)) {
-      return true;
-    }
-
-    return Directionality.maybeOf(context) == ui.TextDirection.rtl;
+    // Match the direction of the actual layout rather than the language
+    // setting. A locale change or nested Directionality can otherwise
+    // leave the arrow pointing against the row's visual reading order.
+    final direction = Directionality.maybeOf(context);
+    if (direction != null) return direction == ui.TextDirection.rtl;
+    final languageCode = Localizations.maybeLocaleOf(context)?.languageCode;
+    return _rtlLanguageCodes.contains(languageCode);
   }
 
   /// Returns the explicit glyph used to navigate deeper into the application.
