@@ -24,44 +24,52 @@ class MathBackground extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: const Alignment(0.86, -0.96),
-                radius: 1.05,
-                colors: [
-                  AppColors.brandCyan.withValues(
-                    alpha: isDark ? 0.070 : 0.045,
+          // Keep the static artwork independent of scrolling and form input.
+          RepaintBoundary(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: const Alignment(0.86, -0.96),
+                      radius: 1.05,
+                      colors: [
+                        AppColors.brandCyan.withValues(
+                          alpha: isDark ? 0.070 : 0.045,
+                        ),
+                        Colors.transparent,
+                      ],
+                      stops: const [0, 0.74],
+                    ),
                   ),
-                  Colors.transparent,
-                ],
-                stops: const [0, 0.74],
-              ),
-            ),
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: const Alignment(-0.92, -0.72),
-                radius: 1.12,
-                colors: [
-                  AppColors.brandPurple.withValues(
-                    alpha: isDark ? 0.065 : 0.035,
+                ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: const Alignment(-0.92, -0.72),
+                      radius: 1.12,
+                      colors: [
+                        AppColors.brandPurple.withValues(
+                          alpha: isDark ? 0.065 : 0.035,
+                        ),
+                        Colors.transparent,
+                      ],
+                      stops: const [0, 0.76],
+                    ),
                   ),
-                  Colors.transparent,
-                ],
-                stops: const [0, 0.76],
-              ),
+                ),
+                CustomPaint(
+                  painter: _MathGridPainter(
+                    color: AppColors.brandCyan.withValues(
+                      alpha: isDark ? 0.012 : 0.023,
+                    ),
+                  ),
+                ),
+                if (showSymbols) const _AmbientSymbolLayer(),
+              ],
             ),
           ),
-          CustomPaint(
-            painter: _MathGridPainter(
-              color: AppColors.brandCyan.withValues(
-                alpha: isDark ? 0.012 : 0.023,
-              ),
-            ),
-          ),
-          if (showSymbols) const _AmbientSymbolLayer(),
           child,
         ],
       ),
