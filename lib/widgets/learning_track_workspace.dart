@@ -269,6 +269,7 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
             onTap:()async{
               var currentId=trackNumber(problem['Id']);
               var completed=false;
+              var retry=false;
               final owner=ref.read(authProvider).user?.id;
               final visited=<int>{};
               while(mounted&&owner!=null&&ref.read(authProvider).user?.id==owner&&currentId>0&&visited.add(currentId)){
@@ -276,10 +277,12 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
                   'problemId':currentId,
                   'trackId':widget.id,
                   'categoryId':widget.categoryId,
+                  'retry':retry,
                 });
-                completed=completed||result==true||result is int;
-                if(!mounted||ref.read(authProvider).user?.id!=owner||result is! int)break;
-                currentId=result;
+                completed=completed||result==true||result is NextTrackCandidate;
+                if(!mounted||ref.read(authProvider).user?.id!=owner||result is! NextTrackCandidate)break;
+                currentId=result.id;
+                retry=result.retry;
               }
               if(mounted&&completed&&ref.read(authProvider).user?.id==owner){ref.invalidate(trackPracticeProvider);ref.invalidate(trackProgressProvider(widget.id));ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}
             },
