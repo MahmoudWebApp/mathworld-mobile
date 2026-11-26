@@ -135,7 +135,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Expanded(child:_Metric(label:tr('المحلولة','Solved'),value:j==null?'${dashboard!.solvedProblemsCount}':'${j.solvedProblems}/${j.totalProblems}',color:AppColors.success)),
             Expanded(child:_Metric(label:tr('الإنجاز','Progress'),value:j==null?'—':'${j.completionPercent}%',color:stageAccent)),
           ]),
-          if(j!=null)...[const SizedBox(height:12),LinearProgressIndicator(value:(j.completionPercent/100).clamp(0.0,1.0).toDouble(),color:AppColors.progressFill(j.completionPercent/100),backgroundColor:AppColors.progressTrack(context),borderRadius:BorderRadius.circular(8))],
+          if(j!=null)...[const SizedBox(height:12),LearningProgressBar(value:j.completionPercent/100,height:6)],
         ]else if(journeyState.isLoading||dashboardState.isLoading)
           Row(children:[const AppInlineLoader(size:18),const SizedBox(width:10),Expanded(child:Text(tr('جارٍ تحميل تقدمك…','Loading your progress…'),style:Theme.of(context).textTheme.bodySmall))])
         else

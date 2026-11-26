@@ -77,8 +77,8 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
   Widget build(BuildContext context){
     final ar=context.locale.languageCode=='ar';
     final selection=ref.watch(trackSelectionProvider);
-    if(selection.isLoading&&!selection.hasValue)return AppContentSkeleton(cards:true,title:ar?'الفئات التعليمية':'Learning topics');
-    if(selection.hasError)return AppErrorView(message:localizedErrorMessage(selection.error!),onRetry:()=>ref.invalidate(trackSelectionProvider));
+    if(selection.isLoading&&!selection.hasValue)return AppContentSkeleton(cards:true,title:ar?'اختر الصف أو المستوى':'Choose grade or level',sectionTitle:ar?'الفئات التعليمية':'Learning topics');
+    if(selection.hasError&&!selection.hasValue)return AppErrorView(message:localizedErrorMessage(selection.error!),onRetry:()=>ref.invalidate(trackSelectionProvider));
     final current=selection.valueOrNull;
     final id=trackNumber(current?['TrackId']);
     final selected=trackNumber(current?['StageId'])==widget.stageId && widget.catalog.items.any((t)=>trackNumber(t['Id'])==id);
@@ -143,7 +143,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
     void reload(){ref.invalidate(trackDetailsProvider(id));ref.invalidate(trackProgressProvider(id));}
     if(detail.hasError&&!detail.hasValue)return AppErrorView(message:localizedErrorMessage(detail.error!),onRetry:reload);
     final d=detail.valueOrNull;
-    if(d==null)return AppContentSkeleton(cards:true,title:widget.title);
+    if(d==null)return AppContentSkeleton(cards:true,title:widget.title,sectionTitle:ar?'الفئات التعليمية':'Learning topics');
     final p=progress.valueOrNull;
     final rawTrack=d['Track'];
     if(rawTrack is! Map)return AppErrorView(onRetry:reload,message:ar?'تعذّر قراءة بيانات الصف أو المستوى':'Could not read grade or level data');
@@ -177,7 +177,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
             else const AppLoadingView(mode:AppLoadingMode.section)
           else MobilePanel(child:Column(children:[
             Row(children:[Expanded(child:Text(ar?'التقدم':'Progress')),Text('${trackNumber(p['Solved'])}/${trackNumber(p['ProblemsCount'])} · ${percent.toStringAsFixed(1)}%',style:TextStyle(color:accent,fontWeight:FontWeight.w700))]),
-            const SizedBox(height:8),LinearProgressIndicator(value:(percent/100).clamp(0.0,1.0).toDouble(),color:AppColors.progressFill(percent/100),backgroundColor:AppColors.progressTrack(context),borderRadius:BorderRadius.circular(8)),
+            const SizedBox(height:8),LearningProgressBar(value:percent/100,height:6),
           ])),
           if(p?['TrackPracticeIsolationEnabled']==true&&stats.values.any((c)=>trackNumber(c['Attempted'])>0))
             Align(alignment:AlignmentDirectional.centerEnd,child:TextButton.icon(onPressed:_resetting?null:()=>_reset(trackNumber(p?['StageId']),trackText(track,'Name',ar)),icon:const Icon(Icons.restart_alt),label:Text(ar?'إعادة تدريب الصف':'Restart grade practice'))),
@@ -202,7 +202,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
               const Spacer(),
               if(s!=null)...[
                 Text('$solved/$count',style:Theme.of(context).textTheme.labelSmall),
-                const SizedBox(height:4),LinearProgressIndicator(value:count>0?(solved/count).clamp(0.0,1.0).toDouble():0,color:AppColors.progressFill(count>0?solved/count:0.0),backgroundColor:AppColors.progressTrack(context),borderRadius:BorderRadius.circular(8)),
+                const SizedBox(height:4),LearningProgressBar(value:count>0?solved/count:0.0),
               ]else const SizedBox(height:18),
               const SizedBox(height:6),
               Row(children:[

@@ -146,10 +146,11 @@ class AppInlineLoader extends StatelessWidget {
 /// Bounded, non-interactive placeholder list/grid. Animate one opacity layer,
 /// not every bar/card, and stop animation when its route/tab is inactive.
 class AppContentSkeleton extends StatefulWidget {
-  const AppContentSkeleton({super.key,this.cards=false,this.count=4,this.title});
+  const AppContentSkeleton({super.key,this.cards=false,this.count=4,this.title,this.sectionTitle,this.cardExtent});
   final bool cards;
   final int count;
-  final String? title;
+  final String? title,sectionTitle;
+  final double? cardExtent;
   @override
   State<AppContentSkeleton> createState()=>_AppContentSkeletonState();
 }
@@ -194,11 +195,12 @@ class _AppContentSkeletonState extends State<AppContentSkeleton> with SingleTick
       final columns=constraints.maxWidth<332||scale>1.35?1:constraints.maxWidth>=732?3:2;
       final child=widget.cards
         ? GridView.builder(physics:const NeverScrollableScrollPhysics(),padding:const EdgeInsets.all(12),
-            gridDelegate:SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:columns,mainAxisExtent:236*scale,crossAxisSpacing:12,mainAxisSpacing:12),
+            gridDelegate:SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:columns,mainAxisExtent:(widget.cardExtent??236)*scale,crossAxisSpacing:12,mainAxisSpacing:12),
             itemCount:count,itemBuilder:(_,__)=>item())
         : ListView.separated(physics:const NeverScrollableScrollPhysics(),padding:const EdgeInsets.all(16),itemCount:count,itemBuilder:(_,__)=>item(),separatorBuilder:(_,__)=>const SizedBox(height:12));
       return SizedBox(height:height,child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
         if(widget.title!=null)Padding(padding:const EdgeInsets.fromLTRB(16,12,16,4),child:Text(widget.title!,style:Theme.of(context).textTheme.headlineSmall)),
+        if(widget.sectionTitle!=null)Padding(padding:const EdgeInsets.fromLTRB(16,8,16,4),child:MobileSectionTitle(title:widget.sectionTitle!)),
         Expanded(child:Semantics(label:ar?'جارٍ تحميل المحتوى':'Loading content',child:ExcludeSemantics(
           child:IgnorePointer(child:FadeTransition(opacity:_opacity,child:RepaintBoundary(child:child))),
         ))),
