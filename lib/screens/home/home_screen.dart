@@ -27,6 +27,7 @@ import '../certificates/certificates_screen.dart';
 import '../premium/custom_exams_screen.dart';
 
 import '../../widgets/mobile_section.dart';
+import '../../widgets/premium_button.dart';
 
 /// Show navigation immediately; independent failures must not block the home page.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -117,7 +118,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Text([if(j!=null)j.getName(context.locale.languageCode),user.premium?'Premium':'Free'].join(' · '),style:Theme.of(context).textTheme.bodySmall),
         ])),
       ]),
-      MobilePanel(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      MobilePanel(gradient:Theme.of(context).brightness==Brightness.dark?AppGradients.darkHero:AppGradients.lightHero,child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         Text(tr('تقدمك الدراسي','Your progress'),style:Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight:FontWeight.w800)),
         const SizedBox(height:12),
         if(j!=null||dashboard!=null)...[
@@ -128,7 +129,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ]),
           if(j!=null)...[const SizedBox(height:12),LinearProgressIndicator(value:(j.completionPercent/100).clamp(0.0,1.0).toDouble(),color:AppColors.success,borderRadius:BorderRadius.circular(8))],
         ]else if(journeyState.isLoading||dashboardState.isLoading)
-          const AppLoadingView(mode:AppLoadingMode.section)
+          Row(children:[const AppInlineLoader(size:18),const SizedBox(width:10),Expanded(child:Text(tr('جارٍ تحميل تقدمك…','Loading your progress…'),style:Theme.of(context).textTheme.bodySmall))])
         else
           TextButton.icon(onPressed:(){ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);},icon:const Icon(Icons.refresh),label:Text(tr('تعذّر تحميل التقدم · إعادة المحاولة','Progress unavailable · Retry'))),
         if(j==null&&journeyState.hasError&&dashboard!=null)
@@ -139,7 +140,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(height:8),
         Text(j?.recommendedCategory?.getName(context.locale.languageCode)??tr('استكشف الفئات المتاحة لك','Explore your available topics')),
         const SizedBox(height:12),
-        FilledButton.icon(onPressed:_resuming?null:resumeNextProblem,icon:_resuming?const AppInlineLoader(size:18):const Icon(Icons.play_arrow_rounded),label:Text(tr('متابعة التعلم','Continue learning'))),
+        PremiumButton(onPressed:_resuming?null:resumeNextProblem,isLoading:_resuming,expand:true,label:tr('متابعة التعلم','Continue learning'),trailingIcon:Icons.arrow_forward_rounded),
       ])),
       Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         MobileSectionTitle(title:tr('أدوات التعلم','Learning tools')),
@@ -160,7 +161,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if(j?.certificatesEnabled==true||examsEnabled)CertificateHomeSummary(journey:j,examsEnabled:examsEnabled),
       Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         MobileSectionTitle(title:tr('آخر النشاطات','Recent activity'),actionLabel:tr('عرض الكل','View all'),onAction:()=>Navigator.pushNamed(context,AppRoutes.solved)),
-        if(dashboardState.isLoading&&dashboard==null)const AppLoadingView(mode:AppLoadingMode.section)
+        if(dashboardState.isLoading&&dashboard==null)const Padding(padding:EdgeInsets.symmetric(vertical:12),child:Center(child:AppInlineLoader(size:18)))
         else if(dashboard==null)TextButton(onPressed:()=>ref.invalidate(dashboardProvider),child:Text(tr('إعادة تحميل النشاطات','Reload activity')))
         else if(dashboard.recentActivities.isEmpty)Text('no_activity_yet'.tr())
         else MobilePanel(padding:EdgeInsets.zero,child:Column(children:[
@@ -180,7 +181,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         try{await Future.wait([ref.refresh(dashboardProvider.future),ref.refresh(learningJourneyProvider.future)]);}catch(_){}
       },
       child:ListView.separated(physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.fromLTRB(16,16,16,24),
-        itemCount:sections.length,itemBuilder:(_,i)=>sections[i],separatorBuilder:(_,__)=>const SizedBox(height:24)),
+        itemCount:sections.length,itemBuilder:(_,i)=>sections[i],separatorBuilder:(_,__)=>const SizedBox(height:16)),
     )));
   }
 }
