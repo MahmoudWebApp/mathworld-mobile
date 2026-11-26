@@ -114,8 +114,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final sections=<Widget>[
       Row(children:[
-        CircleAvatar(radius:23,backgroundColor:primary.withValues(alpha:.12),foregroundColor:primary,
-          child:const Icon(Icons.person_outline_rounded)),
+        Container(
+          width:48,height:48,alignment:Alignment.center,
+          decoration:const BoxDecoration(gradient:AppGradients.primary,shape:BoxShape.circle),
+          child:Text(user.name.trim().isEmpty?'M':user.name.trim().characters.first.toUpperCase(),
+            style:const TextStyle(color:Colors.white,fontSize:19,fontWeight:FontWeight.w800)),
+        ),
         const SizedBox(width:12),
         Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
           Text(user.name.isEmpty?tr('أهلاً بك','Welcome'):user.name,style:Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight:FontWeight.w800),maxLines:2,overflow:TextOverflow.ellipsis),
@@ -139,10 +143,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if(j==null&&journeyState.hasError&&dashboard!=null)
           TextButton(onPressed:()=>ref.invalidate(learningJourneyProvider),child:Text(tr('تحديث تقدم الصف','Refresh grade progress'))),
       ])),
-      MobilePanel(child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-        Row(children:[Icon(Icons.auto_stories_outlined,color:stageAccent),const SizedBox(width:8),Expanded(child:Text(tr('تابع التعلم','Continue learning'),style:Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight:FontWeight.w800)))]),
-        const SizedBox(height:8),
-        Text(j?.recommendedCategory?.getName(context.locale.languageCode)??tr('استكشف الفئات المتاحة لك','Explore your available topics')),
+      MobilePanel(
+        gradient:Theme.of(context).brightness==Brightness.dark?AppGradients.darkHero:AppGradients.lightHero,
+        child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+        Row(children:[
+          Container(width:48,height:48,decoration:BoxDecoration(
+            gradient:AppGradients.primary,borderRadius:BorderRadius.circular(14)),
+            child:const Icon(Icons.functions_rounded,color:Colors.white,size:26)),
+          const SizedBox(width:12),
+          Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            Text(tr('تابع التعلم','Continue learning'),style:Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight:FontWeight.w800)),
+            const SizedBox(height:4),
+            Text(j?.recommendedCategory?.getName(context.locale.languageCode)??tr('استكشف الفئات المتاحة لك','Explore your available topics'),
+              style:Theme.of(context).textTheme.bodySmall),
+          ])),
+        ]),
         const SizedBox(height:12),
         PremiumButton(onPressed:resumeNextProblem,isLoading:_resuming,expand:true,label:tr('متابعة التعلم','Continue learning'),trailingIcon:Icons.arrow_forward_rounded),
       ])),
