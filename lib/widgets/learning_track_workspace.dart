@@ -190,7 +190,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
           return SliverGrid(delegate:SliverChildBuilderDelegate((context,i){
             final c=ordered[i],s=stats[trackNumber(ordered[i]['Id'])];
             final locked=s?['IsLocked'];final count=trackNumber(c['ProblemsCount']);final solved=trackNumber(s?['Solved']);
-            return MobilePanel(padding:const EdgeInsets.all(12),borderColor:accent.withValues(alpha:.36),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            return GestureDetector(behavior:HitTestBehavior.opaque,onTap:locked==null?null:()=>open(c),child:MobilePanel(padding:const EdgeInsets.all(12),borderColor:accent.withValues(alpha:.36),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
               Row(children:[_TrackTopicIcon(value:c['Icon']?.toString()??'',accent:accent),const Spacer(),
                 if(locked==true)Icon(Icons.lock_outline,color:AppColors.pointsGold(context),size:18)
                 else if(c['IsFree']==true)Text(ar?'مجاني':'Free',style:const TextStyle(color:AppColors.success,fontSize:11,fontWeight:FontWeight.w700)),
@@ -211,7 +211,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
                 if(p?['TrackPracticeIsolationEnabled']==true&&locked==false&&trackNumber(s?['Attempted'])>0)
                   IconButton(visualDensity:VisualDensity.compact,tooltip:ar?'إعادة تدريب الفئة':'Restart topic',onPressed:_resetting?null:()=>_reset(trackNumber(p?['StageId']),trackText(c,'Name',ar),categoryId:trackNumber(c['Id'])),icon:Icon(Icons.restart_alt,color:accent,size:20)),
               ]),
-            ]));
+            ])));
           },childCount:ordered.length),gridDelegate:SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:columns,crossAxisSpacing:12,mainAxisSpacing:12,mainAxisExtent:236*scale.clamp(1.0,1.8).toDouble()));
         })),
         SliverToBoxAdapter(child:Padding(padding:const EdgeInsets.all(16),child:TextButton(onPressed:()=>Navigator.pushNamed(context,AppRoutes.learningStage),child:Text(ar?'تغيير المرحلة':'Change stage')))),
