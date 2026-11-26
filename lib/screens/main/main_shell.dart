@@ -283,8 +283,8 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
                       label: 'active_stage_categories'.tr(),
                     ),
                     NavigationDestination(
-                      icon: const Icon(Icons.favorite_border_rounded),
-                      selectedIcon: const Icon(Icons.favorite_rounded),
+                      icon: const Icon(Icons.favorite_border_rounded,color:AppColors.error),
+                      selectedIcon: const Icon(Icons.favorite_rounded,color:AppColors.error),
                       label: 'favorites'.tr(),
                     ),
                     NavigationDestination(
