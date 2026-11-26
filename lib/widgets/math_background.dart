@@ -69,26 +69,13 @@ class MathBackground extends StatelessWidget {
   }
 }
 
-class _AmbientSymbolLayer extends StatefulWidget {
+class _AmbientSymbolLayer extends StatelessWidget {
   const _AmbientSymbolLayer();
-  @override
-  State<_AmbientSymbolLayer> createState()=>_AmbientSymbolLayerState();
-}
-class _AmbientSymbolLayerState extends State<_AmbientSymbolLayer> with SingleTickerProviderStateMixin {
-  late final AnimationController _motion=AnimationController(vsync:this,duration:const Duration(seconds:9));
-  @override
-  void didChangeDependencies(){
-    super.didChangeDependencies();
-    if(MediaQuery.disableAnimationsOf(context)){_motion.stop();_motion.value=0;}
-    else if(!_motion.isAnimating){_motion.repeat(reverse:true);}
-  }
-  @override
-  void dispose(){_motion.dispose();super.dispose();}
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return IgnorePointer(
-      child: RepaintBoundary(child: AnimatedBuilder(animation:_motion,builder:(context,child)=>Transform.translate(offset:Offset(0,8*Curves.easeInOut.transform(_motion.value)),child:child),child: Stack(
+      child: RepaintBoundary(child: Stack(
         children: [
           Positioned(top: 175, right: 28, child: _Symbol('Σ', AppColors.brandPurple.withValues(alpha: isDark ? .065 : .045), 26, .1)),
           Positioned(bottom: 220, left: 35, child: _Symbol('√x', AppColors.brandCyan.withValues(alpha: isDark ? .065 : .045), 24, -.08)),
@@ -137,7 +124,7 @@ class _AmbientSymbolLayerState extends State<_AmbientSymbolLayer> with SingleTic
             ),
           ),
         ],
-      ))),
+      )),
     );
   }
 }
