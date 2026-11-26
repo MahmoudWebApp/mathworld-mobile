@@ -151,11 +151,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if(j!=null&&!j.learningSessionsEnabled&&user.premium)...[const Divider(height:1,indent:12,endIndent:12),MobileActionRow(icon:Icons.emoji_events_outlined,color:gold,title:tr('تحدي اليوم','Daily challenge'),onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const _DailyChallengeScreen())))],
           const Divider(height:1,indent:12,endIndent:12),
           MobileActionRow(icon:Icons.auto_stories_outlined,color:primary,title:tr('دفتر الأخطاء','Error notebook'),onTap:()=>Navigator.pushNamed(context,AppRoutes.errorNotebook)),
+          const Divider(height:1,indent:12,endIndent:12),
+          MobileActionRow(icon:Icons.emoji_events_outlined,color:gold,title:tr('المتفوقون','Leaderboard'),onTap:()=>Navigator.pushNamed(context,AppRoutes.leaderboard)),
         ])),
       ]),
       if(!user.premium)MobilePanel(padding:EdgeInsets.zero,child:MobileActionRow(icon:Icons.workspace_premium_rounded,color:gold,title:tr('مميزات Premium','Premium benefits'),subtitle:tr('افتح جميع الفئات والتقارير والحلول','Unlock topics, reports and solutions'),onTap:()=>Navigator.pushNamed(context,AppRoutes.premiumBenefits))),
       const StudentBadgesCard(),
-      if(j?.certificatesEnabled==true)CertificateHomeSummary(journey:j!),
+      if(j?.certificatesEnabled==true||examsEnabled)CertificateHomeSummary(journey:j,examsEnabled:examsEnabled),
       Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         MobileSectionTitle(title:tr('آخر النشاطات','Recent activity'),actionLabel:tr('عرض الكل','View all'),onAction:()=>Navigator.pushNamed(context,AppRoutes.solved)),
         if(dashboardState.isLoading&&dashboard==null)const AppLoadingView(mode:AppLoadingMode.section)
