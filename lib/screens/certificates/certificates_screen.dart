@@ -158,7 +158,7 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
       if(_list?['IssuanceEnabled']==true&&premium)Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
         Text(tr('استحقاق شهادة جديدة','New certificate eligibility'),style:Theme.of(context).textTheme.titleMedium),
         Text(tr('أكمل جميع مسائل النطاق المعتمد وأثبت الحل المستقل في كل مهارة.','Complete every problem in the approved scope and demonstrate independent solving in every skill.')),
-        DropdownButtonFormField<int>(isExpanded:true,initialValue:_choice,decoration:InputDecoration(labelText:tr('اختر النطاق','Choose scope')),onChanged:_busy||_checking?null:_check,items:[
+        DropdownButtonFormField<int>(key:ValueKey(_choice),isExpanded:true,initialValue:_choice,decoration:InputDecoration(labelText:tr('اختر النطاق','Choose scope')),onChanged:_busy||_checking?null:_check,items:[
           if(j.trackId!=null)DropdownMenuItem(value:0,child:Text(tr('الصف أو المساق الكامل','Entire grade or course'))),
           for(final c in categories)DropdownMenuItem(value:c.categoryId,child:Text(c.getName(context.locale.languageCode),overflow:TextOverflow.ellipsis)),
         ]),
