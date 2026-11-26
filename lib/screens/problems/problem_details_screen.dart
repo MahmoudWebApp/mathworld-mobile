@@ -14,6 +14,7 @@ import '../../core/utils/error_message.dart';
 import '../../models/problem.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/problem_details_provider.dart';
+import '../../providers/learning_tracks_provider.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
@@ -55,10 +56,10 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
     if (mounted) setState(() => _challengeAdvancePaused = true);
   }
 
-  ({int? problemId, bool retry, bool dailyChallenge, int? nextProblemId}) _readArguments() {
+  ({int? problemId, bool retry, bool dailyChallenge, int? nextProblemId, int? trackId, int? categoryId}) _readArguments() {
     final arguments = ModalRoute.of(context)?.settings.arguments;
     if (arguments is int) {
-      return (problemId: arguments, retry: false, dailyChallenge: false, nextProblemId: null);
+      return (problemId: arguments, retry: false, dailyChallenge: false, nextProblemId: null, trackId: null, categoryId: null);
     }
     if (arguments is Map) {
       final rawId = arguments['problemId'] ?? arguments['id'];
@@ -68,9 +69,11 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
         retry: arguments['retry'] == true,
         dailyChallenge: arguments['dailyChallenge'] == true,
         nextProblemId: arguments['nextProblemId'] is int ? arguments['nextProblemId'] as int : null,
+        trackId: arguments['trackId'] is int ? arguments['trackId'] as int : null,
+        categoryId: arguments['categoryId'] is int ? arguments['categoryId'] as int : null,
       );
     }
-    return (problemId: null, retry: false, dailyChallenge: false, nextProblemId: null);
+    return (problemId: null, retry: false, dailyChallenge: false, nextProblemId: null, trackId: null, categoryId: null);
   }
 
   @override
@@ -121,6 +124,10 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
     final state = ref.watch(problemDetailsProvider(problemId));
     final notifier = ref.read(problemDetailsProvider(problemId).notifier);
     final loadedProblem = state.problem.valueOrNull;
+    final trackId=routeArguments.trackId,categoryId=routeArguments.categoryId;
+    final nextTrack=trackId!=null&&categoryId!=null&&!routeArguments.dailyChallenge
+        ?ref.watch(nextTrackProblemProvider((trackId:trackId,categoryId:categoryId,afterProblemId:problemId))):null;
+    final nextId=nextTrack?.valueOrNull??routeArguments.nextProblemId;
 
     if (routeArguments.retry &&
         loadedProblem?.isInErrorNotebook == true &&
@@ -184,7 +191,7 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
             challengeAdvancePaused: _challengeAdvancePaused,
             onPauseChallengeAdvance: _pauseChallengeAdvance,
             onContinueChallenge: _continueChallenge,
-            onNextProblem: routeArguments.nextProblemId == null ? null : () => Navigator.pop(context, 'nextProblem'),
+            onNextProblem: nextId==null ? null : () => Navigator.pop(context, trackId!=null&&categoryId!=null?nextId:'nextProblem'),
             onSubmit: () => _runAction(context, () async {
               await notifier.submitAnswer();
               if (!mounted || !routeArguments.dailyChallenge) return;
@@ -436,7 +443,7 @@ class _ProblemContent extends ConsumerWidget {
             ) : structure==null ? const SizedBox.shrink() : Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
               Text(isArabic?'الفكرة والقانون':'Idea and formula',style:Theme.of(context).textTheme.titleMedium),
               RichMathText(text:structure.idea,isArabic:isArabic),
-              RichMathText(text:structure.formulaLatex,isArabic:isArabic,inline:true),
+              RichMathText(text:structure.formulaLatex,isArabic:isArabic,inline:true,assumeMath:true),
               const SizedBox(height:12),
               Text(isArabic?'خطوات الحل':'Solution steps',style:Theme.of(context).textTheme.titleMedium),
               for(var i=0;i<structure.steps.length;i++) Padding(padding:const EdgeInsets.only(top:6),child:RichMathText(text:'${i+1}. ${structure.steps[i]}',isArabic:isArabic)),
