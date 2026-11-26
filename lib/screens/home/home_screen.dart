@@ -47,7 +47,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final examsEnabled=ref.watch(customExamAvailabilityProvider).valueOrNull==true;
     final primary=Theme.of(context).colorScheme.primary;
     final gold=AppColors.pointsGold(context);
-    final stageAccent=j==null?primary:AppColors.stageForIdentity(j.stageId,j.nameAr);
+    final stageAccent=j==null?primary:AppColors.stageForIdentity(j.stageId,j.nameEn.isNotEmpty?j.nameEn:j.nameAr);
     String tr(String a,String e)=>ar?a:e;
     Future<void> resumeNextProblem() async {
       if(_resuming)return;
@@ -176,7 +176,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ])),
       ]),
     ];
-    return MathBackground(showSymbols:false,child:SafeArea(bottom:false,child:RefreshIndicator(
+    return MathBackground(showSymbols:true,child:SafeArea(bottom:false,child:RefreshIndicator(
       onRefresh:()async{
         ref.invalidate(studentBadgesProvider);
         try{await Future.wait([ref.refresh(dashboardProvider.future),ref.refresh(learningJourneyProvider.future)]);}catch(_){}
