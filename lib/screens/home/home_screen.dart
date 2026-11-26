@@ -7,9 +7,6 @@ import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
 import '../../core/utils/error_message.dart';
 import '../../core/network/api_envelope.dart';
-import '../../core/errors/app_exception.dart';
-import '../../core/utils/relative_time.dart';
-import '../../models/dashboard_stats.dart';
 import '../../models/learning_journey.dart';
 import '../../models/daily_challenge.dart';
 import '../../models/problem_search.dart';
@@ -20,71 +17,64 @@ import '../../providers/daily_challenge_provider.dart';
 import '../../providers/student_badges_provider.dart';
 import '../../providers/repositories_provider.dart';
 import '../../utils/layout_utils.dart';
-import '../../widgets/animated_entry.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
-import '../../widgets/premium_button.dart';
 import '../../widgets/student_badges_card.dart';
 import '../../widgets/rich_math_text.dart';
-import '../../widgets/stage_math_glyph.dart';
 import '../../widgets/learning_session_cards.dart';
 import '../certificates/certificates_screen.dart';
 import '../premium/custom_exams_screen.dart';
 
-/// Displays the user dashboard, progress summary, and learning shortcuts.
-class HomeScreen extends ConsumerWidget {
+import '../../widgets/mobile_section.dart';
+
+/// Show navigation immediately; independent failures must not block the home page.
+class HomeScreen extends ConsumerStatefulWidget {
   final VoidCallback onOpenStages;
-
-  const HomeScreen({super.key, required this.onOpenStages});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final dashboardState = ref.watch(dashboardProvider);
-    final premiumAccount = ref.watch(authProvider.select(
-      (state) => state.user?.subscriptionType.toLowerCase() == 'premium',
-    ));
-    final learningJourney = ref.watch(learningJourneyProvider);
-    final dailyPractice = ref.watch(dailyChallengeProvider);
-    final badges = ref.watch(studentBadgesProvider);
+  const HomeScreen({super.key,required this.onOpenStages});
+  @override ConsumerState<HomeScreen> createState()=>_HomeScreenState();
+}
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  bool _resuming=false;
+  @override Widget build(BuildContext context){
+    final ar=context.locale.languageCode=='ar';
+    final user=ref.watch(authProvider.select((s)=>(name:s.user?.fullName??'',premium:s.user?.subscriptionType.toLowerCase()=='premium')));
+    final journeyState=ref.watch(learningJourneyProvider);
+    final j=journeyState.valueOrNull;
+    final dashboardState=ref.watch(dashboardProvider);
+    final dashboard=dashboardState.valueOrNull;
     final examsEnabled=ref.watch(customExamAvailabilityProvider).valueOrNull==true;
-    // An outdated backend often rejects several optional learning endpoints
-    // at once. Show one actionable explanation instead of many error cards.
-    bool isBackendMismatch(Object? error) =>
-        error is AppException &&
-        error.messageKey == 'server_feature_unavailable';
-    final backendMismatch = [
-      learningJourney.asError?.error,
-      dailyPractice.asError?.error,
-      badges.asError?.error,
-    ].any(isBackendMismatch);
-
+    final primary=Theme.of(context).colorScheme.primary;
+    final gold=AppColors.pointsGold(context);
+    String tr(String a,String e)=>ar?a:e;
     Future<void> resumeNextProblem() async {
+      if(_resuming)return;
       final learner = ref.read(authProvider).user;
       final stageId = learner?.currentStageId;
       // Free students start from their unlocked categories.
       if (learner?.subscriptionType.toLowerCase() != 'premium' ||
           stageId == null || stageId <= 0) {
-        onOpenStages();
+        widget.onOpenStages();
         return;
       }
+      setState(()=>_resuming=true);
       try {
         // Read the selected journey first; an active track never falls back
         // to the whole-stage search if resume is temporarily unavailable.
         final journey = await ref.read(learningJourneyProvider.future);
         if (!context.mounted) return;
-        if (journey == null) { onOpenStages(); return; }
+        if (journey == null) { widget.onOpenStages(); return; }
         if (journey.trackId != null) {
           final response = await ref.read(apiClientProvider).get('/users/learning-tracks/continue');
           final payload = ApiEnvelope.map(response.data);
           if (!context.mounted) return;
           if (payload['TrackId'] != journey.trackId || payload['Problem'] is! Map) {
-            onOpenStages(); return;
+            widget.onOpenStages(); return;
           }
           final id = (payload['Problem'] as Map)['Id'];
-          if (id is! int || id <= 0) { onOpenStages(); return; }
-          await Navigator.pushNamed(context, AppRoutes.problemDetails, arguments: id);
-          if (context.mounted) {
+          if (id is! int || id <= 0) { widget.onOpenStages(); return; }
+          final submitted=await Navigator.pushNamed(context, AppRoutes.problemDetails, arguments: id);
+          if (context.mounted&&submitted==true) {
             ref.invalidate(dashboardProvider);
             ref.invalidate(learningJourneyProvider);
           }
@@ -100,357 +90,141 @@ class HomeScreen extends ConsumerWidget {
           showMathWorldNotice(context,context.locale.languageCode == 'ar'
                 ? 'أنجزت المسائل المتاحة في مرحلتك. يمكنك استكشاف الفئات.'
                 : 'You have completed the available questions in this stage.',kind:MathWorldNoticeKind.success);
-          onOpenStages();
+          widget.onOpenStages();
           return;
         }
-        await Navigator.pushNamed(
+        final submitted=await Navigator.pushNamed(
           context, AppRoutes.problemDetails,
           arguments: result.problems.first.id,
         );
-        ref.invalidate(dashboardProvider);
-        ref.invalidate(learningJourneyProvider);
+        if(context.mounted&&submitted==true){ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}
       } catch (_) {
         if (!context.mounted) return;
         showMathWorldNotice(context,context.locale.languageCode == 'ar'
               ? 'تعذّر تحديد المسألة التالية. يمكنك المتابعة من الفئات.'
               : 'Could not load the next question. Browse your topics.',kind:MathWorldNoticeKind.error);
-        onOpenStages();
-      }
+        widget.onOpenStages();
+      }finally{if(mounted)setState(()=>_resuming=false);}
     }
 
-    return MathBackground(
-      showSymbols: true,
-      child: SafeArea(
-        bottom: false,
-        child: dashboardState.when(
-          loading: () => const AppContentSkeleton(cards:true),
-          // The statistics endpoint can fail independently from the
-          // learning journey. Keep the primary navigation usable.
-          error: (error, _) => ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            children: [
-              _ContinueLearningCard(onTap: onOpenStages),
-              const SizedBox(height: AppSpacing.lg),
-              AppErrorView(
-                message: localizedErrorMessage(error),
-                onRetry: () {
-                  ref.invalidate(dashboardProvider);
-                  ref.invalidate(learningJourneyProvider);
-                },
-              ),
-            ],
+    final sections=<Widget>[
+      Row(children:[
+        CircleAvatar(radius:23,backgroundColor:primary.withValues(alpha:.12),foregroundColor:primary,
+          child:const Icon(Icons.person_outline_rounded)),
+        const SizedBox(width:12),
+        Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          Text(user.name.isEmpty?tr('أهلاً بك','Welcome'):user.name,style:Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight:FontWeight.w800),maxLines:2,overflow:TextOverflow.ellipsis),
+          Text([if(j!=null)j.getName(context.locale.languageCode),user.premium?'Premium':'Free'].join(' · '),style:Theme.of(context).textTheme.bodySmall),
+        ])),
+      ]),
+      MobilePanel(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Text(tr('تقدمك الدراسي','Your progress'),style:Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight:FontWeight.w800)),
+        const SizedBox(height:12),
+        if(j!=null||dashboard!=null)...[
+          Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            Expanded(child:_Metric(label:tr('النقاط','Points'),value:'${j?.displayedPoints??dashboard!.totalPoints}',color:gold,icon:Icons.star_rounded)),
+            Expanded(child:_Metric(label:tr('المحلولة','Solved'),value:j==null?'${dashboard!.solvedProblemsCount}':'${j.solvedProblems}/${j.totalProblems}',color:AppColors.success)),
+            Expanded(child:_Metric(label:tr('الإنجاز','Progress'),value:j==null?'—':'${j.completionPercent}%',color:primary)),
+          ]),
+          if(j!=null)...[const SizedBox(height:12),LinearProgressIndicator(value:(j.completionPercent/100).clamp(0.0,1.0).toDouble(),color:AppColors.success,borderRadius:BorderRadius.circular(8))],
+        ]else if(journeyState.isLoading||dashboardState.isLoading)
+          const AppLoadingView(mode:AppLoadingMode.section)
+        else
+          TextButton.icon(onPressed:(){ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);},icon:const Icon(Icons.refresh),label:Text(tr('تعذّر تحميل التقدم · إعادة المحاولة','Progress unavailable · Retry'))),
+        if(j==null&&journeyState.hasError&&dashboard!=null)
+          TextButton(onPressed:()=>ref.invalidate(learningJourneyProvider),child:Text(tr('تحديث تقدم الصف','Refresh grade progress'))),
+      ])),
+      MobilePanel(child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+        Row(children:[Icon(Icons.auto_stories_outlined,color:primary),const SizedBox(width:8),Expanded(child:Text(tr('تابع التعلم','Continue learning'),style:Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight:FontWeight.w800)))]),
+        const SizedBox(height:8),
+        Text(j?.recommendedCategory?.getName(context.locale.languageCode)??tr('استكشف الفئات المتاحة لك','Explore your available topics')),
+        const SizedBox(height:12),
+        FilledButton.icon(onPressed:_resuming?null:resumeNextProblem,icon:_resuming?const AppInlineLoader(size:18):const Icon(Icons.play_arrow_rounded),label:Text(tr('متابعة التعلم','Continue learning'))),
+      ])),
+      Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        MobileSectionTitle(title:tr('أدوات التعلم','Learning tools')),
+        const SizedBox(height:8),
+        MobilePanel(padding:EdgeInsets.zero,child:Column(children:[
+          MobileActionRow(icon:Icons.insights_rounded,color:const Color(0xFF0F766E),title:tr('التقارير والإحصائيات','Reports & analytics'),subtitle:tr('تقدمك في الصف الحالي','Your current grade progress'),onTap:()=>Navigator.pushNamed(context,AppRoutes.premiumReport)),
+          if(examsEnabled)...[const Divider(height:1,indent:12,endIndent:12),MobileActionRow(icon:Icons.school_outlined,color:primary,title:tr('الامتحانات المخصصة','Custom exams'),subtitle:tr('اختبر نفسك واحصل على شهادة','Test yourself and earn a certificate'),onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const CustomExamsScreen())))],
+          if(j?.learningSessionsEnabled==true)...[const Divider(height:1,indent:12,endIndent:12),MobileActionRow(icon:Icons.calculate_outlined,color:primary,title:tr('التدريب والتحديات','Practice & challenges'),onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>_TrainingScreen(journey:j!))))],
+          if(j!=null&&!j.learningSessionsEnabled&&user.premium)...[const Divider(height:1,indent:12,endIndent:12),MobileActionRow(icon:Icons.emoji_events_outlined,color:gold,title:tr('تحدي اليوم','Daily challenge'),onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const _DailyChallengeScreen())))],
+          const Divider(height:1,indent:12,endIndent:12),
+          MobileActionRow(icon:Icons.auto_stories_outlined,color:primary,title:tr('دفتر الأخطاء','Error notebook'),onTap:()=>Navigator.pushNamed(context,AppRoutes.errorNotebook)),
+        ])),
+      ]),
+      if(!user.premium)MobilePanel(padding:EdgeInsets.zero,child:MobileActionRow(icon:Icons.workspace_premium_rounded,color:gold,title:tr('مميزات Premium','Premium benefits'),subtitle:tr('افتح جميع الفئات والتقارير والحلول','Unlock topics, reports and solutions'),onTap:()=>Navigator.pushNamed(context,AppRoutes.premiumBenefits))),
+      const StudentBadgesCard(),
+      if(j?.certificatesEnabled==true)CertificateHomeSummary(journey:j!),
+      Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        MobileSectionTitle(title:tr('آخر النشاطات','Recent activity'),actionLabel:tr('عرض الكل','View all'),onAction:()=>Navigator.pushNamed(context,AppRoutes.solved)),
+        if(dashboardState.isLoading&&dashboard==null)const AppLoadingView(mode:AppLoadingMode.section)
+        else if(dashboard==null)TextButton(onPressed:()=>ref.invalidate(dashboardProvider),child:Text(tr('إعادة تحميل النشاطات','Reload activity')))
+        else if(dashboard.recentActivities.isEmpty)Text('no_activity_yet'.tr())
+        else MobilePanel(padding:EdgeInsets.zero,child:Column(children:[
+          for(final activity in dashboard.recentActivities.take(3))ListTile(
+            leading:const Icon(Icons.check_circle_outline_rounded,color:AppColors.success),
+            title:RichMathText(text:activity.title,inline:true,maxLines:2,overflow:TextOverflow.ellipsis,style:Theme.of(context).textTheme.titleSmall),
+            subtitle:Text(activity.categoryName,maxLines:1,overflow:TextOverflow.ellipsis),
+            trailing:LayoutUtils.forwardIcon(context),
+            onTap:()=>Navigator.pushNamed(context,AppRoutes.problemDetails,arguments:activity.problemId),
           ),
-          data: (dashboard) => RefreshIndicator(
-            onRefresh: () async {
-              // Refresh both datasets together: points and the recommended
-              // next topic must reflect the same latest saved practice.
-              await Future.wait([
-                ref.refresh(dashboardProvider.future),
-                ref.refresh(learningJourneyProvider.future),
-                ref.refresh(dailyChallengeProvider.future),
-              ]);
-            },
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.lg,
-                AppSpacing.lg,
-                144,
-              ),
-              children: [
-                AnimatedEntry(child: _HeroCard(
-                  dashboard: dashboard,
-                  journey: learningJourney.valueOrNull,
-                  onContinue: () { resumeNextProblem(); },
-                )),
-                const SizedBox(height: AppSpacing.lg),
-                if (!premiumAccount) ...[
-                  GlassCard(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(children: [
-                          const Icon(Icons.workspace_premium_rounded,
-                            color: AppColors.rewardGold),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(child: Text(
-                            context.locale.languageCode == 'ar'
-                              ? 'مميزات Premium وترقية الحساب'
-                              : 'Premium benefits and account upgrade',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800),
-                          )),
-                        ]),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(context.locale.languageCode == 'ar'
-                          ? 'افتح جميع فئات مرحلتك وطريقة الحل والتقارير الشخصية. التفعيل حالياً بكود من الإدارة، دون عرض أسعار.'
-                          : 'Unlock all topics in your stage, preview solutions and access personal reports. Activation uses an admin-issued code; no prices are shown.',
-                          style: Theme.of(context).textTheme.bodyMedium),
-                        const SizedBox(height: AppSpacing.md),
-                        OutlinedButton.icon(
-                          onPressed: () => Navigator.pushNamed(context, AppRoutes.premiumBenefits),
-                          icon: const Icon(Icons.arrow_circle_up_rounded),
-                          label: Text(context.locale.languageCode == 'ar'
-                            ? 'المميزات وترقية الحساب' : 'Benefits & upgrade'),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                ] else
-                  const SizedBox(height: AppSpacing.md),
-                if (backendMismatch) ...[
-                  GlassCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(children: [
-                          const Icon(Icons.sync_problem_rounded,
-                              color: AppColors.warning),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: Text(
-                              context.locale.languageCode == 'ar'
-                                  ? 'تحديث بيانات التعلّم'
-                                  : 'Learning services need an update',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          ),
-                        ]),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text('server_feature_unavailable'.tr()),
-                        const SizedBox(height: AppSpacing.sm),
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            ref.invalidate(learningJourneyProvider);
-                            ref.invalidate(dailyChallengeProvider);
-                            ref.invalidate(studentBadgesProvider);
-                          },
-                          icon: const Icon(Icons.refresh_rounded),
-                          label: Text('retry'.tr()),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                ],
-                learningJourney.when(
-                  data: (journey) => journey == null
-                      ? const SizedBox.shrink()
-                      : Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-                          child: AnimatedEntry(
-                            child: _LearningJourneyCard(journey: journey, onOpenStages: onOpenStages),
-                          ),
-                        ),
-                  error: (error, _) => isBackendMismatch(error)
-                      ? const SizedBox.shrink()
-                      : Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                    child: _JourneyStatusCard(
-                      isLoading: false,
-                      message: localizedErrorMessage(error),
-                      onRetry: () => ref.invalidate(learningJourneyProvider),
-                    ),
-                  ),
-                  loading: () => const Padding(
-                    padding: EdgeInsets.only(bottom: AppSpacing.lg),
-                    child: AppLoadingView(mode:AppLoadingMode.section),
-                  ),
-                ),
-                if (learningJourney.valueOrNull?.learningSessionsEnabled == true)
-                  LearningSessionCards(journey: learningJourney.valueOrNull!),
-                Card(child:ListTile(
-                  leading:const Icon(Icons.insights_rounded,color:Color(0xFF0F766E)),
-                  title:Text(context.locale.languageCode=='ar'?'التقارير والإحصائيات':'Reports & analytics'),
-                  subtitle:Text(context.locale.languageCode=='ar'?'تقدمك في الصف الحالي':'Your current grade progress'),
-                  trailing:const Icon(Icons.arrow_forward_ios,size:16),
-                  onTap:()=>Navigator.pushNamed(context,AppRoutes.premiumReport),
-                )),
-                if(examsEnabled)
-                  Card(child:ListTile(
-                    leading:Icon(Icons.school_outlined,color:Theme.of(context).colorScheme.primary),
-                    title:Text(context.locale.languageCode=='ar'?'الامتحانات المخصصة':'Custom exams'),
-                    subtitle:Text(context.locale.languageCode=='ar'?'امتحن نفسك واحصل على شهادة اجتياز':'Test yourself and earn an exam certificate'),
-                    onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const CustomExamsScreen())),
-                    trailing:const Icon(Icons.arrow_forward_ios,size:16),
-                  )),
-                if (learningJourney.valueOrNull?.certificatesEnabled == true)
-                  Card(child:ListTile(
-                    leading:const Icon(Icons.workspace_premium_outlined,color:AppColors.rewardGold),
-                    title:Text(context.locale.languageCode=='ar'?'شهاداتي التعليمية':'My learning certificates'),
-                    onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>CertificatesScreen(journey:learningJourney.valueOrNull!))),
-                    trailing:const Icon(Icons.arrow_forward_ios,size:16),
-                  )),
-                if (learningJourney.valueOrNull?.learningSessionsEnabled != true)
-                dailyPractice.when(
-                  data: (challenge) => challenge == null
-                      ? const SizedBox.shrink()
-                      : Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-                          child: AnimatedEntry(
-                            child: _DailyPracticeCard(
-                              challenge: challenge,
-                              onOpen: (problemId) async {
-                                var nextId = problemId;
-                                for (var step = 0; step < 5; step++) {
-                                  final submitted = await Navigator.pushNamed(
-                                    context, AppRoutes.problemDetails,
-                                    arguments: {
-                                      'problemId': nextId,
-                                      'dailyChallenge': true,
-                                    },
-                                  );
-                                  if (!context.mounted) return;
-                                  ref.invalidate(dailyChallengeProvider);
-                                  ref.invalidate(dashboardProvider);
-                                  ref.invalidate(learningJourneyProvider);
-                                  if (submitted != true) break;
-                                  final latest = await ref.read(dailyChallengeProvider.future);
-                                  if (!context.mounted || latest == null) return;
-                                  final waiting = latest.problems.where((p) => !p.isAnswered);
-                                  if (waiting.isEmpty) break;
-                                  nextId = waiting.first.id;
-                                }
-                                ref.invalidate(dailyChallengeProvider);
-                              },
-                            ),
-                          ),
-                        ),
-                  loading: () => const Padding(
-                    padding: EdgeInsets.only(bottom: AppSpacing.lg),
-                    child: AppLoadingView(mode:AppLoadingMode.section),
-                  ),
-                  error: (error, _) => isBackendMismatch(error)
-                      ? const SizedBox.shrink()
-                      : Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-                    child: GlassCard(child: Row(children: [
-                      const Icon(Icons.refresh_outlined,
-                        color: AppColors.warning),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(child: Text(localizedErrorMessage(error))),
-                      IconButton(
-                        tooltip: context.locale.languageCode == 'ar'
-                          ? 'إعادة المحاولة' : 'Retry',
-                        onPressed: () => ref.invalidate(dailyChallengeProvider),
-                        icon: const Icon(Icons.refresh_rounded),
-                      ),
-                    ])),
-                  ),
-                ),
-                if (learningJourney.valueOrNull != null) ...[
-                  AnimatedEntry(
-                    index: 1,
-                    child: _StatsGrid(journey: learningJourney.valueOrNull!),
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.xl),
-                if (!isBackendMismatch(badges.asError?.error))
-                  const StudentBadgesCard(),
-                const SizedBox(height: AppSpacing.xl),
-                const SizedBox(height: AppSpacing.xxl),
-                AnimatedEntry(
-                  index: 3,
-                  child: _SectionHeader(title: 'recent_activity'.tr()),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                if (dashboard.recentActivities.isEmpty)
-                  AppEmptyView(
-                    icon: Icons.timeline_rounded,
-                    title: 'no_activity_yet'.tr(),
-                  )
-                else
-                  GlassCard(
-                    padding: EdgeInsets.zero,
-                    child: Column(
-                      children: dashboard.recentActivities
-                          .take(4)
-                          .toList()
-                          .asMap()
-                          .entries
-                          .map((entry) {
-                        final activity = entry.value;
-                        return Column(
-                          children: [
-                            ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.lg,
-                                vertical: AppSpacing.sm,
-                              ),
-                              leading: Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  color: AppColors.success.withValues(
-                                    alpha: 0.12,
-                                  ),
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: const Icon(
-                                  Icons.check_rounded,
-                                  color: AppColors.success,
-                                ),
-                              ),
-                              title: RichMathText(
-                                text: activity.title,
-                                inline: true,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                              subtitle: Padding(
-                                padding: const EdgeInsets.only(
-                                  top: AppSpacing.xs,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(activity.categoryName),
-                                    if (activity.solvedAt != null)
-                                      Text(
-                                        formatLocalizedDateTime(
-                                          context,
-                                          activity.solvedAt,
-                                        ),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              trailing: LayoutUtils.forwardIcon(context),
-                              onTap: () => Navigator.pushNamed(
-                                context,
-                                AppRoutes.problemDetails,
-                                arguments: activity.problemId,
-                              ),
-                            ),
-                            if (entry.key <
-                                dashboard.recentActivities.take(4).length - 1)
-                              const Divider(
-                                height: 1,
-                                indent: 72,
-                                endIndent: 16,
-                              ),
-                          ],
-                        );
-                      }).toList(),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+        ])),
+      ]),
+    ];
+    return MathBackground(showSymbols:false,child:SafeArea(bottom:false,child:RefreshIndicator(
+      onRefresh:()async{
+        ref.invalidate(studentBadgesProvider);
+        try{await Future.wait([ref.refresh(dashboardProvider.future),ref.refresh(learningJourneyProvider.future)]);}catch(_){}
+      },
+      child:ListView.separated(physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.fromLTRB(16,16,16,24),
+        itemCount:sections.length,itemBuilder:(_,i)=>sections[i],separatorBuilder:(_,__)=>const SizedBox(height:24)),
+    )));
   }
 }
-
+class _Metric extends StatelessWidget {
+  final String label,value;
+  final Color color;
+  final IconData? icon;
+  const _Metric({required this.label,required this.value,required this.color,this.icon});
+  @override Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+    Row(children:[if(icon!=null)...[Icon(icon,color:color,size:16),const SizedBox(width:4)],Flexible(child:Text(value,style:Theme.of(context).textTheme.titleMedium?.copyWith(color:color,fontWeight:FontWeight.w800),maxLines:1,overflow:TextOverflow.ellipsis))]),
+    Text(label,style:Theme.of(context).textTheme.labelSmall,maxLines:2),
+  ]);
+}
+class _TrainingScreen extends StatelessWidget {
+  final LearningJourney journey;
+  const _TrainingScreen({required this.journey});
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:Text(context.locale.languageCode=='ar'?'التدريب والتحديات':'Practice & challenges')),body:SafeArea(child:ListView(padding:const EdgeInsets.all(16),children:[LearningSessionCards(journey:journey)])));
+}
+class _DailyChallengeScreen extends ConsumerWidget {
+  const _DailyChallengeScreen();
+  @override Widget build(BuildContext context,WidgetRef ref){
+    final state=ref.watch(dailyChallengeProvider);
+    final ar=context.locale.languageCode=='ar';
+    return Scaffold(appBar:AppBar(title:Text(ar?'تحدي اليوم':'Daily challenge')),body:SafeArea(child:state.when(
+      loading:()=>const AppContentSkeleton(count:3),
+      error:(e,_)=>AppErrorView(message:localizedErrorMessage(e),onRetry:()=>ref.invalidate(dailyChallengeProvider)),
+      data:(challenge)=>challenge==null?Center(child:Text(ar?'لا يوجد تحدٍ متاح حالياً':'No challenge currently available')):ListView(padding:const EdgeInsets.all(16),children:[
+        _DailyPracticeCard(challenge:challenge,onOpen:(id)async{
+          var nextId=id;
+          for(var step=0;step<5;step++){
+            final submitted=await Navigator.pushNamed(context,AppRoutes.problemDetails,arguments:{'problemId':nextId,'dailyChallenge':true});
+            if(!context.mounted||submitted!=true)break;
+            ref.invalidate(dailyChallengeProvider);ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);ref.invalidate(studentBadgesProvider);
+            try{
+              final latest=await ref.read(dailyChallengeProvider.future);
+              if(!context.mounted||latest==null)break;
+              final waiting=latest.problems.where((p)=>!p.isAnswered);
+              if(waiting.isEmpty)break;
+              nextId=waiting.first.id;
+            }catch(_){break;}
+          }
+        }),
+      ]),
+    )));
+  }
+}
 class _DailyPracticeCard extends StatelessWidget {
   const _DailyPracticeCard({
     required this.challenge,
@@ -592,477 +366,5 @@ class _DailyPracticeCard extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Keep journey errors visible without replacing the rest of the dashboard.
-/// The learner can still practice while the optional journey API is down.
-class _JourneyStatusCard extends StatelessWidget {
-  const _JourneyStatusCard({
-    required this.isLoading,
-    this.message,
-    this.onRetry,
-  });
-
-  final bool isLoading;
-  final String? message;
-  final VoidCallback? onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final ar = context.locale.languageCode == 'ar';
-    final scheme = Theme.of(context).colorScheme;
-    return Semantics(
-      liveRegion: true,
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: scheme.outlineVariant),
-        ),
-        child: Row(
-          children: [
-            if (isLoading)
-              const SizedBox.square(
-                dimension: 36,
-                child: Center(child: AppInlineLoader(size:24)),
-              )
-            else
-              Icon(Icons.school_outlined, color: scheme.onSurfaceVariant, size: 36),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isLoading
-                        ? (ar ? 'جارٍ تحميل رحلتك التعليمية…'
-                            : 'Loading your learning journey…')
-                        : (ar ? 'تعذّر تحميل تقدّم المرحلة'
-                            : 'Stage progress is unavailable'),
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  if (!isLoading) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      message ??
-                          (ar ? 'باقي ميزات المنصة متاحة.'
-                              : 'You can still use the rest of the platform.'),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            if (!isLoading && onRetry != null)
-              IconButton(
-                onPressed: onRetry,
-                tooltip: ar ? 'إعادة تحميل التقدّم' : 'Retry stage progress',
-                icon: const Icon(Icons.refresh_rounded),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _HeroCard extends ConsumerWidget {
-  final DashboardStats dashboard;
-  final LearningJourney? journey;
-  final VoidCallback onContinue;
-
-  const _HeroCard({
-    required this.dashboard,
-    required this.journey,
-    required this.onContinue,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final ar = context.locale.languageCode == 'ar';
-    final user = ref.watch(authProvider.select((state) => state.user));
-    final premium = user?.subscriptionType.toLowerCase() == 'premium';
-    final initial = dashboard.fullName.trim().isEmpty
-        ? 'M'
-        : dashboard.fullName.trim().characters.first.toUpperCase();
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        gradient: isDark ? AppGradients.darkHero : AppGradients.lightHero,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: isDark ? .10 : .06),
-            blurRadius: 20,
-            offset: const Offset(0, 7),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(children: [
-            Container(
-              width: 48, height: 48,
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                gradient: AppGradients.primary,
-                shape: BoxShape.circle,
-              ),
-              child: Text(initial,
-                style: const TextStyle(color: Colors.white,
-                    fontSize: 19, fontWeight: FontWeight.w800)),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(dashboard.fullName,
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800)),
-                const SizedBox(height: AppSpacing.xs),
-                Text(premium ? (ar ? 'حساب Premium' : 'Premium account')
-                  : (ar ? 'حساب Free' : 'Free account'),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
-              ],
-            )),
-          ]),
-          if (journey != null) ...[
-            const SizedBox(height: AppSpacing.md),
-            Text(journey!.getName(context.locale.languageCode),
-              style: Theme.of(context).textTheme.bodyMedium),
-          ],
-          const SizedBox(height: AppSpacing.lg),
-          PremiumButton(
-            onPressed: onContinue,
-            label: ar ? 'تابع التعلم' : 'Continue learning',
-            trailingIcon: Icons.arrow_forward_rounded,
-            expand: true,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatsGrid extends StatelessWidget {
-  final LearningJourney journey;
-
-  const _StatsGrid({required this.journey});
-
-  @override
-  Widget build(BuildContext context) {
-    final items = [
-      _StatData(
-        Icons.check_circle_outline_rounded,
-        '${journey.solvedProblems}',
-        'stage_solved'.tr(),
-        AppColors.success,
-      ),
-      _StatData(
-        Icons.star_rounded,
-        '${journey.displayedPoints}',
-        'stage_points'.tr(),
-        AppColors.rewardGold,
-      ),
-      _StatData(
-        Icons.trending_up_rounded,
-        '${journey.completionPercent}%',
-        'stage_completion'.tr(),
-        AppColors.success,
-      ),
-      _StatData(
-        Icons.favorite_border_rounded,
-        '${journey.attemptedProblems}',
-        'stage_attempted'.tr(),
-        AppColors.error,
-      ),
-    ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Small phones and large accessibility text need room for Arabic labels.
-        final columns = constraints.maxWidth >= 720
-            ? 4
-            : constraints.maxWidth < 350
-                ? 1
-                : 2;
-        final width =
-            (constraints.maxWidth - AppSpacing.md * (columns - 1)) / columns;
-        return Wrap(
-          spacing: AppSpacing.md,
-          runSpacing: AppSpacing.md,
-          children: items.map((item) {
-            return SizedBox(
-              width: width,
-              child: GlassCard(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: item.color.withValues(alpha: 0.11),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(item.icon, color: item.color == AppColors.rewardGold ? AppColors.pointsGold(context) : item.color),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    if (item.color == AppColors.rewardGold)
-                      Text(item.value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800,color: AppColors.pointsGold(context)))
-                    else ShaderMask(
-                      shaderCallback: AppGradients.primary.createShader,
-                      blendMode: BlendMode.srcIn,
-                      child: Text(
-                        item.value,
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w800, color: Colors.white),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      item.label,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        );
-      },
-    );
-  }
-}
-
-class _ContinueLearningCard extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _ContinueLearningCard({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GlassCard(
-      gradient: isDark ? AppGradients.darkHero : AppGradients.lightHero,
-      border: BorderSide(
-        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.20),
-      ),
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  gradient: AppGradients.primary,
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Icon(
-                  Icons.functions_rounded,
-                  color: Colors.white,
-                  size: 29,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.lg),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'continue_learning'.tr(),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      context.locale.languageCode == 'ar'
-                          ? 'ابدأ حل المسائل ضمن الفئات المتاحة.'
-                          : 'See your two unlocked stage topics and start practising step by step.',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          PremiumButton(
-            onPressed: onTap,
-            label: context.locale.languageCode == 'ar'
-                ? 'ابدأ من فئاتي المفتوحة'
-                : 'Start with my unlocked topics',
-            trailingIcon: Icons.arrow_forward_rounded,
-            expand: true,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LearningJourneyCard extends StatelessWidget {
-  final LearningJourney journey;
-  final VoidCallback onOpenStages;
-
-  const _LearningJourneyCard({
-    required this.journey,
-    required this.onOpenStages,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final language = context.locale.languageCode;
-    final color = AppColors.stageForIdentity(journey.stageId, journey.nameEn);
-    final reviewCount = journey.categories.where((category) =>
-        !category.isLocked &&
-        category.attemptedProblems > category.solvedProblems).length;
-
-    return GlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            StageMathGlyph(stageOrder: journey.stageId, color: color, size: 30),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(child: Text(language == 'ar' ? 'تقدّمي' : 'My progress',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w900, color: color))),
-          ]),
-          const SizedBox(height: AppSpacing.xs),
-          Text(journey.getName(language),
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: color)),
-          const SizedBox(height: AppSpacing.lg),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'stage_completion'.tr(),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Text('${journey.completionPercent}%',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.success)),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Semantics(
-            label: 'stage_completion'.tr(),
-            value: '${journey.completionPercent}%',
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: SizedBox(
-                height: 8,
-                child: LayoutBuilder(
-                  builder: (context, limits) => Stack(children: [
-                    Container(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.45)),
-                    Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: Container(
-                        width: limits.maxWidth *
-                            (journey.completionPercent.clamp(0, 100) / 100),
-                        decoration: const BoxDecoration(
-                          color: AppColors.success,
-                        ),
-                      ),
-                    ),
-                  ]),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Wrap(
-            spacing: AppSpacing.lg,
-            runSpacing: AppSpacing.sm,
-            children: [
-              _StageStat(
-                title: 'stage_solved'.tr(),
-                value: '${journey.solvedProblems}/${journey.totalProblems}',
-              ),
-              _StageStat(
-                title: 'stage_attempted'.tr(),
-                value: '${journey.attemptedProblems}',
-              ),
-              _StageStat(
-                title: 'stage_points'.tr(),
-                value: '${journey.displayedPoints}',
-                gold: true,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          if (reviewCount > 0) ...[
-            OutlinedButton.icon(
-              onPressed: () => Navigator.pushNamed(
-                context, AppRoutes.errorNotebook,
-              ),
-              icon: const Icon(Icons.auto_stories_outlined),
-              label: Text(language == 'ar'
-                  ? 'راجع أخطاءك في دفتر المراجعة'
-                  : 'Review your attempts in the error notebook'),
-            ),
-            const SizedBox(height: AppSpacing.md),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _StageStat extends StatelessWidget {
-  final String title;
-  final String value;
-
-  final bool gold;
-  const _StageStat({required this.title, required this.value,this.gold=false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(value, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: gold ? (AppColors.pointsGold(context)) : null)),
-        Text(title, style: Theme.of(context).textTheme.bodySmall),
-      ],
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(title, style: Theme.of(context).textTheme.titleLarge);
-  }
-}
-
-class _StatData {
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
-
-  const _StatData(this.icon, this.value, this.label, this.color);
 }
 
