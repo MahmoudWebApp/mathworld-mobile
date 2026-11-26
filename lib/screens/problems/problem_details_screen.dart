@@ -646,6 +646,7 @@ class _ProblemHeader extends StatelessWidget {
                       problem.isFavorite
                           ? Icons.favorite_rounded
                           : Icons.favorite_border_rounded,
+                      color: AppColors.error,
                     ),
             ),
           ],
