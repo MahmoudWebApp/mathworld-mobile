@@ -77,7 +77,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return Scaffold(
       appBar: AppBar(),
       body: MathBackground(
-        showSymbols:false,
+        showSymbols: true,
         child: SafeArea(
           top: false,
           child: Center(
@@ -86,6 +86,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 460),
                 child: MobilePanel(
+                  gradient: Theme.of(context).brightness == Brightness.dark
+                      ? AppGradients.darkHero : AppGradients.lightHero,
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Form(
                     key: _formKey,
