@@ -625,7 +625,7 @@ class _JourneyStatusCard extends StatelessWidget {
             if (isLoading)
               const SizedBox.square(
                 dimension: 36,
-                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                child: Center(child: AppInlineLoader(size:24)),
               )
             else
               Icon(Icons.school_outlined, color: scheme.onSurfaceVariant, size: 36),
