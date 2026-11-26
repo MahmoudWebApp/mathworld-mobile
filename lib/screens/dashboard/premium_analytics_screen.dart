@@ -220,10 +220,10 @@ class _ReportBody extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(stat.$3, color: index == 3 ? AppColors.rewardGold : color, size: 23),
+                      Icon(stat.$3, color: index == 3 ? AppColors.pointsGold(context) : color, size: 23),
                       const SizedBox(height: AppSpacing.sm),
                       Text('${stat.$2}', style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w800, color: index == 3 ? (Theme.of(context).brightness == Brightness.dark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk) : null)),
+                          ?.copyWith(fontWeight: FontWeight.w800, color: index == 3 ? (AppColors.pointsGold(context)) : null)),
                       Text(
                         stat.$1,
                         maxLines: 2,
