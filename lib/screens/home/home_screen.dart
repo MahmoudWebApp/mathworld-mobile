@@ -30,6 +30,7 @@ import '../../widgets/rich_math_text.dart';
 import '../../widgets/stage_math_glyph.dart';
 import '../../widgets/learning_session_cards.dart';
 import '../certificates/certificates_screen.dart';
+import '../premium/custom_exams_screen.dart';
 
 /// Displays the user dashboard, progress summary, and learning shortcuts.
 class HomeScreen extends ConsumerWidget {
@@ -46,6 +47,7 @@ class HomeScreen extends ConsumerWidget {
     final learningJourney = ref.watch(learningJourneyProvider);
     final dailyPractice = ref.watch(dailyChallengeProvider);
     final badges = ref.watch(studentBadgesProvider);
+    final examsEnabled=ref.watch(customExamAvailabilityProvider).valueOrNull==true;
     // An outdated backend often rejects several optional learning endpoints
     // at once. Show one actionable explanation instead of many error cards.
     bool isBackendMismatch(Object? error) =>
@@ -261,6 +263,14 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 if (learningJourney.valueOrNull?.learningSessionsEnabled == true)
                   LearningSessionCards(journey: learningJourney.valueOrNull!),
+                if(examsEnabled)
+                  Card(child:ListTile(
+                    leading:Icon(Icons.school_outlined,color:Theme.of(context).colorScheme.primary),
+                    title:Text(context.locale.languageCode=='ar'?'الامتحانات المخصصة':'Custom exams'),
+                    subtitle:Text(context.locale.languageCode=='ar'?'امتحن نفسك واحصل على شهادة اجتياز':'Test yourself and earn an exam certificate'),
+                    onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const CustomExamsScreen())),
+                    trailing:const Icon(Icons.arrow_forward_ios,size:16),
+                  )),
                 if (learningJourney.valueOrNull?.certificatesEnabled == true)
                   Card(child:ListTile(
                     leading:const Icon(Icons.workspace_premium_outlined,color:AppColors.rewardGold),
