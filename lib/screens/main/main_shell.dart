@@ -181,10 +181,10 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
                     ref.invalidate(learningJourneyProvider);
                     try {
                       final journey = await ref.read(learningJourneyProvider.future);
-                      if (!mounted || journey?.learningSessionsEnabled != true) return;
+                      if (!mounted || journey == null || !journey.learningSessionsEnabled) return;
                       await Navigator.push(context, MaterialPageRoute<void>(
                         builder: (_) => LearningSessionScreen(scope: SessionScope(
-                          kind: 'daily', stageId: journey!.stageId, trackId: journey.trackId)),
+                          kind: 'daily', stageId: journey.stageId, trackId: journey.trackId)),
                       ));
                       if (mounted) {
                         ref.invalidate(learningJourneyProvider);
