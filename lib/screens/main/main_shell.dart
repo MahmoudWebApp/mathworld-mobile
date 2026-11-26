@@ -213,11 +213,15 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
                   }
                 }
               },
-              icon: Stack(
+              icon: Consumer(builder: (context, ref, _) {
+                final hasUnread = ref.watch(notificationInboxProvider.select(
+                  (state) => (state.valueOrNull?.unreadCount ?? 0) > 0,
+                ));
+                return Stack(
                 clipBehavior: Clip.none,
                 children: [
                   const Icon(Icons.notifications_none_rounded),
-                  if ((ref.watch(notificationInboxProvider).valueOrNull?.unreadCount ?? 0) > 0)
+                  if (hasUnread)
                     Positioned(
                       top: 0,
                       right: 0,
@@ -235,7 +239,8 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
                       ),
                     ),
                 ],
-              ),
+              );
+              }),
             ),
           ],
         ),
