@@ -226,6 +226,6 @@ class _ChoiceCard extends StatelessWidget {
         trailing:Icon(selected?Icons.check_circle:Icons.radio_button_unchecked,color:selected?accent:Theme.of(context).colorScheme.onSurfaceVariant),
         onTap:onTap,
       ),
-    ));
+    );
   }
 }
