@@ -83,7 +83,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
     return Scaffold(
       body: MathBackground(
-        showSymbols: false,
+        showSymbols: true,
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -91,6 +91,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 460),
                 child: MobilePanel(
+                  gradient: Theme.of(context).brightness == Brightness.dark
+                      ? AppGradients.darkHero : AppGradients.lightHero,
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Form(
                     key: _formKey,

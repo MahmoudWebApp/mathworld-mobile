@@ -31,8 +31,9 @@ String _badgeUnit(String unit, bool ar) => switch (unit) {
 };
 
 class StudentBadgesCard extends ConsumerWidget {
-  const StudentBadgesCard({super.key,this.showAll=false});
+  const StudentBadgesCard({super.key,this.showAll=false,this.loadSummary=true});
   final bool showAll;
+  final bool loadSummary;
 
   void _showPremiumBadge(BuildContext context, String badgeName, bool ar) {
     showModalBottomSheet<void>(
@@ -136,11 +137,12 @@ class StudentBadgesCard extends ConsumerWidget {
   });
   @override Widget build(BuildContext context,WidgetRef ref){
     final ar=context.locale.languageCode=='ar';
-    final state=ref.watch(studentBadgesProvider);
+    final state=loadSummary||showAll?ref.watch(studentBadgesProvider):null;
     return Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
       MobileSectionTitle(title:ar?'الشارات والإنجازات':'Badges & achievements',actionLabel:showAll?(ar?'تحديث':'Refresh'):(ar?'عرض الكل':'View all'),onAction:showAll?()=>ref.invalidate(studentBadgesProvider):()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>Scaffold(appBar:AppBar(title:Text(ar?'جميع الشارات':'All badges')),body:SafeArea(child:SingleChildScrollView(padding:const EdgeInsets.all(16),child:const StudentBadgesCard(showAll:true))))))),
       const SizedBox(height:8),
-      state.when(loading:()=>_placeholder(context),error:(_,__)=>TextButton.icon(onPressed:()=>ref.invalidate(studentBadgesProvider),icon:const Icon(Icons.refresh),label:Text(ar?'تعذّر تحميل الشارات':'Could not load badges')),data:(result){
+      if(state==null)Text(ar?'عرض الشارات والإنجازات':'View badges and achievements',style:Theme.of(context).textTheme.bodySmall)
+      else state.when(loading:()=>_placeholder(context),error:(_,__)=>TextButton.icon(onPressed:()=>ref.invalidate(studentBadgesProvider),icon:const Icon(Icons.refresh),label:Text(ar?'تعذّر تحميل الشارات':'Could not load badges')),data:(result){
         final badges=result.badges;
         final featured=_featured(badges);
         final groups=<String,List<MathBadge>>{

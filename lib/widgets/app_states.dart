@@ -117,8 +117,8 @@ class AppLoadingView extends StatelessWidget {
   Widget build(BuildContext context) => LayoutBuilder(builder:(context, constraints) {
     if(mode!=AppLoadingMode.data) {
       final height=constraints.hasBoundedHeight
-          ? constraints.maxHeight.clamp(0.0,88.0).toDouble():88.0;
-      return SizedBox(height:height,child:const Center(child:AppInlineLoader(size:24)));
+          ? constraints.maxHeight.clamp(0.0,48.0).toDouble():48.0;
+      return SizedBox(height:height,child:const Center(child:AppInlineLoader(size:20)));
     }
     return SizedBox(
       height:constraints.hasBoundedHeight?constraints.maxHeight:320,

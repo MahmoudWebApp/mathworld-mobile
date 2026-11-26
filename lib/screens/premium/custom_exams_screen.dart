@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:easy_localization/easy_localization.dart';
@@ -21,6 +22,9 @@ final customExamAvailabilityProvider=FutureProvider.autoDispose<bool>((ref) asyn
 });
 final customExamHistoryProvider=FutureProvider.autoDispose.family<List<Map<String,dynamic>>,int>((ref,owner) async{
   if(ref.watch(authProvider.select((s)=>s.user?.id))!=owner)return [];
+  final lease=ref.keepAlive();
+  final expiry=Timer(const Duration(seconds:60),lease.close);
+  ref.onDispose(expiry.cancel);
   final response=await ref.watch(apiClientProvider).get('/users/custom-exams');
   return rows(ApiEnvelope.map(response.data)['Items']);
 });

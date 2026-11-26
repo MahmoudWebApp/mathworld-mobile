@@ -1,8 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mathworld_mobile/widgets/mobile_section.dart';
+import 'package:mathworld_mobile/config/design_tokens.dart';
 
 void main(){
+  testWidgets('mobile panels use branded borders even with a black outlineVariant',(tester)async{
+    for(final brightness in [Brightness.light,Brightness.dark]){
+      final scheme=ColorScheme.fromSeed(seedColor:AppColors.brandPurple,brightness:brightness).copyWith(outlineVariant:Colors.black);
+      await tester.pumpWidget(MaterialApp(theme:ThemeData(colorScheme:scheme),home:const Scaffold(body:MobilePanel(child:Text('Panel')))));
+      final panel=find.descendant(of:find.byType(MobilePanel),matching:find.byType(DecoratedBox));
+      final decoration=tester.widget<DecoratedBox>(panel.first).decoration as BoxDecoration;
+      final border=decoration.border as Border;
+      expect(border.top.color,brightness==Brightness.dark?AppColors.darkBorder:AppColors.lightBorder);
+      expect(border.top.color,isNot(Colors.black));
+      expect(tester.takeException(),isNull);
+    }
+  });
+
   testWidgets('gold medal uses yellow artwork and green earned indicator',(tester)async{
     await tester.pumpWidget(const MaterialApp(home:Scaffold(body:MobileMedal(icon:Icons.emoji_events_rounded,earned:true))));
     expect(find.byIcon(Icons.check_circle),findsOneWidget);
