@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/mathworld_pagination.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/app_routes.dart';
@@ -284,16 +285,10 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                           const SizedBox(height: AppSpacing.lg),
                       itemBuilder: (context, index) {
                         if (index == result.problems.length) {
-                          return _PaginationControls(
-                            page: result.page,
-                            totalPages: result.totalPages,
-                            onPrevious: result.page > 1
-                                ? () => setState(() => _page--)
-                                : null,
-                            onNext: result.hasMorePages
-                                ? () => setState(() => _page++)
-                                : null,
-                          );
+                          return Padding(padding:const EdgeInsets.symmetric(vertical:AppSpacing.lg),child:MathWorldPagination(
+                            page:result.page,pageCount:result.totalPages,arabic:context.locale.languageCode=='ar',
+                            onChanged:(page)=>setState(()=>_page=page),
+                          ));
                         }
 
                         final problem = result.problems[index];
@@ -320,56 +315,6 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _PaginationControls extends StatelessWidget {
-  final int page;
-  final int totalPages;
-  final VoidCallback? onPrevious;
-  final VoidCallback? onNext;
-
-  const _PaginationControls({
-    required this.page,
-    required this.totalPages,
-    required this.onPrevious,
-    required this.onNext,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        top: AppSpacing.lg,
-        bottom: AppSpacing.xl,
-      ),
-      child: Row(
-        children: [
-          IconButton.filledTonal(
-            onPressed: onPrevious,
-            tooltip: 'previous'.tr(),
-            icon: LayoutUtils.previousPageIcon(context),
-          ),
-          Expanded(
-            child: Text(
-              'page_of'.tr(
-                namedArgs: {
-                  'page': '$page',
-                  'total': '$totalPages',
-                },
-              ),
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-          IconButton.filledTonal(
-            onPressed: onNext,
-            tooltip: 'next'.tr(),
-            icon: LayoutUtils.nextPageIcon(context),
-          ),
-        ],
       ),
     );
   }

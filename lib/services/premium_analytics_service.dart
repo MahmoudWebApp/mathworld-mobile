@@ -34,6 +34,8 @@ class PremiumCategoryStatistics {
     required this.categoryNameAr,
     required this.categoryNameEn,
     required this.attemptedProblems,
+    this.totalProblems,
+    this.masteredProblems,
     required this.solvedProblems,
     required this.errorNotebookProblems,
     required this.attempts,
@@ -51,6 +53,8 @@ class PremiumCategoryStatistics {
   final String categoryNameAr;
   final String categoryNameEn;
   final int attemptedProblems;
+  final int? totalProblems;
+  final int? masteredProblems;
   final int solvedProblems;
   final int errorNotebookProblems;
   final int attempts;
@@ -69,6 +73,8 @@ class PremiumCategoryStatistics {
         categoryNameAr: _requiredText(json, 'CategoryNameAr'),
         categoryNameEn: _requiredText(json, 'CategoryNameEn'),
         attemptedProblems: _nonnegativeInt(json, 'AttemptedProblems'),
+        totalProblems: _field(json, 'TotalProblems') == null ? null : _nonnegativeInt(json, 'TotalProblems'),
+        masteredProblems: _field(json, 'MasteredProblems') == null ? null : _nonnegativeInt(json, 'MasteredProblems'),
         solvedProblems: _nonnegativeInt(json, 'SolvedProblems'),
         errorNotebookProblems: _nonnegativeInt(json, 'ErrorNotebookProblems'),
         attempts: _nonnegativeInt(json, 'Attempts'),
@@ -93,6 +99,7 @@ class PremiumAnalyticsReport {
   const PremiumAnalyticsReport({
     required this.generatedAtUtc,
     required this.attemptedProblems,
+    this.totalProblems,
     required this.solvedProblems,
     required this.attempts,
     required this.correctAttempts,
@@ -101,12 +108,14 @@ class PremiumAnalyticsReport {
     required this.awardedPoints,
     required this.timeSpentSeconds,
     required this.categories,
+    this.recentAttempts,
     this.scoreBasis='ActiveProgress',
     this.filter=allAnalytics,
   });
 
   final DateTime generatedAtUtc;
   final int attemptedProblems;
+  final int? totalProblems;
   final int solvedProblems;
   final int attempts;
   final int correctAttempts;
@@ -115,6 +124,7 @@ class PremiumAnalyticsReport {
   final int awardedPoints;
   final int timeSpentSeconds;
   final List<PremiumCategoryStatistics> categories;
+  final List<PremiumRecentAttempt>? recentAttempts;
   final String scoreBasis;
   final AnalyticsFilter filter;
 
@@ -122,6 +132,7 @@ class PremiumAnalyticsReport {
       PremiumAnalyticsReport(
         generatedAtUtc: _reportDate(json),
         attemptedProblems: _nonnegativeInt(json, 'AttemptedProblems'),
+        totalProblems: _field(json, 'TotalProblems') == null ? null : _nonnegativeInt(json, 'TotalProblems'),
         solvedProblems: _nonnegativeInt(json, 'SolvedProblems'),
         attempts: _nonnegativeInt(json, 'Attempts'),
         correctAttempts: _nonnegativeInt(json, 'CorrectAttempts'),
@@ -130,9 +141,39 @@ class PremiumAnalyticsReport {
         awardedPoints: _nonnegativeInt(json, 'AwardedPoints'),
         timeSpentSeconds: _nonnegativeInt(json, 'TimeSpentSeconds'),
         categories: _categories(json),
+        recentAttempts: _recentAttempts(json),
         scoreBasis: _field(json,'ScoreBasis')=='PermanentAchievements'?'PermanentAchievements':'ActiveProgress',
         filter:(stageId:_optionalPositive(json,'FilterStageId'),categoryId:_optionalPositive(json,'FilterCategoryId'),trackId:_optionalPositive(json,'FilterTrackId'),days:_optionalPositive(json,'WindowDays')),
       );
+}
+
+class PremiumRecentAttempt {
+  const PremiumRecentAttempt({required this.problemId, required this.titleAr,
+    required this.titleEn, required this.isCorrect, required this.submittedAtUtc});
+  final int problemId;
+  final String titleAr, titleEn;
+  final bool isCorrect;
+  final DateTime submittedAtUtc;
+}
+
+List<PremiumRecentAttempt>? _recentAttempts(Map<String,dynamic> json) {
+  final raw = _field(json, 'RecentAttempts');
+  if (raw == null) return null;
+  if (raw is! List || raw.length > 10) {
+    throw const FormatException('Invalid recent attempts');
+  }
+  return List<PremiumRecentAttempt>.unmodifiable(raw.map((item) {
+    if (item is! Map) throw const FormatException('Invalid recent attempt');
+    final row = Map<String,dynamic>.from(item);
+    final correct = _field(row, 'IsCorrect');
+    final date = DateTime.tryParse(_requiredText(row, 'SubmittedAtUtc'));
+    if (correct is! bool || date == null) {
+      throw const FormatException('Invalid recent attempt fields');
+    }
+    return PremiumRecentAttempt(problemId: _nonnegativeInt(row, 'ProblemId'),
+      titleAr: _requiredText(row, 'TitleAr'), titleEn: _requiredText(row, 'TitleEn'),
+      isCorrect: correct, submittedAtUtc: date.toUtc());
+  }));
 }
 
 int? _optionalPositive(Map<String,dynamic> json,String name){
@@ -209,7 +250,14 @@ class PremiumAnalyticsService {
       throw const FormatException('Invalid Premium report response');
     }
     final report=PremiumAnalyticsReport.fromJson(Map<String,dynamic>.from(rawData));
-    if(report.filter!=filter)throw const FormatException('Report scope mismatch');
+    // The server resolves an omitted stage/track to the authenticated student's
+    // current grade. Explicitly requested filters must still match exactly.
+    if ((filter.stageId != null && report.filter.stageId != filter.stageId) ||
+        (filter.trackId != null && report.filter.trackId != filter.trackId) ||
+        report.filter.categoryId != filter.categoryId ||
+        report.filter.days != filter.days) {
+      throw const FormatException('Report scope mismatch');
+    }
     return report;
   }
 }

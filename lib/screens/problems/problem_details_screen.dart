@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/mathworld_feedback.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -217,9 +218,7 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizedErrorMessage(error))),
-      );
+      showMathWorldNotice(context,localizedErrorMessage(error),kind:MathWorldNoticeKind.error);
     }
   }
 }
@@ -529,9 +528,7 @@ class _ProblemContent extends ConsumerWidget {
     }
 
     if (!opened && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('unable_to_open_link'.tr())),
-      );
+      showMathWorldNotice(context,'unable_to_open_link'.tr(),kind:MathWorldNoticeKind.error);
     }
   }
 }
@@ -628,11 +625,17 @@ class _ProblemHeader extends StatelessWidget {
                 text: problem.title,
                 isArabic: isArabic,
                 inline: true,
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
             IconButton.filledTonal(
+              iconSize: 28,
+              style: IconButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                backgroundColor: AppColors.error.withValues(alpha: 0.08),
+                side: const BorderSide(color: AppColors.error),
+              ),
               onPressed: isFavoriteBusy ? null : onToggleFavorite,
               tooltip: problem.isFavorite
                   ? 'remove_from_favorites'.tr()
@@ -666,7 +669,7 @@ class _ProblemHeader extends StatelessWidget {
               label: 'points_value'.tr(
                 namedArgs: {'count': '${problem.points}'},
               ),
-              color: AppColors.warning,
+              color: AppColors.rewardGold,
             ),
           ],
         ),
@@ -839,6 +842,11 @@ class _AnswerResultCard extends StatelessWidget {
                   Text(
                     'points_earned_value'.tr(
                       namedArgs: {'count': '${result.pointsEarned}'},
+                    ),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.rewardGoldBright : AppColors.rewardGoldInk,
                     ),
                   ),
                 ],

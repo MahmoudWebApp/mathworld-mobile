@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/mathworld_feedback.dart';
 import 'dart:convert';
 
 import 'package:cross_file/cross_file.dart';
@@ -22,7 +23,7 @@ class PremiumAnalyticsScreen extends ConsumerStatefulWidget {
   @override ConsumerState<PremiumAnalyticsScreen> createState()=>_PremiumAnalyticsScreenState();
 }
 class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen>{
-  String _scope='all';
+  String _scope='track';
   int _days=0;
   @override
   Widget build(BuildContext context) {
@@ -32,8 +33,8 @@ class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen>
     final enabled=j?.learningSessionsEnabled==true;
     final category=_scope.startsWith('category:')?int.tryParse(_scope.substring(9)):null;
     final validCategory=enabled&&j!.categories.any((c)=>c.categoryId==category)?category:null;
-    final scope=enabled?(_scope=='stage'||(_scope=='track'&&j!.trackId!=null)||validCategory!=null?_scope:'all'):'all';
-    final AnalyticsFilter filter=enabled?(stageId:scope=='all'?null:j!.stageId,categoryId:validCategory,trackId:scope=='track'||validCategory!=null?j!.trackId:null,days:_days==0?null:_days):allAnalytics;
+    final scope=validCategory!=null?_scope:'track';
+    final AnalyticsFilter filter=enabled?(stageId:j!.stageId,categoryId:validCategory,trackId:j.trackId,days:_days==0?null:_days):allAnalytics;
     final reportProvider=filter==allAnalytics?premiumAnalyticsProvider:filteredPremiumAnalyticsProvider(filter);
 
     return Scaffold(
@@ -49,10 +50,10 @@ class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen>
         data: (premium) => premium
             ? Column(children:[
                 if(enabled&&j!=null)Padding(padding:const EdgeInsets.symmetric(horizontal:16,vertical:8),child:Column(children:[
-                  DropdownButtonFormField<String>(decoration:InputDecoration(labelText:ar?'النطاق':'Scope',border:OutlineInputBorder(borderRadius:BorderRadius.circular(12))),isExpanded:true,initialValue:scope,key:ValueKey(scope),onChanged:(v)=>setState(()=>_scope=v??'all'),items:[
-                    DropdownMenuItem(value:'all',child:Text(ar?'جميع المراحل':'All stages')),
-                    DropdownMenuItem(value:'stage',child:Text(ar?'المرحلة الحالية':'Current stage')),
-                    if(j.trackId!=null)DropdownMenuItem(value:'track',child:Text(ar?'الصف أو المساق الحالي':'Current grade or course')),
+                  DropdownButtonFormField<String>(decoration:InputDecoration(labelText:ar?'النطاق':'Scope',border:OutlineInputBorder(borderRadius:BorderRadius.circular(12))),isExpanded:true,initialValue:scope,key:ValueKey(scope),onChanged:(v)=>setState(()=>_scope=v??'track'),items:[
+                    DropdownMenuItem(value:'track',child:Text(ar?'الصف أو المساق الحالي':'Current grade or course')),
+                    
+                    
                     for(final c in j.categories)DropdownMenuItem(value:'category:'+c.categoryId.toString(),child:Text(c.getName(context.locale.languageCode),overflow:TextOverflow.ellipsis)),
                   ]),
                   const SizedBox(height:12),
@@ -119,10 +120,17 @@ class _ReportBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ar = context.locale.languageCode == 'ar';
     final color = Theme.of(context).colorScheme.primary;
+    final total = report.totalProblems;
+    final completion = total != null && total > 0 ? (report.solvedProblems / total).clamp(0.0, 1.0).toDouble() : 0.0;
     final correctness = report.attempts <= 0
         ? 0.0
         : 100 * report.correctAttempts / report.attempts;
 
+    final attemptedCategories=report.categories.where((c)=>c.attempts>0).toList();
+    // Use the observed ratio only, and disclose the underlying attempt count.
+    attemptedCategories.sort((a,b)=>(b.correctAttempts/b.attempts).compareTo(a.correctAttempts/a.attempts));
+    final strongest=attemptedCategories.isNotEmpty?attemptedCategories.first:null;
+    final weakest=attemptedCategories.length>1 && attemptedCategories.last.correctAttempts/attemptedCategories.last.attempts < attemptedCategories.first.correctAttempts/attemptedCategories.first.attempts?attemptedCategories.last:null;
     final metrics = <(String, int, IconData)>[
       (
         ar ? 'مسائل محلولة' : 'Unique solved',
@@ -172,6 +180,13 @@ class _ReportBody extends ConsumerWidget {
                       : 'Stats are calculated from saved attempts, not estimates.'),
                   if(report.scoreBasis=='PermanentAchievements')Text(ar?'النقاط حسب تاريخ اكتسابها، ودفتر الأخطاء يعرض الحالة الحالية. زمن الجلسات الموجهة غير مقاس.':'Points follow original earn dates; review errors show current state. Guided-session time is not measured.'),
                   const SizedBox(height: AppSpacing.md),
+                  if (total != null) ...[
+                    Text(ar ? 'الإنجاز: ${report.solvedProblems} / $total' : 'Completion: ${report.solvedProblems} / $total'),
+                    const SizedBox(height: AppSpacing.sm),
+                    LinearProgressIndicator(value: completion),
+                    Text('${(completion * 100).toStringAsFixed(1)}%'),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
                   Text(
                     ar ? 'دقة المحاولات: ${correctness.toStringAsFixed(1)}%'
                         : 'Attempt accuracy: ${correctness.toStringAsFixed(1)}%',
@@ -205,10 +220,10 @@ class _ReportBody extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(stat.$3, color: color, size: 23),
+                      Icon(stat.$3, color: index == 3 ? AppColors.rewardGold : color, size: 23),
                       const SizedBox(height: AppSpacing.sm),
                       Text('${stat.$2}', style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w800)),
+                          ?.copyWith(fontWeight: FontWeight.w800, color: index == 3 ? (Theme.of(context).brightness == Brightness.dark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk) : null)),
                       Text(
                         stat.$1,
                         maxLines: 2,
@@ -228,6 +243,8 @@ class _ReportBody extends ConsumerWidget {
                   Text(ar ? 'تقدم الفئات' : 'Category progress',
                       style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: AppSpacing.md),
+                  if(strongest!=null) ListTile(contentPadding:EdgeInsets.zero,leading:const Icon(Icons.trending_up,color:AppColors.success),title:Text(ar?'أعلى دقة مسجلة':'Highest observed accuracy'),subtitle:Text('${ar?strongest.categoryNameAr:strongest.categoryNameEn} · ${(100*strongest.correctAttempts/strongest.attempts).toStringAsFixed(0)}% · ${strongest.attempts} ${ar?'محاولة':'attempts'}')),
+                  if(weakest!=null) ListTile(contentPadding:EdgeInsets.zero,leading:const Icon(Icons.refresh,color:AppColors.warning),title:Text(ar?'فئة تحتاج مراجعة':'Category to review'),subtitle:Text('${ar?weakest.categoryNameAr:weakest.categoryNameEn} · ${(100*weakest.correctAttempts/weakest.attempts).toStringAsFixed(0)}% · ${weakest.attempts} ${ar?'محاولة':'attempts'}')),
                   if (report.categories.isEmpty)
                     Text(ar ? 'ما عندك محاولات بعد. ابدأ بحل المسائل.'
                         : 'No attempts yet. Start practising.')
@@ -239,12 +256,20 @@ class _ReportBody extends ConsumerWidget {
                           title: Text(ar ? category.categoryNameAr
                               : category.categoryNameEn,
                               style: const TextStyle(fontWeight: FontWeight.w700)),
-                          subtitle: Text(ar ? category.stageNameAr
-                              : category.stageNameEn),
+                          subtitle: Text(ar
+                              ? 'المحاولات: ${category.attempts} · الدقة: ${category.attempts == 0 ? "—" : "${(100 * category.correctAttempts / category.attempts).toStringAsFixed(0)}%"}'
+                              : 'Attempts: ${category.attempts} · Accuracy: ${category.attempts == 0 ? "—" : "${(100 * category.correctAttempts / category.attempts).toStringAsFixed(0)}%"}'),
                           trailing: Text(
-                            '${category.solvedProblems}/${category.attemptedProblems}',
+                            '${category.solvedProblems}/${category.totalProblems ?? category.attemptedProblems}',
                             style: TextStyle(fontWeight: FontWeight.bold, color: color),
                           ),
+                        ),
+                        if (category.masteredProblems != null) Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(children: [
+                            Expanded(child: Text(ar ? 'الإتقان الحالي' : 'Current mastery')),
+                            Text('${category.masteredProblems} / ${category.totalProblems ?? "—"}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                          ]),
                         ),
                         const Divider(height: 1),
                       ],
@@ -253,6 +278,20 @@ class _ReportBody extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
+            if (report.recentAttempts != null) ...[
+              GlassCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(ar ? 'آخر المحاولات' : 'Recent attempts', style: Theme.of(context).textTheme.titleLarge),
+                if (report.recentAttempts!.isEmpty) Text(ar ? 'لا توجد محاولات في هذا النطاق.' : 'No attempts in this scope.'),
+                for (final attempt in report.recentAttempts!)
+                  ListTile(contentPadding: EdgeInsets.zero,
+                    leading: Icon(attempt.isCorrect ? Icons.check_circle_outline : Icons.cancel_outlined,
+                      color: attempt.isCorrect ? Colors.green : Theme.of(context).colorScheme.error),
+                    title: Text(ar ? attempt.titleAr : attempt.titleEn),
+                    subtitle: Text(DateFormat.yMMMd(context.locale.languageCode).add_jm().format(attempt.submittedAtUtc.toLocal())),
+                    trailing: Text(attempt.isCorrect ? (ar ? 'صحيحة' : 'Correct') : (ar ? 'خاطئة' : 'Incorrect'))),
+              ])),
+              const SizedBox(height: AppSpacing.lg),
+            ],
             _PdfShareButton(report: report),
             const SizedBox(height: AppSpacing.sm),
             OutlinedButton.icon(
@@ -275,11 +314,9 @@ class _ReportBody extends ConsumerWidget {
                   );
                 } catch (_) {
                   if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(ar
+                  showMathWorldNotice(context,ar
                         ? 'تعذّر مشاركة الملف. يمكنك نسخ البيانات بدلاً منها.'
-                        : 'Unable to share the CSV file. Try copying the table.')),
-                  );
+                        : 'Unable to share the CSV file. Try copying the table.',kind:MathWorldNoticeKind.error);
                 }
               },
               icon: const Icon(Icons.ios_share_rounded),
@@ -294,13 +331,11 @@ class _ReportBody extends ConsumerWidget {
                   final bytes=await ref.read(premiumAnalyticsServiceProvider).exportCsv(language:ar?'ar':'en',filter:report.filter);
                   if(!context.mounted)return;
                   await Clipboard.setData(ClipboardData(text:utf8.decode(bytes.sublist(3))));
-                }catch(_){if(context.mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(ar?'تعذّر تحميل التقرير':'Could not load report')));return;}
+                }catch(_){if(context.mounted)showMathWorldNotice(context,ar?'تعذّر تحميل التقرير':'Could not load report',kind:MathWorldNoticeKind.error);return;}
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(ar
+                showMathWorldNotice(context,ar
                       ? 'تم نسخ جدول CSV؛ يمكنك لصقه في برنامج جداول.'
-                      : 'CSV copied; paste it into your spreadsheet app.')),
-                );
+                      : 'CSV copied; paste it into your spreadsheet app.',kind:MathWorldNoticeKind.success);
               },
               icon: const Icon(Icons.content_copy_rounded),
               label: Text(ar ? 'نسخ جدول CSV' : 'Copy CSV table'),
@@ -359,11 +394,9 @@ class _XlsxDownloadButtonState extends ConsumerState<_XlsxDownloadButton> {
       ));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(ar
+      showMathWorldNotice(context,ar
             ? 'تعذّر تجهيز ملف Excel. تأكد من اشتراك Premium والاتصال.'
-            : 'Could not export Excel. Check Premium access and your connection.'),
-      ));
+            : 'Could not export Excel. Check Premium access and your connection.',kind:MathWorldNoticeKind.error);
     } finally {
       if (mounted) setState(() => _sharing = false);
     }
@@ -425,11 +458,9 @@ class _PdfShareButtonState extends ConsumerState<_PdfShareButton> {
       ));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(ar
+      showMathWorldNotice(context,ar
             ? 'تعذّر إنشاء PDF. تأكد من الاتصال بالإنترنت، ثم أعد المحاولة.'
-            : 'Could not create the PDF. Check your connection and retry.'),
-      ));
+            : 'Could not create the PDF. Check your connection and retry.',kind:MathWorldNoticeKind.error);
     } finally {
       if (mounted) setState(() => _sharing = false);
     }

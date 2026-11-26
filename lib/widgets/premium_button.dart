@@ -4,7 +4,7 @@ import '../config/design_tokens.dart';
 import '../utils/layout_utils.dart';
 
 /// A responsive gradient button that safely adapts to narrow layouts.
-class PremiumButton extends StatelessWidget {
+class PremiumButton extends StatefulWidget {
   final String label;
   final VoidCallback? onPressed;
   final IconData? leadingIcon;
@@ -27,7 +27,13 @@ class PremiumButton extends StatelessWidget {
   });
 
   @override
+  State<PremiumButton> createState()=>_PremiumButtonState();
+}
+class _PremiumButtonState extends State<PremiumButton>{
+  bool _pressed=false;
+  @override
   Widget build(BuildContext context) {
+    final PremiumButton(:label,:onPressed,:leadingIcon,:trailingIcon,:isLoading,:expand,:padding,:gradient)=widget;
     // A dark text color on the purple half of the gradient had insufficient
     // contrast. Use the same legible white foreground across both themes.
     const foreground = Colors.white;
@@ -59,7 +65,7 @@ class PremiumButton extends StatelessWidget {
                 children: [
                   if (leadingIcon != null) ...[
                     Icon(
-                      LayoutUtils.resolveSemanticIcon(context, leadingIcon!),
+                      LayoutUtils.resolveSemanticIcon(context, leadingIcon),
                       size: 19,
                       color: foreground,
                       textDirection: TextDirection.ltr,
@@ -81,7 +87,7 @@ class PremiumButton extends StatelessWidget {
                   if (trailingIcon != null) ...[
                     const SizedBox(width: 8),
                     Icon(
-                      LayoutUtils.resolveSemanticIcon(context, trailingIcon!),
+                      LayoutUtils.resolveSemanticIcon(context, trailingIcon),
                       size: 19,
                       color: foreground,
                       textDirection: TextDirection.ltr,
@@ -96,14 +102,14 @@ class PremiumButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: isEnabled ? onPressed : null,
+        onHighlightChanged:isEnabled?(value)=>setState(()=>_pressed=value):null,
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: child,
       ),
     );
 
-    if (expand) {
-      return SizedBox(width: double.infinity, child: button);
-    }
-    return button;
+    final motion=AnimatedScale(scale:_pressed&&isEnabled&&!MediaQuery.disableAnimationsOf(context)?0.97:1.0,duration:MediaQuery.disableAnimationsOf(context)?Duration.zero:const Duration(milliseconds:100),child:button);
+    if (expand) return SizedBox(width: double.infinity,child:motion);
+    return motion;
   }
 }

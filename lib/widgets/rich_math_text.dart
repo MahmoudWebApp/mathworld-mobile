@@ -146,8 +146,7 @@ class RichMathText extends StatelessWidget {
     return Directionality(
       textDirection: direction,
       child: Column(
-        crossAxisAlignment:
-            usesArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: sections,
       ),
     );
@@ -356,7 +355,7 @@ class RichMathText extends StatelessWidget {
     }
 
     final hasLatexCommand = RegExp(
-      r'\\(frac|sqrt|text|cdot|times|div|pm|leq|geq|neq|alpha|beta|theta|pi|sin|cos|tan|log|ln|sum|int|lim|left|right|begin|end)\b',
+      r'\\(frac|sqrt|text|cdot|times|div|pm|leq|geq|neq|approx|in|notin|alpha|beta|theta|pi|sin|cos|tan|log|ln|sum|int|lim|left|right|begin|end)\b',
     ).hasMatch(input);
     final hasArabicProse = _arabicPattern.hasMatch(input);
     final hasMathSyntax = RegExp(

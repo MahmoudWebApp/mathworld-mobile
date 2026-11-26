@@ -157,4 +157,32 @@ void main() {
     expect(find.textContaining(r'\('), findsNothing);
   });
 
+  testWidgets('renders relation symbols and radicals in both directions', (tester) async {
+    const expressions = [r'a\neq0',r'x\leq2',r'x\geq0',r'x\approx1',r'x\in A',r'x\notin A',r'\frac{1}{2}',r'\sqrt{x}'];
+    for (final direction in [TextDirection.ltr,TextDirection.rtl]) {
+      await tester.pumpWidget(MaterialApp(home: Scaffold(body:Directionality(textDirection:direction,child:Column(children: [
+        for(final expression in expressions) RichMathText(text:'\$'+expression+'\$',isArabic:direction==TextDirection.rtl),
+      ])))));
+      expect(find.byType(Math),findsNWidgets(expressions.length));
+      for(final expression in expressions) {
+        expect(find.text(expression),findsNothing,reason:'Raw TeX fallback: '+expression);
+      }
+      expect(tester.takeException(),isNull);
+    }
+  });
+
+  testWidgets('renders unwrapped relation commands and aligns Arabic block prose to the start', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: Column(children: [
+      RichMathText(text: r'x\approx 1'),
+      RichMathText(text: r'x\in A'),
+      RichMathText(text: r'x\notin A'),
+      RichMathText(text: r'نحسب \[x=2\] ثم نتابع',isArabic:true),
+    ]))));
+    expect(find.byType(Math), findsNWidgets(4));
+    final columns = tester.widgetList<Column>(find.descendant(
+      of:find.byType(RichMathText),matching:find.byType(Column)));
+    expect(columns.single.crossAxisAlignment,CrossAxisAlignment.start);
+    expect(tester.takeException(),isNull);
+  });
+
 }

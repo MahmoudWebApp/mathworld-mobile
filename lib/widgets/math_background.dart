@@ -90,6 +90,10 @@ class _AmbientSymbolLayerState extends State<_AmbientSymbolLayer> with SingleTic
     return IgnorePointer(
       child: RepaintBoundary(child: AnimatedBuilder(animation:_motion,builder:(context,child)=>Transform.translate(offset:Offset(0,8*Curves.easeInOut.transform(_motion.value)),child:child),child: Stack(
         children: [
+          Positioned(top: 175, right: 28, child: _Symbol('Σ', AppColors.brandPurple.withValues(alpha: isDark ? .065 : .045), 26, .1)),
+          Positioned(bottom: 220, left: 35, child: _Symbol('√x', AppColors.brandCyan.withValues(alpha: isDark ? .065 : .045), 24, -.08)),
+          Positioned(top: 285, left: 18, child: _Symbol('∫', AppColors.brandPurple.withValues(alpha: isDark ? .06 : .04), 34, .08)),
+          Positioned(bottom: 32, right: 90, child: _Symbol('△', AppColors.brandPurple.withValues(alpha: isDark ? .06 : .04), 30, -.12)),
           Positioned(
             top: 32,
             right: 18,

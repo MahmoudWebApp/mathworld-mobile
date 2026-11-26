@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/mathworld_feedback.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/app_routes.dart';
@@ -94,11 +95,9 @@ class HomeScreen extends ConsumerWidget {
         );
         if (!context.mounted) return;
         if (result.problems.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(context.locale.languageCode == 'ar'
+          showMathWorldNotice(context,context.locale.languageCode == 'ar'
                 ? 'أنجزت المسائل المتاحة في مرحلتك. يمكنك استكشاف الفئات.'
-                : 'You have completed the available questions in this stage.'),
-          ));
+                : 'You have completed the available questions in this stage.',kind:MathWorldNoticeKind.success);
           onOpenStages();
           return;
         }
@@ -110,11 +109,9 @@ class HomeScreen extends ConsumerWidget {
         ref.invalidate(learningJourneyProvider);
       } catch (_) {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(context.locale.languageCode == 'ar'
+        showMathWorldNotice(context,context.locale.languageCode == 'ar'
               ? 'تعذّر تحديد المسألة التالية. يمكنك المتابعة من الفئات.'
-              : 'Could not load the next question. Browse your topics.'),
-        ));
+              : 'Could not load the next question. Browse your topics.',kind:MathWorldNoticeKind.error);
         onOpenStages();
       }
     }
@@ -174,8 +171,8 @@ class HomeScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(children: [
-                          Icon(Icons.workspace_premium_rounded,
-                            color: Theme.of(context).colorScheme.primary),
+                          const Icon(Icons.workspace_premium_rounded,
+                            color: AppColors.rewardGold),
                           const SizedBox(width: AppSpacing.sm),
                           Expanded(child: Text(
                             context.locale.languageCode == 'ar'
@@ -266,7 +263,7 @@ class HomeScreen extends ConsumerWidget {
                   LearningSessionCards(journey: learningJourney.valueOrNull!),
                 if (learningJourney.valueOrNull?.certificatesEnabled == true)
                   Card(child:ListTile(
-                    leading:const Icon(Icons.workspace_premium_outlined),
+                    leading:const Icon(Icons.workspace_premium_outlined,color:AppColors.rewardGold),
                     title:Text(context.locale.languageCode=='ar'?'شهاداتي التعليمية':'My learning certificates'),
                     onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>CertificatesScreen(journey:learningJourney.valueOrNull!))),
                     trailing:const Icon(Icons.arrow_forward_ios,size:16),
@@ -543,7 +540,7 @@ class _DailyPracticeCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Icon(Icons.emoji_events_outlined,
-                  size: 34, color: AppColors.success),
+                  size: 34, color: AppColors.rewardGold),
                 const SizedBox(height: AppSpacing.sm),
                 Text(ar ? 'أكملت تحدي اليوم!' : 'Daily challenge complete!',
                   style: Theme.of(context).textTheme.titleMedium),
@@ -754,10 +751,10 @@ class _StatsGrid extends StatelessWidget {
         AppColors.success,
       ),
       _StatData(
-        Icons.auto_awesome_rounded,
+        Icons.star_rounded,
         '${journey.displayedPoints}',
         'stage_points'.tr(),
-        AppColors.warning,
+        AppColors.rewardGold,
       ),
       _StatData(
         Icons.trending_up_rounded,
@@ -804,7 +801,9 @@ class _StatsGrid extends StatelessWidget {
                       child: Icon(item.icon, color: item.color),
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    ShaderMask(
+                    if (item.color == AppColors.rewardGold)
+                      Text(item.value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800,color: Theme.of(context).brightness == Brightness.dark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk))
+                    else ShaderMask(
                       shaderCallback: AppGradients.primary.createShader,
                       blendMode: BlendMode.srcIn,
                       child: Text(
@@ -988,6 +987,7 @@ class _LearningJourneyCard extends StatelessWidget {
               _StageStat(
                 title: 'stage_points'.tr(),
                 value: '${journey.displayedPoints}',
+                gold: true,
               ),
             ],
           ),
@@ -1014,14 +1014,15 @@ class _StageStat extends StatelessWidget {
   final String title;
   final String value;
 
-  const _StageStat({required this.title, required this.value});
+  final bool gold;
+  const _StageStat({required this.title, required this.value,this.gold=false});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(value, style: Theme.of(context).textTheme.titleLarge),
+        Text(value, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: gold ? (Theme.of(context).brightness == Brightness.dark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk) : null)),
         Text(title, style: Theme.of(context).textTheme.bodySmall),
       ],
     );

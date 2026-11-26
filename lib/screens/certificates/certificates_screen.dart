@@ -10,6 +10,8 @@ import '../../providers/repositories_provider.dart';
 import '../../providers/stage_category_access_provider.dart';
 import '../../core/network/api_envelope.dart';
 import '../../services/learning_session_api.dart';
+import '../../widgets/math_background.dart';
+import '../../config/design_tokens.dart';
 
 class CertificatesScreen extends ConsumerStatefulWidget {
   final LearningJourney journey;
@@ -85,7 +87,7 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
     final categories=j.categories.where((c)=>c.accessVerified&&!c.isLocked&&c.totalProblems>=5).toList();
     final items=sessionRows(_list?['Items']);
     final e=_eligibility;
-    return Scaffold(appBar:AppBar(title:Text(tr('شهاداتي التعليمية','My learning certificates'))),body:SafeArea(child:ListView(padding:const EdgeInsets.all(16),children:[
+    return Scaffold(appBar:AppBar(title:Text(tr('شهاداتي التعليمية','My learning certificates'))),body:MathBackground(child:SafeArea(child:ListView(padding:const EdgeInsets.all(16),children:[
       if(_busy||_checking)const LinearProgressIndicator(),
       if(_error)Card(child:ListTile(title:Text(tr('تعذّر إكمال الطلب. أعد المحاولة.','Request failed. Please retry.')),trailing:IconButton(onPressed:_busy||_checking?null:() async{await _load();if(mounted&&_choice!=null)await _check(_choice);},icon:const Icon(Icons.refresh)))),
       if(_notice!=null)Text(_notice!),
@@ -106,7 +108,7 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
       const SizedBox(height:12),Text(tr('الشهادات الصادرة','Issued certificates'),style:Theme.of(context).textTheme.titleMedium),
       if(_list!=null&&items.isEmpty)Padding(padding:const EdgeInsets.all(12),child:Text(tr('لم تصدر لك شهادات بعد.','No certificates issued yet.'))),
       for(final c in items)Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        ListTile(contentPadding:EdgeInsets.zero,leading:const Icon(Icons.workspace_premium_outlined),title:Text(sessionText(c,ar?'TitleAr':'TitleEn')),subtitle:Text(sessionText(c,'StudentName'))),
+        ListTile(contentPadding:EdgeInsets.zero,leading:const Icon(Icons.workspace_premium_outlined,color:AppColors.rewardGold),title:Text(sessionText(c,ar?'TitleAr':'TitleEn')),subtitle:Text(sessionText(c,'StudentName'))),
         Text(sessionText(c,'IssuedAtUtc').split('T').first),
         Text(tr('رمز التحقق','Verification code')),
         SelectableText(sessionText(c,'VerificationCode')),
@@ -115,6 +117,6 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
           OutlinedButton.icon(onPressed:_busy?null:()=>_share(c,'en'),icon:const Icon(Icons.share_outlined),label:const Text('PDF English')),
         ]),
       ]))),
-    ])));
+    ]))));
   }
 }

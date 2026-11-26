@@ -7,7 +7,6 @@ import '../../core/utils/error_message.dart';
 import '../../models/premium_progress_report.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/premium_reports_provider.dart';
-import '../../providers/stages_provider.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
@@ -22,14 +21,12 @@ class PremiumProgressReportScreen extends ConsumerStatefulWidget {
 
 class _PremiumProgressReportScreenState
     extends ConsumerState<PremiumProgressReportScreen> {
-  int? _selectedStageId;
 
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider.select((auth) => auth.user));
     final isPremium = user?.subscriptionType.toLowerCase() == 'premium';
-    final stageId = _selectedStageId ?? user?.currentStageId;
-    final availableStages = ref.watch(stagesProvider).valueOrNull;
+    final stageId = user?.currentStageId;
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -75,29 +72,7 @@ class _PremiumProgressReportScreenState
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.all(AppSpacing.lg),
                           children: [
-                            if (availableStages != null &&
-                                availableStages.length > 1) ...[
-                              DropdownButtonFormField<int>(
-                                initialValue: availableStages.any(
-                                  (stage) => stage.id == stageId,
-                                ) ? stageId : null,
-                                isExpanded: true,
-                                decoration: InputDecoration(
-                                  labelText: 'premium_report_stage'.tr(),
-                                  prefixIcon: const Icon(Icons.school_outlined),
-                                ),
-                                items: availableStages.map((stage) =>
-                                  DropdownMenuItem<int>(
-                                    value: stage.id,
-                                    child: Text(stage.getName(
-                                      context.locale.languageCode,
-                                    )),
-                                  )).toList(),
-                                onChanged: (next) =>
-                                  setState(() => _selectedStageId = next),
-                              ),
-                              const SizedBox(height: AppSpacing.md),
-                            ],
+                            Padding(padding: const EdgeInsets.only(bottom: AppSpacing.md), child: Text(context.locale.languageCode == 'ar' ? 'الصف أو المساق الحالي' : 'Current grade or course')),
                             GlassCard(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,6 +119,7 @@ class _PremiumProgressReportScreenState
                                 _Metric(
                                   label: 'premium_report_points'.tr(),
                                   value: '${report.officialPoints}',
+                                  gold: true,
                                 ),
                               ],
                             ),
@@ -184,7 +160,8 @@ class _PremiumProgressReportScreenState
 class _Metric extends StatelessWidget {
   final String label;
   final String value;
-  const _Metric({required this.label, required this.value});
+  final bool gold;
+  const _Metric({required this.label, required this.value, this.gold = false});
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -198,6 +175,7 @@ class _Metric extends StatelessWidget {
               Text(value,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w800,
+                        color: gold ? (Theme.of(context).brightness == Brightness.dark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk) : null,
                       )),
             ],
           ),
@@ -229,11 +207,10 @@ class _CategoryReport extends StatelessWidget {
               '${category.solvedProblems}/${category.totalProblems} '
               '· ${category.completionPercent}%',
             ),
-            Text(
-              '${'premium_report_mastered'.tr()}: ${category.masteredProblems} '
-              '· ${'premium_report_points'.tr()}: ${category.officialPoints}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            Text.rich(TextSpan(style: Theme.of(context).textTheme.bodySmall,children:[
+              TextSpan(text: '${'premium_report_mastered'.tr()}: ${category.masteredProblems} · '),
+              TextSpan(text: '${'premium_report_points'.tr()}: ${category.officialPoints}',style:TextStyle(fontWeight:FontWeight.w700,color:Theme.of(context).brightness == Brightness.dark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk)),
+            ])),
           ],
         ),
       );

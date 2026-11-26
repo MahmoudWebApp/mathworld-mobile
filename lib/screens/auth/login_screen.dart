@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'auth_captcha.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/mathworld_feedback.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../config/constants.dart';
@@ -57,9 +58,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizedErrorMessage(error))),
-      );
+      showMathWorldNotice(context,localizedErrorMessage(error),kind:MathWorldNoticeKind.error);
     } finally {
       if (mounted) setState(() => _passwordSubmitting = false);
     }
@@ -74,9 +73,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           mode: LaunchMode.externalApplication)) return;
     } catch (_) {}
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(
-      ar ? 'تعذّر فتح صفحة الاستعادة.' : 'Could not open the recovery page.',
-    )));
+    showMathWorldNotice(context,ar?'تعذّر فتح صفحة الاستعادة.':'Could not open the recovery page.',kind:MathWorldNoticeKind.error);
   }
 
   @override

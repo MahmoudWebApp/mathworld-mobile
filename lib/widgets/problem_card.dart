@@ -71,11 +71,11 @@ class ProblemCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(Icons.star_rounded,
-                        size: 17, color: AppColors.warning),
+                        size: 17, color: AppColors.rewardGold),
                       const SizedBox(width: 3),
                       Text('${problem.points}',
                         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: AppColors.warning, fontWeight: FontWeight.w800)),
+                          color: isDark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk, fontWeight: FontWeight.w800)),
                     ],
                   ),
                   if (problem.isSolved)

@@ -9,6 +9,10 @@ class MathBadge {
     required this.earned,
     required this.isAvailable,
     required this.currentProgress,
+    this.unit = 'solved',
+    this.icon = 'medal',
+    this.descriptionAr = '',
+    this.descriptionEn = '',
   });
   final String key;
   final String titleAr;
@@ -17,6 +21,7 @@ class MathBadge {
   final bool earned;
   final bool isAvailable;
   final int currentProgress;
+  final String unit, icon, descriptionAr, descriptionEn;
 
   factory MathBadge.fromJson(Map<String, dynamic> json) => MathBadge(
         key: json['Key'] as String? ?? '',
@@ -26,6 +31,10 @@ class MathBadge {
         earned: json['Earned'] == true,
         isAvailable: json['IsAvailable'] == true,
         currentProgress: (json['CurrentProgress'] as num).toInt(),
+        unit: json['Unit'] as String? ?? 'solved',
+        icon: json['Icon'] as String? ?? 'medal',
+        descriptionAr: json['DescriptionAr'] as String? ?? '',
+        descriptionEn: json['DescriptionEn'] as String? ?? '',
       );
 }
 

@@ -20,23 +20,23 @@ class _AnimatedEntryState extends State<AnimatedEntry>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 520),
+    duration: const Duration(milliseconds: 220),
   );
   Timer? _delayTimer;
   bool _started = false;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_started) {
-      return;
-    }
-    _started = true;
     final disabled = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     if (disabled) {
+      _delayTimer?.cancel();
       _controller.value = 1;
+      _started = true;
       return;
     }
-    _delayTimer = Timer(Duration(milliseconds: widget.index * 70), () {
+    if (_started) return;
+    _started = true;
+    _delayTimer = Timer(Duration(milliseconds: widget.index.clamp(0, 7).toInt() * 35), () {
       if (mounted) {
         _controller.forward();
       }
@@ -58,7 +58,7 @@ class _AnimatedEntryState extends State<AnimatedEntry>
       builder: (context, child) {
         final value = Curves.easeOutCubic.transform(_controller.value);
         return Opacity(
-          opacity: value,
+          opacity: .82 + .18 * value,
           child: Transform.translate(
             offset: Offset(
               widget.beginOffset.dx * 80 * (1 - value),

@@ -11,6 +11,8 @@ import '../../widgets/glass_card.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/math_background.dart';
 import '../../utils/layout_utils.dart';
+import '../../widgets/mathworld_pagination.dart';
+import '../../widgets/animated_entry.dart';
 
 /// Read-only stage leaderboard, with anonymous peers and the learner's own rank.
 class LeaderboardScreen extends ConsumerStatefulWidget {
@@ -187,7 +189,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                           // Medal colors depend on the actual global rank,
                           // not on this page's position in the result list.
                           final Color? medalColor = switch (entry.rank) {
-                            1 => const Color(0xFFD4A017), // Gold
+                            1 => AppColors.rewardGold, // Gold
                             2 => const Color(0xFF8491A3), // Silver
                             3 => const Color(0xFFB87333), // Bronze
                             _ => null,
@@ -213,7 +215,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                                   color: medalColor?.withValues(alpha: 0.70) ??
                                       scheme.outline.withValues(alpha: 0.65),
                                 );
-                          return Padding(
+                          return AnimatedEntry(index:entry.rank-1,child: Padding(
                             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                             child: GlassCard(
                               color: cardBackground,
@@ -273,11 +275,14 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                                               ),
                                             ),
                                           ),
-                                        Text(
-                                          '${entry.solvedProblems} ${'leaderboard_solved'.tr()} · '
-                                          '${entry.points} ${'leaderboard_points'.tr()}',
+                                        Text.rich(TextSpan(
                                           style: theme.textTheme.bodySmall,
-                                        ),
+                                          children: [
+                                            TextSpan(text: '${entry.solvedProblems} ${'leaderboard_solved'.tr()} · '),
+                                            TextSpan(text: '${entry.points} ${'leaderboard_points'.tr()}',
+                                              style: TextStyle(fontWeight: FontWeight.w700, color: dark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk)),
+                                          ],
+                                        )),
                                         Text(
                                           '${entry.firstTryCorrect} ${'leaderboard_first_try'.tr()}',
                                           style: theme.textTheme.bodySmall,
@@ -293,41 +298,10 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                                 ],
                               ),
                             ),
-                          );
+                          ));
                         }),
                         const SizedBox(height: AppSpacing.md),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            OutlinedButton(
-                              onPressed: _page > 1
-                                  ? () => setState(() => _page--)
-                                  : null,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  LayoutUtils.previousPageIcon(context, size: 18),
-                                  const SizedBox(width: 5),
-                                  Text('leaderboard_previous'.tr()),
-                                ],
-                              ),
-                            ),
-                            Text('$_page / $maxPage'),
-                            OutlinedButton(
-                              onPressed: _page < maxPage
-                                  ? () => setState(() => _page++)
-                                  : null,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text('leaderboard_next'.tr()),
-                                  const SizedBox(width: 5),
-                                  LayoutUtils.nextPageIcon(context, size: 18),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                        MathWorldPagination(page:_page,pageCount:maxPage,arabic:isArabic,onChanged:(p)=>setState(()=>_page=p)),
                         const SizedBox(height: AppSpacing.md),
                         Text(
                           'leaderboard_privacy'.tr(),

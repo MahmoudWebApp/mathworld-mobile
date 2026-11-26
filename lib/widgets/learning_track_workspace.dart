@@ -3,6 +3,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../config/design_tokens.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'mathworld_feedback.dart';
+import 'math_background.dart';
+import 'mathworld_pagination.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/app_routes.dart';
 import '../core/network/api_envelope.dart';
@@ -111,10 +114,10 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
     final ar=context.locale.languageCode=='ar';
     setState(()=>_resetting=true);
     try{
-      final accepted=await showDialog<bool>(context:context,builder:(dialog)=>AlertDialog(
-        title:Text(ar?'تأكيد إعادة التدريب':'Confirm practice restart'),
-        content:Text('$name\n\n'+(ar?'يعود تقدم التدريب ودفتر الأخطاء في هذا النطاق فقط إلى البداية. النقاط الدائمة والمفضلة والشهادات وتقدم الصفوف الأخرى محفوظة.':'Only practice progress and review errors in this scope reset. Lifetime points, favorites, certificates and other tracks remain.')),
-        actions:[TextButton(onPressed:()=>Navigator.pop(dialog,false),child:Text(ar?'إلغاء':'Cancel')),FilledButton(onPressed:()=>Navigator.pop(dialog,true),child:Text(ar?'تأكيد':'Confirm'))]));
+      final accepted=await showMathWorldConfirmation(context,
+        title:ar?'تأكيد إعادة التدريب':'Confirm practice restart',
+        message:'$name\n\n'+(ar?'يعود تقدم التدريب ودفتر الأخطاء في هذا النطاق فقط إلى البداية. النقاط الدائمة والمفضلة والشهادات وتقدم الصفوف الأخرى محفوظة.':'Only practice progress and review errors in this scope reset. Lifetime points, favorites, certificates and other tracks remain.'),
+        cancel:ar?'إلغاء':'Cancel',confirm:ar?'تأكيد':'Confirm');
       if(accepted!=true||!mounted||ref.read(authProvider).user?.id!=actor)return;
       final selection=ref.read(trackSelectionProvider).valueOrNull;
       if(selection?['StageId']!=stageId||selection?['TrackId']!=id)throw StateError('Practice scope changed');
@@ -125,9 +128,9 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
       ref.invalidate(solvedProvider);ref.invalidate(errorNotebookProvider);ref.invalidate(favoritesProvider);
       ref.invalidate(problemsProvider);ref.invalidate(dailyChallengeProvider);ref.invalidate(studentBadgesProvider);
       ref.invalidate(premiumAnalyticsProvider);ref.invalidate(filteredPremiumAnalyticsProvider);ref.invalidate(leaderboardProvider);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(ar?'بدأ تدريب جديد ضمن النطاق المحدد.':'A new practice cycle has started in the selected scope.')));
+      showMathWorldNotice(context,ar?'بدأ تدريب جديد ضمن النطاق المحدد.':'A new practice cycle has started in the selected scope.',kind:MathWorldNoticeKind.success);
     }catch(error){
-      if(mounted&&ref.read(authProvider).user?.id==actor)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(localizedErrorMessage(error))));
+      if(mounted&&ref.read(authProvider).user?.id==actor)showMathWorldNotice(context,localizedErrorMessage(error),kind:MathWorldNoticeKind.error);
     }finally{if(mounted)setState(()=>_resetting=false);}
   }
   @override
@@ -210,18 +213,14 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
     final data=state.valueOrNull;
     final rows=trackRows(data?['Items']);
     final visible=rows;
-    return Scaffold(appBar:AppBar(title:Text(widget.name)),body:state.hasError?AppErrorView(message:localizedErrorMessage(state.error!),onRetry:()=>ref.invalidate(trackPracticeProvider(key))):data==null?const AppContentSkeleton():RefreshIndicator(onRefresh:()async{ref.invalidate(trackPracticeProvider(key));await ref.read(trackPracticeProvider(key).future);},child:ListView(physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.all(12),children:[
+    return Scaffold(appBar:AppBar(title:Text(widget.name)),body:MathBackground(child:state.hasError?AppErrorView(message:localizedErrorMessage(state.error!),onRetry:()=>ref.invalidate(trackPracticeProvider(key))):data==null?const AppContentSkeleton():RefreshIndicator(onRefresh:()async{ref.invalidate(trackPracticeProvider(key));await ref.read(trackPracticeProvider(key).future);},child:ListView(physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.all(12),children:[
       FilterChip(label:Text(ar?'إخفاء المحلولة':'Hide solved'),selected:_hideSolved,onSelected:(value)=>setState((){_hideSolved=value;_page=1;})),
       if(visible.isEmpty) AppEmptyView(icon:Icons.calculate_outlined,title:ar?'لا توجد مسائل مطابقة':'No matching problems'),
       for(final problem in visible) Card(child:ListTile(title:Text(trackText(problem,'Title',ar)),subtitle:Text(problem['IsSolved']==true?(ar?'محلولة':'Solved'):(ar?'غير محلولة':'Unsolved')),onTap:()async{
         await Navigator.pushNamed(context,AppRoutes.problemDetails,arguments:trackNumber(problem['Id']));
         if(mounted){ref.invalidate(trackPracticeProvider(key));ref.invalidate(trackProgressProvider(widget.id));ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}
       })),
-      Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-        TextButton(onPressed:_page<=1?null:()=>setState(()=>_page--),child:Text(ar?'السابق':'Previous')),
-        Text('$_page'),
-        TextButton(onPressed:trackNumber(data['PageSize'])<=0||_page*trackNumber(data['PageSize'])>=trackNumber(data['Total'])?null:()=>setState(()=>_page++),child:Text(ar?'التالي':'Next')),
-      ]),
-    ])));
+      MathWorldPagination(page:_page,pageCount:trackNumber(data['PageSize'])<=0?1:(trackNumber(data['Total'])+trackNumber(data['PageSize'])-1)~/trackNumber(data['PageSize']),arabic:ar,onChanged:(p)=>setState(()=>_page=p)),
+    ]))));
   }
 }

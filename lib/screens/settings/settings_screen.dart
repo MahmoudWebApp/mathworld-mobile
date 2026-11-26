@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/mathworld_feedback.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/app_routes.dart';
@@ -272,16 +273,12 @@ ListView(key: const PageStorageKey('settings-2'),padding:const EdgeInsets.all(16
                             await ref.read(authProvider.notifier).linkGoogle();
                             ref.invalidate(googleLinkedProvider);
                             if (!context.mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('google_linked'.tr())),
-                            );
+                            showMathWorldNotice(context,'google_linked'.tr(),kind:MathWorldNoticeKind.success);
                           } catch (error) {
                             if (!context.mounted) return;
                             if (error is AppException &&
                                 error.type == AppExceptionType.cancelled) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(localizedErrorMessage(error))),
-                            );
+                            showMathWorldNotice(context,localizedErrorMessage(error),kind:MathWorldNoticeKind.error);
                           }
                         },
                 ),
@@ -304,11 +301,7 @@ ListView(key: const PageStorageKey('settings-2'),padding:const EdgeInsets.all(16
                     );
                     if (changed != true || !context.mounted) return;
                     Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false);
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(
-                      context.locale.languageCode == 'ar'
-                        ? 'تم تغيير كلمة المرور. سجّل الدخول مجدداً.'
-                        : 'Password changed. Please sign in again.',
-                    )));
+                    showMathWorldNotice(context,context.locale.languageCode=='ar'?'تم تغيير كلمة المرور. سجّل الدخول مجدداً.':'Password changed. Please sign in again.',kind:MathWorldNoticeKind.success);
                   },
                 ),
               ),
