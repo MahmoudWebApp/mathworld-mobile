@@ -45,7 +45,7 @@ class _ExamWorkspaceState extends ConsumerState<_ExamWorkspace>{
   List<Map<String,dynamic>> history=[];
   bool busy=false,loaded=false;
   String? error,request;
-  int category=0,count=10;
+  int category=0,count=10,difficulty=0;
   int? chosen;
   bool get active=>mounted&&ref.read(authProvider).user?.id==widget.owner;
   bool get ar=>context.locale.languageCode=='ar';
@@ -71,7 +71,7 @@ class _ExamWorkspaceState extends ConsumerState<_ExamWorkspace>{
   void show(Map<String,dynamic> value){if(active)setState((){exam=value;chosen=null;});}
   Future<void> start()=>run(()async{
     request??=requestId();
-    show(await post('$root/start',{'RequestId':request,'CategoryId':category==0?null:category,'Count':count}));
+    show(await post('$root/start',{'RequestId':request,'CategoryId':category==0?null:category,'Count':count,'DifficultyLevel':difficulty==0?null:difficulty}));
     if(active){request=null;await reload();}
   });
   Future<void> open(String id)=>run(()async{show(await get('$root/$id'));});
@@ -96,7 +96,9 @@ class _ExamWorkspaceState extends ConsumerState<_ExamWorkspace>{
     final premium=ref.watch(studentPremiumProvider).valueOrNull==true;
     final e=exam,s=setup,q=asMap(e?['CurrentQuestion']);
     final cats=rows(s?['Categories']);
-    final max=cats.where((c)=>category==0||c['Id']==category).fold<int>(0,(n,c)=>n+((c['Count'] as num?)?.toInt()??0));
+    final scoped=cats.where((c)=>category==0||c['Id']==category).toList();
+    int available(int level)=>scoped.fold<int>(0,(n,c)=>n+(level==0?((c['Count'] as num?)?.toInt()??0):rows(c['DifficultyCounts']).where((d)=>d['Level']==level).fold<int>(0,(sum,d)=>sum+((d['Count'] as num?)?.toInt()??0))));
+    final max=available(difficulty);
     final unfinished=history.any((h)=>h['FinishedAtUtc']==null&&h['AbandonedAtUtc']==null);
     return Scaffold(appBar:AppBar(title:Text(tr('الامتحانات المخصصة','Custom exams')),actions:[IconButton(onPressed:busy?null:load,icon:const Icon(Icons.refresh))]),
       body:SafeArea(child:!loaded&&busy?const AppContentSkeleton():ListView(padding:const EdgeInsets.all(16),children:[
@@ -133,6 +135,12 @@ class _ExamWorkspaceState extends ConsumerState<_ExamWorkspace>{
             DropdownMenuItem(value:0,child:Text(tr('الصف الكامل','Entire grade'))),
             for(final c in cats)DropdownMenuItem(value:(c['Id'] as num).toInt(),child:Text(name(c,'Name'),overflow:TextOverflow.ellipsis)),
           ],onChanged:busy?null:(v)=>setState((){category=v??0;request=null;})),
+          const SizedBox(height:12),
+          DropdownButtonFormField<int>(initialValue:difficulty,decoration:InputDecoration(labelText:tr('مستوى الصعوبة (اختياري)','Difficulty (optional)')),items:[
+            DropdownMenuItem(value:0,child:Text(tr('جميع المستويات','All levels'))),
+            for(final level in [1,2,3,4,5])DropdownMenuItem(value:level,enabled:available(level)>0,child:Text(tr('المستوى','Level')+' $level')),
+          ],onChanged:busy?null:(v)=>setState((){difficulty=v??0;request=null;})),
+          Text(tr('التصفية تعتمد مستويات الصعوبة المراجعة فقط.','Difficulty filters use reviewed levels only.'),style:Theme.of(context).textTheme.bodySmall),
           const SizedBox(height:12),
           DropdownButtonFormField<int>(initialValue:count,decoration:InputDecoration(labelText:tr('عدد الأسئلة','Questions')),items:[for(final n in [5,10,15,20])DropdownMenuItem(value:n,enabled:n<=max,child:Text('$n'))],onChanged:busy?null:(v)=>setState((){count=v??10;request=null;})),
           Text(tr('حد النجاح','Pass threshold')+": ${s['PassPercent']}%"),
