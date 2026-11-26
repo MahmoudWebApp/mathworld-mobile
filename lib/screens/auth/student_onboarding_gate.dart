@@ -191,7 +191,7 @@ class _SetupScreenState extends ConsumerState<_SetupScreen> {
           if(mounted) Navigator.pushNamedAndRemoveUntil(context,AppRoutes.login,(_)=>false);
         }),child:Text(ar?'تسجيل الخروج':'Sign out')),
       ]))),
-    );
+    ));
   }
 }
 
