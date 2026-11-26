@@ -10,6 +10,7 @@ import '../../providers/repositories_provider.dart';
 import '../../providers/learning_tracks_provider.dart';
 import '../../providers/stage_category_access_provider.dart';
 import '../../widgets/app_states.dart';
+import '../../widgets/mathworld_pagination.dart';
 import '../../widgets/mobile_section.dart';
 import '../../widgets/math_background.dart';
 
@@ -47,23 +48,33 @@ class CurrentGradeReportScreen extends ConsumerWidget {
   }
 }
 
-class _ReportBody extends StatelessWidget {
+class _ReportBody extends StatefulWidget {
   const _ReportBody({required this.report,required this.ar,required this.onRefresh});
   final Map<String,dynamic> report;
   final bool ar;
   final Future<void> Function() onRefresh;
+  @override State<_ReportBody> createState()=>_ReportBodyState();
+}
+class _ReportBodyState extends State<_ReportBody>{
+  int _categoryPage=1,_attemptPage=1;
+  Map<String,dynamic> get report=>widget.report;
+  bool get ar=>widget.ar;
+  Future<void> Function() get onRefresh=>widget.onRefresh;
   String percent(Object? v)=>v is num?'${v.toStringAsFixed(1)}%':'—';
   @override Widget build(BuildContext context){
     final p=report,theme=Theme.of(context);
     final track=p['Track'] is Map?Map<String,dynamic>.from(p['Track'] as Map):<String,dynamic>{};
-    final categories=trackRows(p['Categories']),recent=trackRows(p['RecentAttempts']);
+    final allCategories=trackRows(p['Categories']),allRecent=trackRows(p['RecentAttempts']);
+    final categoryPages=(allCategories.length+4)~/5,attemptPages=(allRecent.length+4)~/5;
+    final cp=_categoryPage.clamp(1,categoryPages<1?1:categoryPages).toInt(),ap=_attemptPage.clamp(1,attemptPages<1?1:attemptPages).toInt();
+    final categories=allCategories.skip((cp-1)*5).take(5).toList(),recent=allRecent.skip((ap-1)*5).take(5).toList();
     final gold=AppColors.pointsGold(context);
     Widget metric(String label,Object? value,{Color? tint})=>Padding(padding:const EdgeInsets.symmetric(vertical:5),child:Row(children:[Expanded(child:Text(label)),const SizedBox(width:12),Text(value?.toString()??'—',style:TextStyle(fontWeight:FontWeight.bold,color:tint))]));
     Widget section(String title)=>Padding(padding:const EdgeInsets.only(top:24,bottom:12),child:MobileSectionTitle(title:title));
-    return RefreshIndicator(onRefresh:onRefresh,child:ListView.builder(physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.all(16),itemCount:categories.length+recent.length+4,itemBuilder:(context,i){
+    return RefreshIndicator(onRefresh:onRefresh,child:ListView.builder(physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.all(16),itemCount:categories.length+recent.length+6,itemBuilder:(context,i){
       if(i==0)return MobilePanel(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         Text(trackText(track,'Name',ar),style:theme.textTheme.titleLarge),
-        if(p['CompletionPercent'] is num)...[const SizedBox(height:12),LinearProgressIndicator(value:((p['CompletionPercent'] as num)/100).clamp(0.0,1.0).toDouble())],
+        if(p['CompletionPercent'] is num)...[const SizedBox(height:12),LinearProgressIndicator(value:((p['CompletionPercent'] as num)/100).clamp(0.0,1.0).toDouble(),color:AppColors.progressFill((p['CompletionPercent'] as num)/100),backgroundColor:AppColors.progressTrack(context))],
         metric(ar?'نسبة الإنجاز':'Completion',percent(p['CompletionPercent'])),
         metric(ar?'المسائل المحلولة':'Solved','${p['Solved']} / ${p['ProblemsCount']}'),
         metric(ar?'دقة المحاولات المسجلة':'Recorded attempt accuracy',percent(p['AccuracyPercent'])),
@@ -82,8 +93,10 @@ class _ReportBody extends StatelessWidget {
           metric(ar?'المحاولات':'Attempts',c['Attempts']),metric(ar?'الإتقان':'Mastery',percent(mastery)),metric(ar?'الدقة':'Accuracy',percent(c['AccuracyPercent'])),
         ])));
       }
-      if(i==categories.length+2)return section(ar?'المحاولات الأخيرة':'Recent attempts');
-      final index=i-categories.length-3;
+      if(i==categories.length+2)return categoryPages>1?MathWorldPagination(page:cp,pageCount:categoryPages,arabic:ar,onChanged:(p)=>setState(()=>_categoryPage=p)):const SizedBox.shrink();
+      if(i==categories.length+3)return section(ar?'المحاولات الأخيرة':'Recent attempts');
+      final index=i-categories.length-4;
+      if(index==recent.length+1)return attemptPages>1?MathWorldPagination(page:ap,pageCount:attemptPages,arabic:ar,onChanged:(p)=>setState(()=>_attemptPage=p)):const SizedBox.shrink();
       if(index==recent.length)return Padding(padding:const EdgeInsets.only(top:12),child:Text(recent.isEmpty?(ar?'لا توجد محاولات مسجلة لهذا الصف.':'No recorded attempts for this grade.'):(ar?'آخر 10 محاولات مسجلة كحد أقصى.':'Up to 10 most recent recorded attempts.')));
       final a=recent[index],correct=a['IsCorrect']==true;
       final date=DateTime.tryParse(a['SubmittedAtUtc']?.toString()??'')?.toLocal();
