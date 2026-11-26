@@ -14,7 +14,7 @@ import '../screens/problems/problems_list_screen.dart';
 import '../screens/settings/privacy_screen.dart';
 import '../screens/settings/premium_gift_redeem_screen.dart';
 import '../screens/premium/premium_benefits_screen.dart';
-import '../screens/premium/premium_progress_report_screen.dart';
+import '../screens/premium/current_grade_report_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/stages/stage_categories_screen.dart';
 import '../screens/stages/learning_stage_screen.dart';
@@ -57,7 +57,7 @@ class AppRoutes {
       notifications: (_) => StudentOnboardingGate(child: const NotificationsScreen()),
       premiumAnalytics: (_) => StudentOnboardingGate(child: const PremiumAnalyticsScreen()),
       premiumBenefits: (_) => StudentOnboardingGate(child: const PremiumBenefitsScreen()),
-      premiumReport: (_) => StudentOnboardingGate(child: const PremiumProgressReportScreen()),
+      premiumReport: (_) => StudentOnboardingGate(child: const CurrentGradeReportScreen()),
       premiumGiftRedeem: (_) => StudentOnboardingGate(child: const PremiumGiftRedeemScreen()),
       // Preserve old deep links but never expose unavailable checkout pricing.
       premiumCheckout: (_) => StudentOnboardingGate(child: const PremiumBenefitsScreen()),
