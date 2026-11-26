@@ -22,6 +22,7 @@ import 'problem_details_provider.dart';
 import 'problems_provider.dart';
 import 'notification_provider.dart';
 import 'premium_analytics_provider.dart';
+import 'premium_reports_provider.dart';
 import 'stage_category_access_provider.dart';
 import 'student_badges_provider.dart';
 import 'social_link_status_provider.dart';
@@ -291,6 +292,8 @@ class AuthNotifier extends StateNotifier<AuthState>
         _ref.invalidate(problemsProvider);
         _ref.invalidate(problemDetailsProvider);
         _ref.invalidate(premiumAnalyticsProvider);
+        _ref.invalidate(filteredPremiumAnalyticsProvider);
+        _ref.invalidate(premiumProgressReportProvider);
       }
     } catch (_) {
       // Do not end a valid session because a background refresh failed.
@@ -326,6 +329,8 @@ class AuthNotifier extends StateNotifier<AuthState>
       _ref.invalidate(favoritesProvider);
       _ref.invalidate(solvedProvider);
       _ref.invalidate(premiumAnalyticsProvider);
+        _ref.invalidate(filteredPremiumAnalyticsProvider);
+        _ref.invalidate(premiumProgressReportProvider);
       _ref.invalidate(learnerPresenceServiceProvider);
     } catch (_) {
       state = state.copyWith(isSubmitting: false);
@@ -410,6 +415,8 @@ class AuthNotifier extends StateNotifier<AuthState>
     _ref.invalidate(stageCategoryAccessProvider);
     _ref.invalidate(notificationInboxProvider);
     _ref.invalidate(premiumAnalyticsProvider);
+        _ref.invalidate(filteredPremiumAnalyticsProvider);
+        _ref.invalidate(premiumProgressReportProvider);
     _ref.invalidate(studentBadgesProvider);
     _ref.invalidate(googleLinkedProvider);
   }

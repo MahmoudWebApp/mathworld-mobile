@@ -9,5 +9,5 @@ final premiumReportsRepositoryProvider = Provider<PremiumReportsRepository>(
 );
 
 final premiumProgressReportProvider =
-    FutureProvider.family<PremiumProgressReport, int>((ref, stageId) =>
+    FutureProvider.autoDispose.family<PremiumProgressReport, int>((ref, stageId) =>
       ref.watch(premiumReportsRepositoryProvider).getReport(stageId: stageId));
