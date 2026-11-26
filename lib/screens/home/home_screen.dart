@@ -47,6 +47,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final examsEnabled=ref.watch(customExamAvailabilityProvider).valueOrNull==true;
     final primary=Theme.of(context).colorScheme.primary;
     final gold=AppColors.pointsGold(context);
+    final stageAccent=j==null?primary:AppColors.stageForOrder(j.stageId);
     String tr(String a,String e)=>ar?a:e;
     Future<void> resumeNextProblem() async {
       if(_resuming)return;
@@ -115,7 +116,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(width:12),
         Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
           Text(user.name.isEmpty?tr('أهلاً بك','Welcome'):user.name,style:Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight:FontWeight.w800),maxLines:2,overflow:TextOverflow.ellipsis),
-          Text([if(j!=null)j.getName(context.locale.languageCode),user.premium?'Premium':'Free'].join(' · '),style:Theme.of(context).textTheme.bodySmall),
+          Text([if(j!=null)j.getName(context.locale.languageCode),user.premium?'Premium':'Free'].join(' · '),style:Theme.of(context).textTheme.bodySmall?.copyWith(color:stageAccent,fontWeight:FontWeight.w700)),
         ])),
       ]),
       MobilePanel(gradient:Theme.of(context).brightness==Brightness.dark?AppGradients.darkHero:AppGradients.lightHero,child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
@@ -125,7 +126,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
             Expanded(child:_Metric(label:tr('النقاط','Points'),value:'${j?.displayedPoints??dashboard!.totalPoints}',color:gold,icon:Icons.star_rounded)),
             Expanded(child:_Metric(label:tr('المحلولة','Solved'),value:j==null?'${dashboard!.solvedProblemsCount}':'${j.solvedProblems}/${j.totalProblems}',color:AppColors.success)),
-            Expanded(child:_Metric(label:tr('الإنجاز','Progress'),value:j==null?'—':'${j.completionPercent}%',color:primary)),
+            Expanded(child:_Metric(label:tr('الإنجاز','Progress'),value:j==null?'—':'${j.completionPercent}%',color:stageAccent)),
           ]),
           if(j!=null)...[const SizedBox(height:12),LinearProgressIndicator(value:(j.completionPercent/100).clamp(0.0,1.0).toDouble(),color:AppColors.success,borderRadius:BorderRadius.circular(8))],
         ]else if(journeyState.isLoading||dashboardState.isLoading)
@@ -136,7 +137,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           TextButton(onPressed:()=>ref.invalidate(learningJourneyProvider),child:Text(tr('تحديث تقدم الصف','Refresh grade progress'))),
       ])),
       MobilePanel(child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-        Row(children:[Icon(Icons.auto_stories_outlined,color:primary),const SizedBox(width:8),Expanded(child:Text(tr('تابع التعلم','Continue learning'),style:Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight:FontWeight.w800)))]),
+        Row(children:[Icon(Icons.auto_stories_outlined,color:stageAccent),const SizedBox(width:8),Expanded(child:Text(tr('تابع التعلم','Continue learning'),style:Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight:FontWeight.w800)))]),
         const SizedBox(height:8),
         Text(j?.recommendedCategory?.getName(context.locale.languageCode)??tr('استكشف الفئات المتاحة لك','Explore your available topics')),
         const SizedBox(height:12),
@@ -157,8 +158,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ])),
       ]),
       if(!user.premium)MobilePanel(padding:EdgeInsets.zero,child:MobileActionRow(icon:Icons.workspace_premium_rounded,color:gold,title:tr('مميزات Premium','Premium benefits'),subtitle:tr('افتح جميع الفئات والتقارير والحلول','Unlock topics, reports and solutions'),onTap:()=>Navigator.pushNamed(context,AppRoutes.premiumBenefits))),
-      const StudentBadgesCard(),
-      if(j?.certificatesEnabled==true||examsEnabled)CertificateHomeSummary(journey:j,examsEnabled:examsEnabled),
+      StudentBadgesCard(loadSummary:j!=null||dashboard!=null),
+      if(j?.certificatesEnabled==true||examsEnabled)CertificateHomeSummary(journey:j,examsEnabled:examsEnabled,loadSummary:j!=null||dashboard!=null),
       Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         MobileSectionTitle(title:tr('آخر النشاطات','Recent activity'),actionLabel:tr('عرض الكل','View all'),onAction:()=>Navigator.pushNamed(context,AppRoutes.solved)),
         if(dashboardState.isLoading&&dashboard==null)const Padding(padding:EdgeInsets.symmetric(vertical:12),child:Center(child:AppInlineLoader(size:18)))
