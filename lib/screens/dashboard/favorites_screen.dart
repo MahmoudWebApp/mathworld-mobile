@@ -31,7 +31,7 @@ class FavoritesScreen extends ConsumerWidget {
         bottom: false,
         child: favoritesState.when(
             skipLoadingOnRefresh:false,skipLoadingOnReload:false,
-          loading: () => const AppContentSkeleton(),
+          loading: () => AppContentSkeleton(count:5,title:embedded?'favorites'.tr():null),
           error: (error, __) => AppErrorView(
             message: localizedErrorMessage(error),
             onRetry: () => ref.invalidate(favoritesProvider),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/problem_search.dart';
@@ -15,6 +16,10 @@ final problemsProvider =
     final languageCode = ref.watch(
       settingsProvider.select((settings) => settings.languageCode),
     );
-    return ref.watch(problemsRepositoryProvider).search(params, languageCode);
+    final lease=ref.keepAlive();
+    final timer=Timer(const Duration(seconds:30),lease.close);
+    ref.onDispose(timer.cancel);
+    try { return await ref.watch(problemsRepositoryProvider).search(params, languageCode); }
+    catch (_) { lease.close(); rethrow; }
   },
 );

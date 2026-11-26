@@ -110,7 +110,7 @@ class StageCategoriesScreen extends ConsumerWidget {
         top: embedded,
         bottom: false,
         child: accessState.when(
-          loading: () => const AppContentSkeleton(cards:true,count:4),
+          loading: () => AppContentSkeleton(cards:true,count:4,title:stage.getName(localeCode)),
           error: (error, __) => AppErrorView(
             message: localizedErrorMessage(error),
             onRetry: () => ref.invalidate(
@@ -380,7 +380,7 @@ class CurrentStageCategoriesScreen extends ConsumerWidget {
     // An explicit disabled/legacy API response preserves existing stage UI.
     // A temporary failure must not silently switch a selected track to a stage.
     if (trackCatalog.isLoading && !trackCatalog.hasValue) {
-      return const AppContentSkeleton(cards:true);
+      return AppContentSkeleton(cards:true,title:context.locale.languageCode=='ar'?'الفئات التعليمية':'Learning topics');
     }
     if (trackCatalog.hasError) {
       return AppErrorView(onRetry: () => ref.invalidate(publishedTracksProvider(stageId)));
@@ -391,7 +391,7 @@ class CurrentStageCategoriesScreen extends ConsumerWidget {
     }
 
     return ref.watch(stagesProvider).when(
-      loading: () => const AppContentSkeleton(cards:true,count:4),
+      loading: () => AppContentSkeleton(cards:true,count:4,title:context.locale.languageCode=='ar'?'الفئات التعليمية':'Learning topics'),
       error: (error, _) => AppErrorView(
         message: localizedErrorMessage(error),
         onRetry: () => ref.invalidate(stagesProvider),
@@ -555,8 +555,8 @@ class _CategoryCard extends StatelessWidget {
                 child: LinearProgressIndicator(
                   minHeight: 5,
                   value: category.progress!.clamp(0.0, 1.0).toDouble(),
-                  backgroundColor: accent.withValues(alpha: 0.18),
-                  valueColor: AlwaysStoppedAnimation<Color>(accent),
+                  backgroundColor: AppColors.progressTrack(context),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.progressFill(category.progress!)),
                 ),
               ),
             ),

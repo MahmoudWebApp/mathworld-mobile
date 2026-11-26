@@ -77,12 +77,12 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
   Widget build(BuildContext context){
     final ar=context.locale.languageCode=='ar';
     final selection=ref.watch(trackSelectionProvider);
-    if(selection.isLoading&&!selection.hasValue)return const AppContentSkeleton(cards:true);
+    if(selection.isLoading&&!selection.hasValue)return AppContentSkeleton(cards:true,title:ar?'الفئات التعليمية':'Learning topics');
     if(selection.hasError)return AppErrorView(message:localizedErrorMessage(selection.error!),onRetry:()=>ref.invalidate(trackSelectionProvider));
     final current=selection.valueOrNull;
     final id=trackNumber(current?['TrackId']);
     final selected=trackNumber(current?['StageId'])==widget.stageId && widget.catalog.items.any((t)=>trackNumber(t['Id'])==id);
-    if(selected&&!_changing)return _TrackContent(key:ValueKey(id),id:id,onChange:()=>setState(()=>_changing=true));
+    if(selected&&!_changing)return _TrackContent(key:ValueKey(id),id:id,title:trackText(widget.catalog.items.firstWhere((t)=>trackNumber(t['Id'])==id),'Name',ar),onChange:()=>setState(()=>_changing=true));
     return ListView(padding:const EdgeInsets.all(16),children:[
       Text(ar?'اختر الصف أو المستوى':'Choose grade or level',style:Theme.of(context).textTheme.headlineSmall),
       const SizedBox(height:8),
@@ -102,8 +102,8 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
 }
 
 class _TrackContent extends ConsumerStatefulWidget{
-  final int id;final VoidCallback onChange;
-  const _TrackContent({super.key,required this.id,required this.onChange});
+  final int id;final String title;final VoidCallback onChange;
+  const _TrackContent({super.key,required this.id,required this.title,required this.onChange});
   @override
   ConsumerState<_TrackContent> createState()=>_TrackContentState();
 }
@@ -143,7 +143,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
     void reload(){ref.invalidate(trackDetailsProvider(id));ref.invalidate(trackProgressProvider(id));}
     if(detail.hasError&&!detail.hasValue)return AppErrorView(message:localizedErrorMessage(detail.error!),onRetry:reload);
     final d=detail.valueOrNull;
-    if(d==null)return const AppContentSkeleton(cards:true);
+    if(d==null)return AppContentSkeleton(cards:true,title:widget.title);
     final p=progress.valueOrNull;
     final rawTrack=d['Track'];
     if(rawTrack is! Map)return AppErrorView(onRetry:reload,message:ar?'تعذّر قراءة بيانات الصف أو المستوى':'Could not read grade or level data');
@@ -190,7 +190,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
           return SliverGrid(delegate:SliverChildBuilderDelegate((context,i){
             final c=ordered[i],s=stats[trackNumber(ordered[i]['Id'])];
             final locked=s?['IsLocked'];final count=trackNumber(c['ProblemsCount']);final solved=trackNumber(s?['Solved']);
-            return MobilePanel(padding:const EdgeInsets.all(12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            return MobilePanel(padding:const EdgeInsets.all(12),borderColor:accent.withValues(alpha:.36),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
               Row(children:[_TrackTopicIcon(value:c['Icon']?.toString()??'',accent:accent),const Spacer(),
                 if(locked==true)Icon(Icons.lock_outline,color:AppColors.pointsGold(context),size:18)
                 else if(c['IsFree']==true)Text(ar?'مجاني':'Free',style:const TextStyle(color:AppColors.success,fontSize:11,fontWeight:FontWeight.w700)),
