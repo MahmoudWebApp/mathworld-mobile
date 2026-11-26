@@ -72,7 +72,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                     action: FilledButton.icon(
                       onPressed: () {
                         if (onOpenStages != null) {
-                          onOpenStages!();
+                          onOpenStages();
                         } else {
                           Navigator.pushNamed(context, AppRoutes.home,
                               arguments: {'initialTab': 1});
