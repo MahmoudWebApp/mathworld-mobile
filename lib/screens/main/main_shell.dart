@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/design_tokens.dart';
 import '../../config/app_routes.dart';
 import '../../providers/notification_provider.dart';
+import '../../providers/daily_challenge_provider.dart';
 import '../../providers/dashboard_provider.dart';
 import '../../providers/premium_reports_provider.dart';
 import '../../providers/premium_analytics_provider.dart';
@@ -168,8 +169,15 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
               tooltip: context.locale.languageCode == 'ar'
                   ? 'الإشعارات' : 'Notifications',
               onPressed: () async {
-                await Navigator.pushNamed(context, AppRoutes.notifications);
-                if (mounted) ref.invalidate(notificationInboxProvider);
+                final destination = await Navigator.pushNamed<String>(
+                    context, AppRoutes.notifications);
+                if (mounted) {
+                  ref.invalidate(notificationInboxProvider);
+                  if (destination == 'daily-challenge') {
+                    _selectTab(0);
+                    ref.invalidate(dailyChallengeProvider);
+                  }
+                }
               },
               icon: Stack(
                 clipBehavior: Clip.none,
