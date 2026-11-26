@@ -10,6 +10,7 @@ import '../../providers/notifications_provider.dart';
 import '../../services/notification_api_service.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/math_background.dart';
+import '../../utils/layout_utils.dart';
 
 class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
@@ -30,6 +31,8 @@ class _ManagedInboxState extends ConsumerState<_ManagedInbox>{
   final _selected=<int>{};
   final _read=<int>{};
   NotificationInbox? _page;
+  int _visiblePage=0;
+  static const _pageSize=5;
   bool _all=false,_busy=false;
   String? _error;
   bool get _active=>mounted&&ref.read(authProvider).user?.id==widget.owner;
@@ -39,13 +42,9 @@ class _ManagedInboxState extends ConsumerState<_ManagedInbox>{
   NotificationApiService get _api=>ref.read(notificationApiServiceProvider);
   @override void initState(){
     super.initState();
-    _scroll.addListener(_nearEnd);
     WidgetsBinding.instance.addPostFrameCallback((_){if(_active)_refresh();});
   }
   @override void dispose(){_scroll.dispose();super.dispose();}
-  void _nearEnd(){
-    if(_scroll.hasClients&&_scroll.position.extentAfter<80&&_page?.hasMore==true&&!_busy&&_error==null){_more();}
-  }
   void _invalidate(){
     ref.invalidate(notificationInboxProvider);
     ref.invalidate(notificationsUnreadCountProvider);
@@ -62,19 +61,32 @@ class _ManagedInboxState extends ConsumerState<_ManagedInbox>{
     final p=await _api.managed();
     if(!_active)return;
     setState((){
-      _page=p;_items..clear()..addAll(p.items);
+      _page=p;_visiblePage=0;_items..clear()..addAll(p.items);
       _all=false;_selected.clear();_read.clear();
     });
     if(_scroll.hasClients)_scroll.jumpTo(0);
   }
   Future<void> _refresh()=>_run(() async{await _reset();if(_active)_invalidate();});
+  void _previous(){
+    if(_busy||_visiblePage<=0)return;
+    setState(()=>_visiblePage--);
+    if(_scroll.hasClients)_scroll.jumpTo(0);
+  }
   Future<void> _more()=>_run(() async{
+    if((_visiblePage+1)*_pageSize<_items.length){
+      setState(()=>_visiblePage++);
+      if(_scroll.hasClients)_scroll.jumpTo(0);
+      return;
+    }
     final p=_page;
     if(p==null||!p.hasMore||_items.isEmpty)return;
     final next=await _api.managed(snapshotId:p.snapshotId,before:_items.last);
     if(!_active)return;
     final known=_items.map((n)=>n.id).toSet();
-    setState((){_page=next;_items.addAll(next.items.where((n)=>known.add(n.id)));});
+    setState((){_page=next;_items.addAll(next.items.where((n)=>known.add(n.id)));
+      if((_visiblePage+1)*_pageSize<_items.length)_visiblePage++;
+    });
+    if(_scroll.hasClients)_scroll.jumpTo(0);
   });
   Future<void> _delete() async {
     if(!_active||_busy||_count==0||_page==null)return;
@@ -116,6 +128,8 @@ class _ManagedInboxState extends ConsumerState<_ManagedInbox>{
   });
   @override Widget build(BuildContext context){
     final scheme=Theme.of(context).colorScheme;
+    final visible=_items.skip(_visiblePage*_pageSize).take(_pageSize).toList();
+    final canNext=(_visiblePage+1)*_pageSize<_items.length||_page?.hasMore==true;
     return Scaffold(
       appBar:AppBar(title:Text(tr('الإشعارات','Notifications')),actions:[
         IconButton(onPressed:_busy?null:_refresh,tooltip:tr('تحديث','Refresh'),icon:const Icon(Icons.refresh)),
@@ -133,18 +147,25 @@ class _ManagedInboxState extends ConsumerState<_ManagedInbox>{
           ],
         )),
         if(_error!=null)Padding(padding:const EdgeInsets.all(8),child:Text(_error!,style:TextStyle(color:scheme.error))),
-        Expanded(child:_page==null&&(_busy||_error==null)?const AppContentSkeleton():_page==null?AppErrorView(message:_error,onRetry:_refresh):
+        Expanded(child:_page==null&&(_busy||_error==null)?const AppContentSkeleton(count:5):_page==null?AppErrorView(message:_error,onRetry:_refresh):
           RefreshIndicator(onRefresh:_refresh,child:ListView.separated(
             controller:_scroll,physics:const AlwaysScrollableScrollPhysics(),
             padding:const EdgeInsets.all(AppSpacing.md),
-            itemCount:_items.length+1,
+            itemCount:visible.length+1,
             separatorBuilder:(_,__)=>const Divider(height:1,indent:16,endIndent:16),
             itemBuilder:(context,index){
-              if(index==_items.length){
-                if(_page?.hasMore==true)return Padding(padding:const EdgeInsets.all(12),child:Center(child:_busy?const AppInlineLoader():TextButton(onPressed:_more,child:Text(tr('عرض المزيد','Load more')))));
-                return Padding(padding:const EdgeInsets.all(16),child:Center(child:Text(_items.isEmpty?tr('لا توجد إشعارات','No notifications'):tr('نهاية إشعارات آخر 30 يوماً','End of 30-day notifications'))));
+              if(index==visible.length){
+                if(_items.isEmpty)return Padding(padding:const EdgeInsets.all(16),child:Center(child:Text(tr('لا توجد إشعارات','No notifications'))));
+                final pages=((_page?.totalCount??0)+_pageSize-1)~/_pageSize;
+                return Padding(padding:const EdgeInsets.symmetric(vertical:16),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
+                  OutlinedButton(onPressed:_busy||_visiblePage==0?null:_previous,child:Tooltip(message:tr('السابق','Previous'),child:LayoutUtils.previousPageIcon(context,size:18))),
+                  const SizedBox(width:12),
+                  if(_busy)const AppInlineLoader()else Text('${_visiblePage+1} / ${pages>_visiblePage?pages:_visiblePage+1}'),
+                  const SizedBox(width:12),
+                  OutlinedButton(onPressed:_busy||!canNext?null:_more,child:Tooltip(message:tr('التالي','Next'),child:LayoutUtils.nextPageIcon(context,size:18))),
+                ]));
               }
-              final n=_items[index],unread=n.isUnread&&!_read.contains(n.id);
+              final n=visible[index],unread=n.isUnread&&!_read.contains(n.id);
               return Material(key:ValueKey(n.id),color:unread?scheme.primaryContainer.withValues(alpha:.25):scheme.surface,child:ListTile(
                 leading:Checkbox(value:_all||_selected.contains(n.id),onChanged:_busy||_all?null:(v)=>setState((){if(v==true){_selected.add(n.id);}else{_selected.remove(n.id);}})),
                 title:Text(_ar?n.titleAr:n.titleEn,style:TextStyle(fontWeight:unread?FontWeight.w800:FontWeight.w600)),
