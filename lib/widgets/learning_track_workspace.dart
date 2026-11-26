@@ -78,7 +78,7 @@ class _LearningTrackWorkspaceState extends ConsumerState<LearningTrackWorkspace>
     final ar=context.locale.languageCode=='ar';
     final selection=ref.watch(trackSelectionProvider);
     if(selection.isLoading&&!selection.hasValue)return AppContentSkeleton(cards:true,title:ar?'اختر الصف أو المستوى':'Choose grade or level',sectionTitle:ar?'الفئات التعليمية':'Learning topics',cardExtent:236);
-    if(selection.hasError)return AppErrorView(message:localizedErrorMessage(selection.error!),onRetry:()=>ref.invalidate(trackSelectionProvider));
+    if(selection.hasError&&!selection.hasValue)return AppErrorView(message:localizedErrorMessage(selection.error!),onRetry:()=>ref.invalidate(trackSelectionProvider));
     final current=selection.valueOrNull;
     final id=trackNumber(current?['TrackId']);
     final selected=trackNumber(current?['StageId'])==widget.stageId && widget.catalog.items.any((t)=>trackNumber(t['Id'])==id);
@@ -150,6 +150,8 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
     final track=Map<String,dynamic>.from(rawTrack);
     final stats={for(final c in trackRows(p?['Categories']))trackNumber(c['CategoryId']):c};
     final percent=double.tryParse(p?['CompletionPercent']?.toString()??'')??0;
+    final total=trackNumber(p?['ProblemsCount']);
+    final completion=total>0?trackNumber(p?['Solved'])/total:0.0;
     final accent=AppColors.stageForOrder(trackNumber(track['StageId']));
     final categories=trackRows(d['Categories']);
     final ordered=[...categories.where((c)=>c['IsFree']==true),...categories.where((c)=>c['IsFree']!=true)];
@@ -177,7 +179,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
             else const AppLoadingView(mode:AppLoadingMode.section)
           else MobilePanel(child:Column(children:[
             Row(children:[Expanded(child:Text(ar?'التقدم':'Progress')),Text('${trackNumber(p['Solved'])}/${trackNumber(p['ProblemsCount'])} · ${percent.toStringAsFixed(1)}%',style:TextStyle(color:accent,fontWeight:FontWeight.w700))]),
-            const SizedBox(height:8),LearningProgressBar(value:(percent/100).clamp(0.0,1.0).toDouble()),
+            const SizedBox(height:8),LearningProgressBar(value:completion),
           ])),
           if(p?['TrackPracticeIsolationEnabled']==true&&stats.values.any((c)=>trackNumber(c['Attempted'])>0))
             Align(alignment:AlignmentDirectional.centerEnd,child:TextButton.icon(onPressed:_resetting?null:()=>_reset(trackNumber(p?['StageId']),trackText(track,'Name',ar)),icon:const Icon(Icons.restart_alt),label:Text(ar?'إعادة تدريب الصف':'Restart grade practice'))),

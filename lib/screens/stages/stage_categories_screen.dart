@@ -377,13 +377,16 @@ class CurrentStageCategoriesScreen extends ConsumerWidget {
       );
     }
 
+    // Start account selection alongside the public catalog rather than waiting
+    // for one request to finish before the next begins.
     final trackCatalog = ref.watch(publishedTracksProvider(stageId));
+    ref.watch(trackSelectionProvider.select((state)=>state.isLoading));
     // An explicit disabled/legacy API response preserves existing stage UI.
     // A temporary failure must not silently switch a selected track to a stage.
     if (trackCatalog.isLoading && !trackCatalog.hasValue) {
       return AppContentSkeleton(cards:true,title:context.locale.languageCode=='ar'?'الفئات التعليمية':'Learning topics',cardExtent:236);
     }
-    if (trackCatalog.hasError) {
+    if (trackCatalog.hasError && !trackCatalog.hasValue) {
       return AppErrorView(onRetry: () => ref.invalidate(publishedTracksProvider(stageId)));
     }
     final catalog = trackCatalog.valueOrNull;
