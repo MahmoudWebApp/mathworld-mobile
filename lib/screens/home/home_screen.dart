@@ -798,11 +798,11 @@ class _StatsGrid extends StatelessWidget {
                         color: item.color.withValues(alpha: 0.11),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Icon(item.icon, color: item.color),
+                      child: Icon(item.icon, color: item.color == AppColors.rewardGold ? AppColors.pointsGold(context) : item.color),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     if (item.color == AppColors.rewardGold)
-                      Text(item.value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800,color: Theme.of(context).brightness == Brightness.dark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk))
+                      Text(item.value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800,color: AppColors.pointsGold(context)))
                     else ShaderMask(
                       shaderCallback: AppGradients.primary.createShader,
                       blendMode: BlendMode.srcIn,
@@ -1022,7 +1022,7 @@ class _StageStat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(value, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: gold ? (Theme.of(context).brightness == Brightness.dark ? AppColors.rewardGoldBright : AppColors.rewardGoldInk) : null)),
+        Text(value, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: gold ? (AppColors.pointsGold(context)) : null)),
         Text(title, style: Theme.of(context).textTheme.bodySmall),
       ],
     );
