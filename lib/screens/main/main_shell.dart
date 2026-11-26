@@ -23,6 +23,8 @@ import '../../providers/repositories_provider.dart';
 import '../../widgets/brand_logo.dart';
 import '../dashboard/favorites_screen.dart';
 import '../home/home_screen.dart';
+import '../home/learning_session_screen.dart';
+import '../../services/learning_session_api.dart';
 import '../settings/settings_screen.dart';
 import '../stages/stage_categories_screen.dart';
 
@@ -176,6 +178,22 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
                   if (destination == 'daily-challenge') {
                     _selectTab(0);
                     ref.invalidate(dailyChallengeProvider);
+                    ref.invalidate(learningJourneyProvider);
+                    try {
+                      final journey = await ref.read(learningJourneyProvider.future);
+                      if (!mounted || journey?.learningSessionsEnabled != true) return;
+                      await Navigator.push(context, MaterialPageRoute<void>(
+                        builder: (_) => LearningSessionScreen(scope: SessionScope(
+                          kind: 'daily', stageId: journey!.stageId, trackId: journey.trackId)),
+                      ));
+                      if (mounted) {
+                        ref.invalidate(learningJourneyProvider);
+                        ref.invalidate(dashboardProvider);
+                        ref.invalidate(studentBadgesProvider);
+                      }
+                    } catch (_) {
+                      // Home remains available even when fetching the journey fails.
+                    }
                   }
                 }
               },
