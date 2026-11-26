@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:printing/printing.dart';
 import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
 import '../../core/network/api_envelope.dart';
@@ -90,7 +90,19 @@ class _ExamWorkspaceState extends ConsumerState<_ExamWorkspace>{
     final bytes=await ref.read(apiClientProvider).getBinary('$root/$id/certificate',queryParameters:{'lang':lang});
     if(bytes.length<5||String.fromCharCodes(bytes.take(5))!='%PDF-')throw const FormatException('Invalid PDF');
     if(!active)return;
-    await SharePlus.instance.share(ShareParams(files:[XFile.fromData(Uint8List.fromList(bytes),mimeType:'application/pdf',name:'mathworld-exam-$lang.pdf')],fileNameOverrides:['mathworld-exam-$lang.pdf']));
+    final pdf=Uint8List.fromList(bytes);
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder:(ctx)=>Scaffold(
+      appBar:AppBar(title:Text(lang=='ar'?'معاينة شهادة الامتحان':'Exam certificate preview')),
+      body:PdfPreview(
+        build:(_)=>pdf,
+        pdfFileName:'mathworld-exam-$lang.pdf',
+        canChangePageFormat:false,
+        canChangeOrientation:false,
+        canDebug:false,
+        allowPrinting:true,
+        allowSharing:true,
+      ),
+    )));
   });
   @override Widget build(BuildContext context){
     final premium=ref.watch(studentPremiumProvider).valueOrNull==true;
@@ -109,7 +121,7 @@ class _ExamWorkspaceState extends ConsumerState<_ExamWorkspace>{
           Text(name(e,'Title'),style:Theme.of(context).textTheme.titleLarge),
           if(e['FinishedAtUtc']!=null)...[
             Text("${e['Score']}/${e['Total']} — "+(e['Passed']==true?tr('ناجح','Passed'):tr('لم تجتز','Not passed')),style:Theme.of(context).textTheme.headlineSmall),
-            if(e['CertificateIssued']==true)FilledButton.icon(onPressed:busy?null:()=>certificate(e['Id'].toString()),icon:const Icon(Icons.download),label:Text(tr('تحميل الشهادة PDF','Download certificate PDF'))),
+            if(e['CertificateIssued']==true)FilledButton.icon(onPressed:busy?null:()=>certificate(e['Id'].toString()),icon:const Icon(Icons.download),label:Text(tr('معاينة الشهادة','Preview certificate'))),
             Text(tr('مراجعة الإجابات','Review answers')),
             for(final r in rows(e['Review']))Card(child:Padding(padding:const EdgeInsets.all(12),child:Column(children:[
               RichMathText(text:name(asMap(r['Question'])??{},'QuestionText')),
