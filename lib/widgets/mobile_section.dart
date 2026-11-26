@@ -7,10 +7,11 @@ class MobilePanel extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final Gradient? gradient;
-  const MobilePanel({super.key,required this.child,this.padding=const EdgeInsets.all(14),this.gradient});
+  final Color? borderColor;
+  const MobilePanel({super.key,required this.child,this.padding=const EdgeInsets.all(14),this.gradient,this.borderColor});
   @override Widget build(BuildContext context) => DecoratedBox(
     decoration:BoxDecoration(color:gradient==null?Theme.of(context).colorScheme.surface:null,gradient:gradient,
-      border:Border.all(color:Theme.of(context).brightness==Brightness.dark?AppColors.darkBorder:AppColors.lightBorder),
+      border:Border.all(color:borderColor??(Theme.of(context).brightness==Brightness.dark?AppColors.darkBorder:AppColors.lightBorder)),
       borderRadius:BorderRadius.circular(16)),
     child:Padding(padding:padding,child:child),
   );

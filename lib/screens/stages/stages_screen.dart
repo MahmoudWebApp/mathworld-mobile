@@ -29,7 +29,7 @@ class StagesScreen extends ConsumerWidget {
       child: SafeArea(
         bottom: false,
         child: stagesState.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => AppContentSkeleton(cards:true,count:4,title:embedded?'educational_stages'.tr():null),
           error: (error, __) => AppErrorView(
             message: localizedErrorMessage(error),
             onRetry: () => ref.invalidate(stagesProvider),

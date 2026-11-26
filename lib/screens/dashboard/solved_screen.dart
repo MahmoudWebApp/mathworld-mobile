@@ -10,14 +10,20 @@ import '../../widgets/app_states.dart';
 import '../../widgets/math_background.dart';
 import '../../widgets/problem_card.dart';
 import '../../widgets/compact_problem_count.dart';
+import '../../widgets/mathworld_pagination.dart';
 
 /// Displays localized solved problems with consistent spacing.
-class SolvedScreen extends ConsumerWidget {
+class SolvedScreen extends ConsumerStatefulWidget {
   const SolvedScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final solvedState = ref.watch(solvedProvider);
+  ConsumerState<SolvedScreen> createState()=>_SolvedScreenState();
+}
+class _SolvedScreenState extends ConsumerState<SolvedScreen> {
+  int _page=1;
+  @override
+  Widget build(BuildContext context) {
+    final solvedState = ref.watch(solvedProvider(_page));
 
     return Scaffold(
       appBar: AppBar(title: Text('solved_problems'.tr())),
@@ -30,7 +36,11 @@ class SolvedScreen extends ConsumerWidget {
               message: localizedErrorMessage(error),
               onRetry: () => ref.invalidate(solvedProvider),
             ),
-            data: (items) {
+            data: (result) {
+            final items=result.problems;
+            if(items.isEmpty&&_page>1) {
+              return Center(child:TextButton(onPressed:()=>setState(()=>_page=1),child:Text(context.locale.languageCode=='ar'?'العودة لأول صفحة':'Back to first page')));
+            }
               if (items.isEmpty) {
                 return ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -53,7 +63,7 @@ class SolvedScreen extends ConsumerWidget {
               }
 
               return RefreshIndicator(
-                onRefresh: () => ref.refresh(solvedProvider.future),
+                onRefresh: () => ref.refresh(solvedProvider(_page).future),
                 child: ListView.separated(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(
@@ -62,19 +72,20 @@ class SolvedScreen extends ConsumerWidget {
                     AppSpacing.lg,
                     AppSpacing.xxl,
                   ),
-                  itemCount: items.length + 1,
+                  itemCount: items.length + 2,
                   separatorBuilder: (_, __) =>
                       const SizedBox(height: AppSpacing.lg),
                   itemBuilder: (context, index) {
                     if (index == 0) {
                       return CompactProblemCount(
-                        count: items.length,
+                        count: result.total,
                         label: Localizations.localeOf(context).languageCode == 'ar'
                             ? 'إجمالي المحلولة' : 'Solved questions',
                         icon: Icons.check_circle_outline_rounded,
                         accent: AppColors.success,
                       );
                     }
+                    if(index==items.length+1)return MathWorldPagination(page:result.page,pageCount:result.totalPages,arabic:context.locale.languageCode=='ar',onChanged:(p)=>setState(()=>_page=p));
                     final problem = items[index - 1];
                     return ProblemCard(
                       problem: problem,

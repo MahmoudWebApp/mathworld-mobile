@@ -114,7 +114,7 @@ class AppConstants {
   static const String appVersion = '1.3.0';
   static const String defaultLanguage = 'ar';
   static const String tokenKey = 'auth_token';
-  static const int pageSize = 10;
+  static const int pageSize = 5;
   static const Duration contentCacheDuration = Duration(days: 7);
 }
 

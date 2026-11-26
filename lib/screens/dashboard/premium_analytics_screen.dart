@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/mathworld_pagination.dart';
 import '../../widgets/mathworld_feedback.dart';
 import 'dart:convert';
 
@@ -110,16 +111,26 @@ class _PremiumAnalyticsScreenState extends ConsumerState<PremiumAnalyticsScreen>
   }
 }
 
-class _ReportBody extends ConsumerWidget {
+class _ReportBody extends ConsumerStatefulWidget {
   const _ReportBody({super.key,required this.report,required this.onRefresh});
 
   final PremiumAnalyticsReport report;
   final Future<void> Function() onRefresh;
 
+  @override ConsumerState<_ReportBody> createState()=>_ReportBodyState();
+}
+class _ReportBodyState extends ConsumerState<_ReportBody>{
+  int _categoryPage=1,_attemptPage=1;
+  PremiumAnalyticsReport get report=>widget.report;
+  Future<void> Function() get onRefresh=>widget.onRefresh;
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final ar = context.locale.languageCode == 'ar';
     final color = Theme.of(context).colorScheme.primary;
+    final categoryPages=(report.categories.length+4)~/5;
+    final attemptPages=((report.recentAttempts?.length??0)+4)~/5;
+    final categoryPage=_categoryPage.clamp(1,categoryPages<1?1:categoryPages).toInt();
+    final attemptPage=_attemptPage.clamp(1,attemptPages<1?1:attemptPages).toInt();
     final total = report.totalProblems;
     final completion = total != null && total > 0 ? (report.solvedProblems / total).clamp(0.0, 1.0).toDouble() : 0.0;
     final correctness = report.attempts <= 0
@@ -183,7 +194,7 @@ class _ReportBody extends ConsumerWidget {
                   if (total != null) ...[
                     Text(ar ? 'الإنجاز: ${report.solvedProblems} / $total' : 'Completion: ${report.solvedProblems} / $total'),
                     const SizedBox(height: AppSpacing.sm),
-                    LinearProgressIndicator(value: completion),
+                    LinearProgressIndicator(value: completion,color:AppColors.progressFill(completion),backgroundColor:AppColors.progressTrack(context)),
                     Text('${(completion * 100).toStringAsFixed(1)}%'),
                     const SizedBox(height: AppSpacing.sm),
                   ],
@@ -249,7 +260,7 @@ class _ReportBody extends ConsumerWidget {
                     Text(ar ? 'ما عندك محاولات بعد. ابدأ بحل المسائل.'
                         : 'No attempts yet. Start practising.')
                   else
-                    ...report.categories.map((category) => Column(
+                    ...report.categories.skip((categoryPage-1)*5).take(5).map((category) => Column(
                       children: [
                         ListTile(
                           contentPadding: EdgeInsets.zero,
@@ -274,6 +285,7 @@ class _ReportBody extends ConsumerWidget {
                         const Divider(height: 1),
                       ],
                     )),
+                  if(categoryPages>1)MathWorldPagination(page:categoryPage,pageCount:categoryPages,arabic:ar,onChanged:(p)=>setState(()=>_categoryPage=p)),
                 ],
               ),
             ),
@@ -282,13 +294,14 @@ class _ReportBody extends ConsumerWidget {
               GlassCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(ar ? 'آخر المحاولات' : 'Recent attempts', style: Theme.of(context).textTheme.titleLarge),
                 if (report.recentAttempts!.isEmpty) Text(ar ? 'لا توجد محاولات في هذا النطاق.' : 'No attempts in this scope.'),
-                for (final attempt in report.recentAttempts!)
+                for (final attempt in report.recentAttempts!.skip((attemptPage-1)*5).take(5))
                   ListTile(contentPadding: EdgeInsets.zero,
                     leading: Icon(attempt.isCorrect ? Icons.check_circle_outline : Icons.cancel_outlined,
                       color: attempt.isCorrect ? Colors.green : Theme.of(context).colorScheme.error),
                     title: Text(ar ? attempt.titleAr : attempt.titleEn),
                     subtitle: Text(DateFormat.yMMMd(context.locale.languageCode).add_jm().format(attempt.submittedAtUtc.toLocal())),
                     trailing: Text(attempt.isCorrect ? (ar ? 'صحيحة' : 'Correct') : (ar ? 'خاطئة' : 'Incorrect'))),
+                if(attemptPages>1)MathWorldPagination(page:attemptPage,pageCount:attemptPages,arabic:ar,onChanged:(p)=>setState(()=>_attemptPage=p)),
               ])),
               const SizedBox(height: AppSpacing.lg),
             ],

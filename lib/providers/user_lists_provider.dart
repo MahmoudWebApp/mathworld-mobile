@@ -1,28 +1,34 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../models/problem.dart';
+import '../models/problem_search.dart';
 import 'auth_provider.dart';
 import 'repositories_provider.dart';
 import 'settings_provider.dart';
 
-final favoritesProvider = FutureProvider.autoDispose<List<ProblemPreview>>((ref) async {
-  final languageCode = ref.watch(
-    settingsProvider.select((settings) => settings.languageCode),
-  );
-  final account=ref.watch(authProvider.select((s)=>(id:s.user?.id,stage:s.user?.currentStageId)));
-  final stageId=account.stage;
-  if(account.id==null||stageId==null||stageId<=0)return [];
-  final all = await ref.watch(problemsRepositoryProvider).getFavorites(languageCode);
-  return all.where((problem) => problem.stageId == stageId).toList();
+final favoritesProvider=FutureProvider.autoDispose.family<ProblemSearchResult,int>((ref,page) async {
+  final languageCode=ref.watch(settingsProvider.select((s)=>s.languageCode));
+  final account=ref.watch(authProvider.select((s)=>(id:s.user?.id,stage:s.user?.currentStageId,plan:s.user?.subscriptionType)));
+  if(account.id==null||account.stage==null||account.stage!<=0) {
+    return ProblemSearchResult(problems:const [],total:0,page:page,totalPages:0);
+  }
+  final repo=ref.watch(problemsRepositoryProvider);
+  final lease=ref.keepAlive();
+  final timer=Timer(const Duration(seconds:30),lease.close);
+  ref.onDispose(timer.cancel);
+  try{return await repo.getUserProblemPage(favorites:true,languageCode:languageCode,page:page);}
+  catch(_){lease.close();rethrow;}
 });
 
-final solvedProvider = FutureProvider.autoDispose<List<ProblemPreview>>((ref) async {
-  final languageCode = ref.watch(
-    settingsProvider.select((settings) => settings.languageCode),
-  );
-  final account=ref.watch(authProvider.select((s)=>(id:s.user?.id,stage:s.user?.currentStageId)));
-  final stageId=account.stage;
-  if(account.id==null||stageId==null||stageId<=0)return [];
-  final all = await ref.watch(problemsRepositoryProvider).getSolved(languageCode);
-  return all.where((problem) => problem.stageId == stageId).toList();
+final solvedProvider=FutureProvider.autoDispose.family<ProblemSearchResult,int>((ref,page) async {
+  final languageCode=ref.watch(settingsProvider.select((s)=>s.languageCode));
+  final account=ref.watch(authProvider.select((s)=>(id:s.user?.id,stage:s.user?.currentStageId,plan:s.user?.subscriptionType)));
+  if(account.id==null||account.stage==null||account.stage!<=0) {
+    return ProblemSearchResult(problems:const [],total:0,page:page,totalPages:0);
+  }
+  final repo=ref.watch(problemsRepositoryProvider);
+  final lease=ref.keepAlive();
+  final timer=Timer(const Duration(seconds:30),lease.close);
+  ref.onDispose(timer.cancel);
+  try{return await repo.getUserProblemPage(favorites:false,languageCode:languageCode,page:page);}
+  catch(_){lease.close();rethrow;}
 });

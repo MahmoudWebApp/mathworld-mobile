@@ -81,7 +81,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 result.when(
                   skipLoadingOnRefresh:false,skipLoadingOnReload:false,
-                  loading: () => const AppLoadingView(mode:AppLoadingMode.filter),
+                  loading: () => const AppContentSkeleton(count:5),
                   error: (error, _) => GlassCard(
                     child: Column(
                       children: [

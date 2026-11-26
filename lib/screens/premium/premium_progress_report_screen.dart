@@ -8,6 +8,7 @@ import '../../models/premium_progress_report.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/premium_reports_provider.dart';
 import '../../widgets/app_states.dart';
+import '../../widgets/mathworld_pagination.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
 
@@ -21,6 +22,7 @@ class PremiumProgressReportScreen extends ConsumerStatefulWidget {
 
 class _PremiumProgressReportScreenState
     extends ConsumerState<PremiumProgressReportScreen> {
+  int _categoryPage=1;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +64,10 @@ class _PremiumProgressReportScreenState
                           premiumProgressReportProvider(stageId),
                         ),
                       ),
-                      data: (report) => RefreshIndicator(
+                      data: (report) {
+                        final pages=(report.categories.length+4)~/5;
+                        final page=_categoryPage.clamp(1,pages<1?1:pages).toInt();
+                        return RefreshIndicator(
                         onRefresh: () async {
                           await ref.refresh(
                             premiumProgressReportProvider(stageId).future,
@@ -87,6 +92,8 @@ class _PremiumProgressReportScreenState
                                   LinearProgressIndicator(
                                     value: (report.completionPercent / 100)
                                         .clamp(0.0, 1.0),
+                                    color:AppColors.progressFill(report.completionPercent/100),
+                                    backgroundColor:AppColors.progressTrack(context),
                                     minHeight: 9,
                                     borderRadius: BorderRadius.circular(8),
                                   ),
@@ -129,12 +136,13 @@ class _PremiumProgressReportScreenState
                               style: theme.textTheme.titleLarge,
                             ),
                             const SizedBox(height: AppSpacing.md),
-                            ...report.categories.map((category) => Padding(
+                            ...report.categories.skip((page-1)*5).take(5).map((category) => Padding(
                                   padding: const EdgeInsets.only(
                                     bottom: AppSpacing.md,
                                   ),
                                   child: _CategoryReport(category: category),
                                 )),
+                            if(pages>1)MathWorldPagination(page:page,pageCount:pages,arabic:context.locale.languageCode=='ar',onChanged:(p)=>setState(()=>_categoryPage=p)),
                             if (report.categories.isEmpty)
                               AppEmptyView(
                                 icon: Icons.category_outlined,
@@ -149,7 +157,8 @@ class _PremiumProgressReportScreenState
                             const SizedBox(height: AppSpacing.xxl),
                           ],
                         ),
-                      ),
+                      );
+                      },
                     ),
         ),
       ),
@@ -199,6 +208,8 @@ class _CategoryReport extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             LinearProgressIndicator(
               value: (category.completionPercent / 100).clamp(0.0, 1.0),
+              color:AppColors.progressFill(category.completionPercent/100),
+              backgroundColor:AppColors.progressTrack(context),
               minHeight: 8,
               borderRadius: BorderRadius.circular(8),
             ),

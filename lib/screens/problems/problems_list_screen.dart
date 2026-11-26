@@ -111,7 +111,7 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
         ),
       )),
       body: MathBackground(
-        child: Column(
+        child: SafeArea(top:false,child: Column(
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -176,7 +176,7 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
             Expanded(
               child: problemsState.when(
                 skipLoadingOnRefresh:true,skipLoadingOnReload:false,
-                loading: () => _query != null || _hideSolved ? AppLoadingView(mode:_query != null ? AppLoadingMode.search : AppLoadingMode.filter) : const AppContentSkeleton(),
+                loading: () => const AppContentSkeleton(count:5),
                 error: (error, __) {
                   if (error is AppException &&
                       error.type == AppExceptionType.forbidden &&
@@ -314,7 +314,7 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
               ),
             ),
           ],
-        ),
+        )),
       ),
     );
   }

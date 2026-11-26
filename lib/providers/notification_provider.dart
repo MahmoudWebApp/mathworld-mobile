@@ -11,7 +11,7 @@ final notificationInboxProvider = FutureProvider.autoDispose<NotificationInbox>(
   (ref) => ref.watch(notificationApiServiceProvider).getInbox(),
 );
 
-const int notificationPageSize = 30;
+const int notificationPageSize = 5;
 
 /// A page of the same JWT-owned 30-day history used by the compact bell.
 /// The bell continues using the first page without changing its provider.

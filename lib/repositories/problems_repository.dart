@@ -164,6 +164,25 @@ class ProblemsRepository {
         .toList();
   }
 
+  Future<({List<ErrorNotebookProblem> items,int total,int dueCount})> getErrorNotebookPage({
+    required String languageCode, required bool includeArchived,
+    required int stageId, required bool dueOnly, required int page,
+  }) async {
+    final response=await _apiService.get(ApiConstants.errorNotebook,queryParameters:{
+      'includeArchived':includeArchived,'stageId':stageId,'dueOnly':dueOnly,
+      'page':page,'pageSize':AppConstants.pageSize,
+    });
+    final total=int.tryParse(response.headers.value('x-total-count')??'');
+    final due=int.tryParse(response.headers.value('x-due-count')??'');
+    final items=ApiEnvelope.list(response.data).whereType<Map>().map(
+      (x)=>ErrorNotebookProblem.fromJson(Map<String,dynamic>.from(x),languageCode:languageCode),
+    ).toList();
+    if(total==null||due==null||total<0||due<0||items.length>AppConstants.pageSize) {
+      throw const FormatException('Invalid notebook pagination metadata');
+    }
+    return (items:items,total:total,dueCount:due);
+  }
+
   /// Archives or restores one problem in the error notebook.
   Future<bool> setErrorNotebookArchive({
     required int problemId,
@@ -218,6 +237,25 @@ class ProblemsRepository {
     }
 
     return false;
+  }
+
+  Future<ProblemSearchResult> getUserProblemPage({
+    required bool favorites, required String languageCode, required int page,
+  }) async {
+    final response = await _apiService.get(
+      favorites ? ApiConstants.userFavorites : ApiConstants.userSolved,
+      queryParameters: {'page':page,'pageSize':AppConstants.pageSize},
+    );
+    final total = int.tryParse(response.headers.value('x-total-count') ?? '');
+    if (total == null || total < 0) {
+      throw const FormatException('Missing paginated user-list count');
+    }
+    final items=ApiEnvelope.list(response.data).whereType<Map>().map(
+      (item)=>ProblemPreview.fromJson(Map<String,dynamic>.from(item),languageCode:languageCode),
+    ).toList();
+    if(items.length>AppConstants.pageSize)throw const FormatException('Invalid user-list page');
+    return ProblemSearchResult(problems:items,total:total,page:page,
+      totalPages:(total+AppConstants.pageSize-1)~/AppConstants.pageSize);
   }
 
   Future<List<ProblemPreview>> getFavorites(String languageCode) {

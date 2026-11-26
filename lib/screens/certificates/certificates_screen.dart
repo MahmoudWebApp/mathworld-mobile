@@ -14,16 +14,22 @@ import '../../widgets/math_background.dart';
 import '../../config/design_tokens.dart';
 import '../../widgets/mobile_section.dart';
 import '../../widgets/app_states.dart';
+import '../../widgets/mathworld_pagination.dart';
+import '../../config/constants.dart';
 import '../premium/custom_exams_screen.dart';
 
-final certificateListProvider=FutureProvider.autoDispose.family<Map<String,dynamic>,int>((ref,owner) async{
+final certificateListProvider=FutureProvider.autoDispose.family<Map<String,dynamic>,({int owner,int page})>((ref,key) async{
   final actor=ref.watch(authProvider.select((s)=>s.user?.id));
-  if(actor!=owner)return {};
+  if(actor!=key.owner)return {};
   final lease=ref.keepAlive();
   final expiry=Timer(const Duration(seconds:60),lease.close);
   ref.onDispose(expiry.cancel);
-  final response=await ref.watch(apiClientProvider).get('/users/certificates');
-  return ApiEnvelope.map(response.data);
+  try {
+    final response=await ref.watch(apiClientProvider).get('/users/certificates',queryParameters:{'page':key.page,'pageSize':AppConstants.pageSize});
+    final data=ApiEnvelope.map(response.data);
+    if(data['Total'] is! num||data['PageSize']!=AppConstants.pageSize||sessionRows(data['Items']).length>AppConstants.pageSize)throw const FormatException('Invalid certificate page');
+    return data;
+  } catch (_) {lease.close();rethrow;}
 });
 
 /// Fetch only when the summary scrolls into view. Share the same account-scoped
@@ -38,10 +44,11 @@ class CertificateHomeSummary extends ConsumerWidget {
     final owner=ref.watch(authProvider.select((s)=>s.user?.id));
     if(owner==null)return const SizedBox.shrink();
     final learningEnabled=journey?.certificatesEnabled==true;
-    final learning=learningEnabled&&loadSummary?ref.watch(certificateListProvider(owner)):null;
-    final exams=examsEnabled&&loadSummary?ref.watch(customExamHistoryProvider(owner)):null;
+    final learning=learningEnabled&&loadSummary?ref.watch(certificateListProvider((owner:owner,page:1))):null;
+    final exams=examsEnabled&&loadSummary?ref.watch(customExamHistoryProvider((owner:owner,page:1,certificatesOnly:true))):null;
     final learningItems=sessionRows(learning?.valueOrNull?['Items']);
-    final examHistory=exams?.valueOrNull??[];
+    final examHistory=rows(exams?.valueOrNull?['Items']);
+    final total=sessionInt(learning?.valueOrNull?['Total'])+sessionInt(exams?.valueOrNull?['Total']);
     final examItems=examHistory.where((x)=>x['CertificateIssued']==true).toList();
     final items=[for(final x in learningItems)(title:sessionText(x,ar?'TitleAr':'TitleEn'),date:DateTime.tryParse(sessionText(x,'IssuedAtUtc'))),for(final x in examItems)(title:sessionText(x,ar?'TitleAr':'TitleEn'),date:DateTime.tryParse(sessionText(x,'FinishedAtUtc')))];
     items.sort((a,b)=>(b.date??DateTime.fromMillisecondsSinceEpoch(0)).compareTo(a.date??DateTime.fromMillisecondsSinceEpoch(0)));
@@ -49,7 +56,7 @@ class CertificateHomeSummary extends ConsumerWidget {
     final failed=learning?.hasError==true||exams?.hasError==true;
     final summary=!loadSummary?(ar?'عرض الشهادات':'View certificates'):pending?(failed?(ar?'تعذّر تحميل الملخص':'Summary unavailable'):(ar?'جارٍ تحميل الشهادات…':'Loading certificates…'))
       :items.isEmpty?(ar?'لم تصدر شهادات بعد':'No certificates yet')
-      :'${items.length}${examHistory.length>=100?'+':''} ${ar?'شهادة':'certificates'} · ${items.first.title}';
+      :'$total ${ar?'شهادة':'certificates'} · ${items.first.title}';
     return MobilePanel(padding:EdgeInsets.zero,child:MobileActionRow(
       icon:Icons.workspace_premium_rounded,color:AppColors.pointsGold(context),
       title:ar?'شهاداتي':'My certificates',subtitle:summary,
@@ -68,6 +75,7 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
   static const _root='/users/certificates';
   Map<String,dynamic>? _list,_eligibility;
   int? _choice;
+  int _page=1;
   bool _busy=true,_checking=false,_error=false;
   String? _notice;
   late final int? _owner;
@@ -75,14 +83,15 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
   bool get ar=>context.locale.languageCode=='ar';
   String tr(String a,String e)=>ar?a:e;
   @override void initState(){super.initState();_owner=ref.read(authProvider).user?.id;_load();}
-  Future<void> _load({bool refresh=false}) async{
+  Future<void> _load({bool refresh=false,int? page}) async{
     if(!mounted||!_sameOwner)return;
     setState((){_busy=true;_error=false;});
     try{
-      final provider=certificateListProvider(_owner!);
-      if(refresh)ref.invalidate(provider);
+      final target=page??_page;
+      final provider=certificateListProvider((owner:_owner!,page:target));
+      if(refresh)ref.invalidate(certificateListProvider);
       final data=await ref.read(provider.future);
-      if(mounted&&_sameOwner)setState(()=>_list=data);
+      if(mounted&&_sameOwner)setState((){_list=data;_page=target;});
     }catch(_){if(mounted&&_sameOwner)setState(()=>_error=true);}
     finally{if(mounted)setState(()=>_busy=false);}
   }
@@ -110,7 +119,7 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
       await ref.read(apiClientProvider).post('$_root/issue',data:_scope);
       if(!mounted||!_sameOwner)return;
       setState((){_choice=null;_eligibility=null;_notice=tr('تم إصدار الشهادة وحفظها.','Certificate issued and saved.');});
-      await _load(refresh:true);
+      await _load(refresh:true,page:1);
     }catch(_){if(mounted&&_sameOwner)setState((){_error=true;_eligibility=null;});}
     finally{if(mounted)setState(()=>_busy=false);}
   }
@@ -138,9 +147,10 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
     final j=widget.journey;
     final categories=j.categories.where((c)=>c.accessVerified&&!c.isLocked&&c.totalProblems>=5).toList();
     final items=sessionRows(_list?['Items']);
+    final pages=(sessionInt(_list?['Total'])+AppConstants.pageSize-1)~/AppConstants.pageSize;
     final e=_eligibility;
     return Scaffold(appBar:AppBar(title:Text(tr('شهاداتي التعليمية','My learning certificates'))),body:MathBackground(child:SafeArea(child:ListView(padding:const EdgeInsets.all(16),children:[
-      if(_busy&&_list==null)const SizedBox(height:220,child:AppContentSkeleton(count:2))else if(_busy||_checking)const LinearProgressIndicator(),
+      if(_busy||_checking)const LinearProgressIndicator(),
       if(_error)Card(child:ListTile(title:Text(tr('تعذّر إكمال الطلب. أعد المحاولة.','Request failed. Please retry.')),trailing:IconButton(onPressed:_busy||_checking?null:() async{await _load(refresh:true);if(mounted&&_choice!=null)await _check(_choice);},icon:const Icon(Icons.refresh)))),
       if(_notice!=null)Text(_notice!),
       if(widget.showExams)MobilePanel(padding:EdgeInsets.zero,child:MobileActionRow(icon:Icons.school_outlined,color:AppColors.pointsGold(context),title:tr('شهادات الامتحانات','Exam certificates'),onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const CustomExamsScreen())))),
@@ -160,6 +170,7 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
         ],
       ]))),
       const SizedBox(height:12),Text(tr('الشهادات الصادرة','Issued certificates'),style:Theme.of(context).textTheme.titleMedium),
+      if(_busy&&_list==null)const SizedBox(height:400,child:AppContentSkeleton(count:5)),
       if(_list!=null&&items.isEmpty)Padding(padding:const EdgeInsets.all(12),child:Text(tr('لم تصدر لك شهادات بعد.','No certificates issued yet.'))),
       for(final c in items)Padding(padding:const EdgeInsets.only(top:16),child:MobilePanel(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         ListTile(contentPadding:EdgeInsets.zero,leading:const Icon(Icons.workspace_premium_outlined,color:AppColors.rewardGold),title:Text(sessionText(c,ar?'TitleAr':'TitleEn')),subtitle:Text(sessionText(c,'StudentName'))),
@@ -171,6 +182,7 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
           OutlinedButton.icon(onPressed:_busy?null:()=>_preview(c,'en'),icon:const Icon(Icons.picture_as_pdf_outlined),label:const Text('PDF English')),
         ]),
       ]))),
+      if(pages>1)Padding(padding:const EdgeInsets.symmetric(vertical:16),child:MathWorldPagination(page:_page,pageCount:pages,arabic:ar,onChanged:(p){if(!_busy&&!_checking)_load(page:p);})),
     ]))));
   }
 }

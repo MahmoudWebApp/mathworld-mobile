@@ -53,7 +53,7 @@ class AppColors {
   /// Preserve white glyphs and alpha while tinting the icon shading to its stage.
   static ColorFilter topicArtworkFilter(Color accent) {
     List<double> channel(double value) {
-      final base = value * 255 * .32;
+      final base = value * 255;
       final gain = 1 - base / 255;
       return [.2126 * gain, .7152 * gain, .0722 * gain, 0, base];
     }
@@ -62,6 +62,10 @@ class AppColors {
       0, 0, 0, 1, 0,
     ]);
   }
+
+  static Color progressFill(double fraction) => fraction >= 1 ? success : rewardGoldBright;
+  static Color progressTrack(BuildContext context) => Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFF45404E) : const Color(0xFFE5E1E8);
 
   /// Identical stage accents to the web's StagePremiumCard identity.
   static Color stageForOrder(int order) {

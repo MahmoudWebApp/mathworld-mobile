@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'mathworld_pagination.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../config/app_routes.dart';
@@ -30,11 +31,17 @@ String _badgeUnit(String unit, bool ar) => switch (unit) {
   _ => ar ? 'مسائل' : 'Problems',
 };
 
-class StudentBadgesCard extends ConsumerWidget {
+class StudentBadgesCard extends ConsumerStatefulWidget {
   const StudentBadgesCard({super.key,this.showAll=false,this.loadSummary=true});
   final bool showAll;
   final bool loadSummary;
 
+  @override ConsumerState<StudentBadgesCard> createState()=>_StudentBadgesCardState();
+}
+class _StudentBadgesCardState extends ConsumerState<StudentBadgesCard>{
+  int _page=1;
+  bool get showAll=>widget.showAll;
+  bool get loadSummary=>widget.loadSummary;
   void _showPremiumBadge(BuildContext context, String badgeName, bool ar) {
     showModalBottomSheet<void>(
       context: context,
@@ -113,7 +120,7 @@ class StudentBadgesCard extends ConsumerWidget {
         Directionality(textDirection:ui.TextDirection.ltr,child:Text('${badge.currentProgress}/${badge.requiredSolved}',style:TextStyle(color:gold,fontSize:12,fontWeight:FontWeight.w700))),
         if(showAll)Text(_badgeUnit(badge.unit,ar),style:Theme.of(context).textTheme.labelSmall),
         const SizedBox(height:5),
-        LinearProgressIndicator(value:progress,minHeight:4,color:earned?AppColors.success:AppColors.rewardGoldBright,backgroundColor:gold.withValues(alpha:.12),borderRadius:BorderRadius.circular(8)),
+        LinearProgressIndicator(value:progress,minHeight:4,color:earned?AppColors.success:AppColors.rewardGoldBright,backgroundColor:AppColors.progressTrack(context),borderRadius:BorderRadius.circular(8)),
       ],
     ]);
     return Semantics(label:name,hint:description,button:locked,child:InkWell(
@@ -135,7 +142,7 @@ class StudentBadgesCard extends ConsumerWidget {
       ]),
     ]);
   });
-  @override Widget build(BuildContext context,WidgetRef ref){
+  @override Widget build(BuildContext context){
     final ar=context.locale.languageCode=='ar';
     final state=loadSummary||showAll?ref.watch(studentBadgesProvider):null;
     return Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
@@ -150,10 +157,14 @@ class StudentBadgesCard extends ConsumerWidget {
           ar?'قيد الإنجاز':'In progress':badges.where((b)=>b.isAvailable&&!b.earned).toList(),
           ar?'شارات Premium':'Premium badges':badges.where((b)=>!b.isAvailable).toList(),
         };
+        final ordered=[for(final group in groups.values)...group];
+        final pages=(ordered.length+4)~/5;
+        final page=_page.clamp(1,pages<1?1:pages).toInt();
+        final visible=ordered.skip((page-1)*5).take(5).map((b)=>b.key).toSet();
         return Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
           Text('${result.earnedCount} / ${badges.where((b)=>b.isAvailable).length}',style:TextStyle(color:AppColors.pointsGold(context),fontWeight:FontWeight.bold)),
           const SizedBox(height:12),
-          if(showAll)...[for(final group in groups.entries)if(group.value.isNotEmpty)...[Text(group.key,style:Theme.of(context).textTheme.titleMedium),const SizedBox(height:8),_grid(context,group.value,ar),const SizedBox(height:16)]]else...[
+          if(showAll)...[for(final group in groups.entries)if(group.value.any((b)=>visible.contains(b.key)))...[Text(group.key,style:Theme.of(context).textTheme.titleMedium),const SizedBox(height:8),_grid(context,group.value.where((b)=>visible.contains(b.key)).toList(),ar),const SizedBox(height:16)],if(pages>1)MathWorldPagination(page:page,pageCount:pages,arabic:ar,onChanged:(p)=>setState(()=>_page=p))]else...[
             if(featured.isEmpty)Text(ar?'ابدأ التدريب لجمع الشارات.':'Start practicing to earn badges.')else _grid(context,featured,ar),
           ],
         ]);
