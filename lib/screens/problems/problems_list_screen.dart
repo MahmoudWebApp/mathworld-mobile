@@ -295,15 +295,21 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                         return ProblemCard(
                           problem: problem,
                           onTap: () async {
-                            final submitted=await Navigator.pushNamed(
-                              context,
-                              AppRoutes.problemDetails,
-                              arguments: problem.id,
-                            );
-                            // The solved tag and server-wide unsolved-first order
-                            // must refresh when returning from an answer.
-                            if (context.mounted&&submitted==true) {
-                              ref.invalidate(problemsProvider(parameters));
+                            final items=result.problems;
+                            var current=index;
+                            final owner=ref.read(authProvider).user?.id;
+                            while(mounted&&ref.read(authProvider).user?.id==owner){
+                              final next=items.indexWhere((item)=>!item.isSolved&&!item.hasAttempted,current+1);
+                              final submitted=await Navigator.pushNamed(
+                                this.context,AppRoutes.problemDetails,arguments:{
+                                  'problemId':items[current].id,
+                                  if(next>=0)'nextProblemId':items[next].id,
+                                },
+                              );
+                              if(!mounted||ref.read(authProvider).user?.id!=owner)break;
+                              if(submitted==true||submitted=='nextProblem')ref.invalidate(problemsProvider(parameters));
+                              if(submitted!='nextProblem'||next<0)break;
+                              current=next;
                             }
                           },
                         );
