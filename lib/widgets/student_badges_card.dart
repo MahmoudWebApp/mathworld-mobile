@@ -86,7 +86,13 @@ class StudentBadgesCard extends ConsumerWidget {
 
   double _progress(MathBadge badge)=>badge.requiredSolved>0?(badge.currentProgress/badge.requiredSolved).clamp(0.0,1.0).toDouble():0;
   List<MathBadge> _featured(List<MathBadge> badges){
-    final earned=badges.where((b)=>b.isAvailable&&b.earned).toList()..sort((a,b)=>b.requiredSolved.compareTo(a.requiredSolved));
+    final earned=badges.where((b)=>b.isAvailable&&b.earned).toList()..sort((a,b){
+      final x=a.milestoneReachedAtUtc,y=b.milestoneReachedAtUtc;
+      if(x!=null&&y!=null)return y.compareTo(x);
+      if(x!=null)return -1;
+      if(y!=null)return 1;
+      return b.requiredSolved.compareTo(a.requiredSolved);
+    });
     final pending=badges.where((b)=>b.isAvailable&&!b.earned).toList()..sort((a,b)=>_progress(b).compareTo(_progress(a)));
     return [...earned.take(1),...pending].take(4).toList();
   }
@@ -102,6 +108,11 @@ class StudentBadgesCard extends ConsumerWidget {
         child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
           Row(children:[Icon(_badgeIcon(badge.icon),color:gold,size:28),const Spacer(),if(earned)const Icon(Icons.check_circle_rounded,color:AppColors.success,size:18) else if(locked)const Icon(Icons.lock_outline,size:18)]),
           const SizedBox(height:8),Text(name,style:Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight:FontWeight.w800),maxLines:2,overflow:TextOverflow.ellipsis),
+          if(earned&&badge.milestoneReachedAtUtc!=null)
+            Padding(padding:const EdgeInsets.only(top:4),child:Text(
+              (ar?'بلوغ الهدف: ':'Milestone reached: ')+DateFormat.yMMMd(context.locale.languageCode).format(badge.milestoneReachedAtUtc!.toLocal()),
+              style:Theme.of(context).textTheme.bodySmall,
+            )),
           if(showAll&&description.isNotEmpty)Padding(padding:const EdgeInsets.only(top:4),child:Text(description,style:Theme.of(context).textTheme.bodySmall)),
           const SizedBox(height:8),
           if(locked)Text('Premium',style:TextStyle(color:gold,fontWeight:FontWeight.w700))else...[
