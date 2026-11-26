@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../config/design_tokens.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'mathworld_feedback.dart';
 import 'math_background.dart';
 import 'mathworld_pagination.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -113,10 +114,10 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
     final ar=context.locale.languageCode=='ar';
     setState(()=>_resetting=true);
     try{
-      final accepted=await showDialog<bool>(context:context,builder:(dialog)=>AlertDialog(
-        title:Text(ar?'تأكيد إعادة التدريب':'Confirm practice restart'),
-        content:Text('$name\n\n'+(ar?'يعود تقدم التدريب ودفتر الأخطاء في هذا النطاق فقط إلى البداية. النقاط الدائمة والمفضلة والشهادات وتقدم الصفوف الأخرى محفوظة.':'Only practice progress and review errors in this scope reset. Lifetime points, favorites, certificates and other tracks remain.')),
-        actions:[TextButton(onPressed:()=>Navigator.pop(dialog,false),child:Text(ar?'إلغاء':'Cancel')),FilledButton(onPressed:()=>Navigator.pop(dialog,true),child:Text(ar?'تأكيد':'Confirm'))]));
+      final accepted=await showMathWorldConfirmation(context,
+        title:ar?'تأكيد إعادة التدريب':'Confirm practice restart',
+        message:'$name\n\n'+(ar?'يعود تقدم التدريب ودفتر الأخطاء في هذا النطاق فقط إلى البداية. النقاط الدائمة والمفضلة والشهادات وتقدم الصفوف الأخرى محفوظة.':'Only practice progress and review errors in this scope reset. Lifetime points, favorites, certificates and other tracks remain.'),
+        cancel:ar?'إلغاء':'Cancel',confirm:ar?'تأكيد':'Confirm');
       if(accepted!=true||!mounted||ref.read(authProvider).user?.id!=actor)return;
       final selection=ref.read(trackSelectionProvider).valueOrNull;
       if(selection?['StageId']!=stageId||selection?['TrackId']!=id)throw StateError('Practice scope changed');
@@ -127,9 +128,9 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
       ref.invalidate(solvedProvider);ref.invalidate(errorNotebookProvider);ref.invalidate(favoritesProvider);
       ref.invalidate(problemsProvider);ref.invalidate(dailyChallengeProvider);ref.invalidate(studentBadgesProvider);
       ref.invalidate(premiumAnalyticsProvider);ref.invalidate(filteredPremiumAnalyticsProvider);ref.invalidate(leaderboardProvider);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(ar?'بدأ تدريب جديد ضمن النطاق المحدد.':'A new practice cycle has started in the selected scope.')));
+      showMathWorldNotice(context,ar?'بدأ تدريب جديد ضمن النطاق المحدد.':'A new practice cycle has started in the selected scope.',kind:MathWorldNoticeKind.success);
     }catch(error){
-      if(mounted&&ref.read(authProvider).user?.id==actor)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(localizedErrorMessage(error))));
+      if(mounted&&ref.read(authProvider).user?.id==actor)showMathWorldNotice(context,localizedErrorMessage(error),kind:MathWorldNoticeKind.error);
     }finally{if(mounted)setState(()=>_resetting=false);}
   }
   @override

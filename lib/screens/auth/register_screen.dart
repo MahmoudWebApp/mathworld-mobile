@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'auth_captcha.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/mathworld_feedback.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
@@ -62,9 +63,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizedErrorMessage(error))),
-      );
+      showMathWorldNotice(context,localizedErrorMessage(error),kind:MathWorldNoticeKind.error);
     } finally {
       if (mounted) setState(() => _passwordSubmitting = false);
     }

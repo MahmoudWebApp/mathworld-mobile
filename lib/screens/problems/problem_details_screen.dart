@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/mathworld_feedback.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -217,9 +218,7 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(localizedErrorMessage(error))),
-      );
+      showMathWorldNotice(context,localizedErrorMessage(error),kind:MathWorldNoticeKind.error);
     }
   }
 }
@@ -529,9 +528,7 @@ class _ProblemContent extends ConsumerWidget {
     }
 
     if (!opened && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('unable_to_open_link'.tr())),
-      );
+      showMathWorldNotice(context,'unable_to_open_link'.tr(),kind:MathWorldNoticeKind.error);
     }
   }
 }

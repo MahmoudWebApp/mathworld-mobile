@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/mathworld_feedback.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/errors/app_exception.dart';
 import '../../providers/auth_provider.dart';
@@ -84,11 +85,10 @@ class _LearningSessionScreenState extends ConsumerState<LearningSessionScreen>{
           preview['SessionIds'] is! List)throw const AppException(type:AppExceptionType.invalidResponse,messageKey:'invalid_response');
       final count=(preview['SessionIds'] as List).length;
       if(count==0){setState(()=>_notice=tr('لا توجد جلسات مفتوحة ضمن هذا النطاق.','No open sessions in this scope.'));return;}
-      final accepted=await showDialog<bool>(context:context,builder:(dialog)=>AlertDialog(
-        title:Text(tr('إعادة بدء الجلسات المفتوحة','Restart open sessions')),
-        content:Text(tr('سيتم إنهاء $count جلسة مفتوحة في النطاق المحدد فقط. نقاطك وإنجازاتك ومحاولاتك محفوظة.','End $count open sessions in this scope only. Points, achievements and previous attempts remain.')),
-        actions:[TextButton(onPressed:()=>Navigator.pop(dialog,false),child:Text(tr('إلغاء','Cancel'))),
-          FilledButton(onPressed:()=>Navigator.pop(dialog,true),child:Text(tr('تأكيد','Confirm')))]));
+      final accepted=await showMathWorldConfirmation(context,
+        title:tr('إعادة بدء الجلسات المفتوحة','Restart open sessions'),
+        message:tr('سيتم إنهاء $count جلسة مفتوحة في النطاق المحدد فقط. نقاطك وإنجازاتك ومحاولاتك محفوظة.','End $count open sessions in this scope only. Points, achievements and previous attempts remain.'),
+        cancel:tr('إلغاء','Cancel'),confirm:tr('تأكيد','Confirm'));
       if(accepted!=true||!mounted||!_sameUser)return;
       await _api.restart(preview);
       if(mounted&&_sameUser)setState((){_session=null;_loadFailed=false;_clear();_notice=tr('تم إنهاء الجلسات المفتوحة. إنجازاتك محفوظة.','Open sessions ended. Achievements preserved.');});
