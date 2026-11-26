@@ -125,6 +125,11 @@ class _ReportBody extends ConsumerWidget {
         ? 0.0
         : 100 * report.correctAttempts / report.attempts;
 
+    final attemptedCategories=report.categories.where((c)=>c.attempts>0).toList();
+    // Use the observed ratio only, and disclose the underlying attempt count.
+    attemptedCategories.sort((a,b)=>(b.correctAttempts/b.attempts).compareTo(a.correctAttempts/a.attempts));
+    final strongest=attemptedCategories.isNotEmpty?attemptedCategories.first:null;
+    final weakest=attemptedCategories.length>1 && attemptedCategories.last.correctAttempts/attemptedCategories.last.attempts < attemptedCategories.first.correctAttempts/attemptedCategories.first.attempts?attemptedCategories.last:null;
     final metrics = <(String, int, IconData)>[
       (
         ar ? 'مسائل محلولة' : 'Unique solved',
@@ -237,6 +242,8 @@ class _ReportBody extends ConsumerWidget {
                   Text(ar ? 'تقدم الفئات' : 'Category progress',
                       style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: AppSpacing.md),
+                  if(strongest!=null) ListTile(contentPadding:EdgeInsets.zero,leading:const Icon(Icons.trending_up,color:AppColors.success),title:Text(ar?'أعلى دقة مسجلة':'Highest observed accuracy'),subtitle:Text('${ar?strongest.categoryNameAr:strongest.categoryNameEn} · ${(100*strongest.correctAttempts/strongest.attempts).toStringAsFixed(0)}% · ${strongest.attempts} ${ar?'محاولة':'attempts'}')),
+                  if(weakest!=null) ListTile(contentPadding:EdgeInsets.zero,leading:const Icon(Icons.refresh,color:AppColors.warning),title:Text(ar?'فئة تحتاج مراجعة':'Category to review'),subtitle:Text('${ar?weakest.categoryNameAr:weakest.categoryNameEn} · ${(100*weakest.correctAttempts/weakest.attempts).toStringAsFixed(0)}% · ${weakest.attempts} ${ar?'محاولة':'attempts'}')),
                   if (report.categories.isEmpty)
                     Text(ar ? 'ما عندك محاولات بعد. ابدأ بحل المسائل.'
                         : 'No attempts yet. Start practising.')

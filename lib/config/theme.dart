@@ -39,13 +39,13 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
-      pageTransitionsTheme: const PageTransitionsTheme(builders: {
-        TargetPlatform.android: MathWorldPageTransition(),
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.fuchsia: MathWorldPageTransition(),
-        TargetPlatform.linux: MathWorldPageTransition(),
-        TargetPlatform.macOS: MathWorldPageTransition(),
-        TargetPlatform.windows: MathWorldPageTransition(),
+      pageTransitionsTheme: PageTransitionsTheme(builders: {
+        ...const PageTransitionsTheme().builders,
+        TargetPlatform.android: const MathWorldPageTransition(),
+        TargetPlatform.fuchsia: const MathWorldPageTransition(),
+        TargetPlatform.linux: const MathWorldPageTransition(),
+        TargetPlatform.macOS: const MathWorldPageTransition(),
+        TargetPlatform.windows: const MathWorldPageTransition(),
       }),
       dialogTheme: DialogThemeData(
         backgroundColor: surface,

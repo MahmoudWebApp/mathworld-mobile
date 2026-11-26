@@ -17,7 +17,7 @@ class MathWorldPagination extends StatelessWidget {
     return Semantics(label:arabic?'الصفحة $active من $last':'Page $active of $last',
       child:Wrap(alignment:WrapAlignment.center,crossAxisAlignment:WrapCrossAlignment.center,spacing:4,runSpacing:4,children:[
         OutlinedButton(onPressed:disabled||active==1?null:()=>onChanged(active-1),
-          child:LayoutUtils.previousPageIcon(context,size:18)),
+          child:Tooltip(message:arabic?'السابق':'Previous',child:LayoutUtils.previousPageIcon(context,size:18))),
         for(var i=0;i<pages.length;i++)...[
           if(i>0&&pages[i]-pages[i-1]>1)const Text('…'),
           Semantics(selected:pages[i]==active,button:true,label:arabic?'صفحة ${pages[i]}':'Page ${pages[i]}',
@@ -25,7 +25,7 @@ class MathWorldPagination extends StatelessWidget {
               OutlinedButton(onPressed:disabled?null:()=>onChanged(pages[i]),style:OutlinedButton.styleFrom(minimumSize:const Size(44,44),padding:const EdgeInsets.symmetric(horizontal:10)),child:Text('${pages[i]}'))),
         ],
         OutlinedButton(onPressed:disabled||active>=last?null:()=>onChanged(active+1),
-          child:LayoutUtils.nextPageIcon(context,size:18)),
+          child:Tooltip(message:arabic?'التالي':'Next',child:LayoutUtils.nextPageIcon(context,size:18))),
       ]));
   }
 }

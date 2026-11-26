@@ -4,6 +4,7 @@ import '../config/design_tokens.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'math_background.dart';
+import 'mathworld_pagination.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/app_routes.dart';
 import '../core/network/api_envelope.dart';
@@ -218,11 +219,7 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
         await Navigator.pushNamed(context,AppRoutes.problemDetails,arguments:trackNumber(problem['Id']));
         if(mounted){ref.invalidate(trackPracticeProvider(key));ref.invalidate(trackProgressProvider(widget.id));ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}
       })),
-      Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-        TextButton(onPressed:_page<=1?null:()=>setState(()=>_page--),child:Text(ar?'السابق':'Previous')),
-        Text('$_page'),
-        TextButton(onPressed:trackNumber(data['PageSize'])<=0||_page*trackNumber(data['PageSize'])>=trackNumber(data['Total'])?null:()=>setState(()=>_page++),child:Text(ar?'التالي':'Next')),
-      ]),
+      MathWorldPagination(page:_page,pageCount:trackNumber(data['PageSize'])<=0?1:(trackNumber(data['Total'])+trackNumber(data['PageSize'])-1)~/trackNumber(data['PageSize']),arabic:ar,onChanged:(p)=>setState(()=>_page=p)),
     ]))));
   }
 }
