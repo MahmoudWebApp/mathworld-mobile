@@ -39,7 +39,7 @@ class BrandLogo extends StatelessWidget {
                 child: FittedBox(
                   alignment: AlignmentDirectional.centerStart,
                   fit: fit == BoxFit.fill ? BoxFit.scaleDown : fit,
-                  child: const _BrandWordmark(),
+                  child: const RepaintBoundary(child: _BrandWordmark()),
                 ),
               ),
             ],
