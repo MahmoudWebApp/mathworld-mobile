@@ -127,7 +127,8 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
     final trackId=routeArguments.trackId,categoryId=routeArguments.categoryId;
     final nextTrack=trackId!=null&&categoryId!=null&&!routeArguments.dailyChallenge
         ?ref.watch(nextTrackProblemProvider((trackId:trackId,categoryId:categoryId,afterProblemId:problemId))):null;
-    final nextId=nextTrack?.valueOrNull??routeArguments.nextProblemId;
+    final candidate=nextTrack?.hasError==false&&!nextTrack!.isLoading?nextTrack.valueOrNull:null;
+    final nextId=trackId!=null&&categoryId!=null?candidate?.id:routeArguments.nextProblemId;
 
     if (routeArguments.retry &&
         loadedProblem?.isInErrorNotebook == true &&
@@ -191,10 +192,16 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
             challengeAdvancePaused: _challengeAdvancePaused,
             onPauseChallengeAdvance: _pauseChallengeAdvance,
             onContinueChallenge: _continueChallenge,
-            onNextProblem: nextId==null ? null : () => Navigator.pop(context, trackId!=null&&categoryId!=null?nextId:'nextProblem'),
+            onNextProblem: nextId==null ? null : () => Navigator.pop(context, candidate!=null?candidate:'nextProblem'),
+            nextTrackLoading: nextTrack?.isLoading==true,
+            nextTrackError: nextTrack?.hasError==true,
+            nextTrackExhausted: nextTrack?.hasValue==true&&nextTrack?.isLoading==false&&nextTrack?.hasError==false&&candidate==null,
+            onRetryNext: trackId!=null&&categoryId!=null?()=>ref.invalidate(nextTrackProblemProvider((trackId:trackId,categoryId:categoryId,afterProblemId:problemId))):null,
             onSubmit: () => _runAction(context, () async {
               await notifier.submitAnswer();
-              if (!mounted || !routeArguments.dailyChallenge) return;
+              if (!mounted) return;
+              if(trackId!=null&&categoryId!=null&&!routeArguments.dailyChallenge)ref.invalidate(nextTrackProblemProvider((trackId:trackId,categoryId:categoryId,afterProblemId:problemId)));
+              if (!routeArguments.dailyChallenge) return;
               // An incorrect answer must never advance the challenge.
               // Let the learner read the solution only after a correct answer.
               if (ref.read(problemDetailsProvider(problemId)).answerResult?.isCorrect == true) {
@@ -241,6 +248,8 @@ class _ProblemContent extends ConsumerWidget {
   final VoidCallback onPauseChallengeAdvance;
   final VoidCallback onContinueChallenge;
   final VoidCallback? onNextProblem;
+  final bool nextTrackLoading,nextTrackError,nextTrackExhausted;
+  final VoidCallback? onRetryNext;
   final ValueChanged<int?> onOptionChanged;
   final VoidCallback onSubmit;
   final VoidCallback onStartRetry;
@@ -256,6 +265,10 @@ class _ProblemContent extends ConsumerWidget {
     required this.onPauseChallengeAdvance,
     required this.onContinueChallenge,
     required this.onNextProblem,
+    required this.nextTrackLoading,
+    required this.nextTrackError,
+    required this.nextTrackExhausted,
+    required this.onRetryNext,
     required this.onOptionChanged,
     required this.onSubmit,
     required this.onStartRetry,
@@ -401,8 +414,12 @@ class _ProblemContent extends ConsumerWidget {
               ),
             ),
           ] else ...[
-            if (!isDailyChallenge && state.answerResult!.isCorrect && onNextProblem != null)
-              FilledButton.icon(onPressed: onNextProblem, icon: LayoutUtils.forwardIcon(context), label: Text(isArabic ? 'المسألة التالية' : 'Next problem')),
+            if (!isDailyChallenge && state.answerResult!.isCorrect) ...[
+              if(nextTrackLoading)Text(isArabic?'جارٍ تجهيز المسألة التالية…':'Preparing the next problem…')
+              else if(nextTrackError)OutlinedButton(onPressed:onRetryNext,child:Text(isArabic?'إعادة تحميل المسألة التالية':'Retry loading the next problem'))
+              else if(onNextProblem!=null)FilledButton.icon(onPressed: onNextProblem, icon: LayoutUtils.forwardIcon(context), label: Text(isArabic ? 'المسألة التالية' : 'Next problem'))
+              else if(nextTrackExhausted)Text(isArabic?'لا توجد مسائل أخرى غير محلولة ومتاحة في هذه الفئة.':'No other available unsolved problems in this topic.'),
+            ],
             TextButton.icon(
               onPressed: () => Navigator.maybePop(context),
               icon: const Icon(Icons.list_alt_rounded),
