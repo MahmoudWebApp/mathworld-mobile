@@ -6,9 +6,9 @@ import 'repositories_provider.dart';
 
 /// Reloads when the signed-in user or the selected learning stage changes.
 final learningJourneyProvider = FutureProvider<LearningJourney?>((ref) async {
-  final user = ref.watch(authProvider.select((state) => state.user));
-  final stageId = user?.currentStageId;
-  if (user?.role != 'Student' || stageId == null) {
+  final account = ref.watch(authProvider.select((s)=>(id:s.user?.id,role:s.user?.role,stageId:s.user?.currentStageId,premium:s.user?.subscriptionType)));
+  final stageId = account.stageId;
+  if (account.id==null || account.role != 'Student' || stageId == null) {
     return null;
   }
   return ref.watch(dashboardRepositoryProvider).getJourney(stageId);
