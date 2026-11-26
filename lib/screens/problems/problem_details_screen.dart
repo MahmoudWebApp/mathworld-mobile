@@ -124,11 +124,20 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
     final state = ref.watch(problemDetailsProvider(problemId));
     final notifier = ref.read(problemDetailsProvider(problemId).notifier);
     final loadedProblem = state.problem.valueOrNull;
-    final trackId=routeArguments.trackId,categoryId=routeArguments.categoryId;
-    final nextTrack=trackId!=null&&categoryId!=null&&!routeArguments.dailyChallenge
+    final explicitScope=routeArguments.trackId!=null&&routeArguments.categoryId!=null;
+    final selection=!routeArguments.dailyChallenge&&!explicitScope&&loadedProblem!=null
+        ?ref.watch(trackSelectionProvider):null;
+    final selected=selection?.hasError==false&&selection?.isLoading==false?selection?.valueOrNull:null;
+    final selectedTrackId=trackNumber(selected?['TrackId']);
+    final trackId=explicitScope?routeArguments.trackId:
+        loadedProblem!=null&&trackNumber(selected?['StageId'])==loadedProblem.stageId&&selectedTrackId>0?selectedTrackId:null;
+    final categoryId=explicitScope?routeArguments.categoryId:loadedProblem?.categoryId;
+    final validScope=trackId!=null&&categoryId!=null&&loadedProblem?.categoryId==categoryId&&!routeArguments.dailyChallenge;
+    final nextTrack=validScope
         ?ref.watch(nextTrackProblemProvider((trackId:trackId,categoryId:categoryId,afterProblemId:problemId))):null;
     final candidate=nextTrack?.hasError==false&&!nextTrack!.isLoading?nextTrack.valueOrNull:null;
-    final nextId=trackId!=null&&categoryId!=null?candidate?.id:routeArguments.nextProblemId;
+    final nextId=validScope?candidate?.id:
+        selection?.isLoading==true||selection?.hasError==true||explicitScope?null:routeArguments.nextProblemId;
 
     if (routeArguments.retry &&
         loadedProblem?.isInErrorNotebook == true &&
@@ -192,15 +201,25 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
             challengeAdvancePaused: _challengeAdvancePaused,
             onPauseChallengeAdvance: _pauseChallengeAdvance,
             onContinueChallenge: _continueChallenge,
-            onNextProblem: nextId==null ? null : () => Navigator.pop(context, candidate!=null?candidate:'nextProblem'),
-            nextTrackLoading: nextTrack?.isLoading==true,
-            nextTrackError: nextTrack?.hasError==true,
+            onNextProblem: nextId==null ? null : () {
+              if(candidate!=null&&explicitScope){
+                Navigator.pop(context,candidate);
+              }else if(candidate!=null){
+                Navigator.pushReplacementNamed(context,AppRoutes.problemDetails,arguments:{
+                  'problemId':candidate.id,'retry':candidate.retry,
+                });
+              }else{
+                Navigator.pop(context,'nextProblem');
+              }
+            },
+            nextTrackLoading: selection?.isLoading==true||nextTrack?.isLoading==true,
+            nextTrackError: selection?.hasError==true||nextTrack?.hasError==true,
             nextTrackExhausted: nextTrack?.hasValue==true&&nextTrack?.isLoading==false&&nextTrack?.hasError==false&&candidate==null,
-            onRetryNext: trackId!=null&&categoryId!=null?()=>ref.invalidate(nextTrackProblemProvider((trackId:trackId,categoryId:categoryId,afterProblemId:problemId))):null,
+            onRetryNext: selection?.hasError==true?()=>ref.invalidate(trackSelectionProvider):validScope?()=>ref.invalidate(nextTrackProblemProvider((trackId:trackId,categoryId:categoryId,afterProblemId:problemId))):null,
             onSubmit: () => _runAction(context, () async {
               await notifier.submitAnswer();
               if (!mounted) return;
-              if(trackId!=null&&categoryId!=null&&!routeArguments.dailyChallenge)ref.invalidate(nextTrackProblemProvider((trackId:trackId,categoryId:categoryId,afterProblemId:problemId)));
+              if(validScope)ref.invalidate(nextTrackProblemProvider((trackId:trackId,categoryId:categoryId,afterProblemId:problemId)));
               if (!routeArguments.dailyChallenge) return;
               // An incorrect answer must never advance the challenge.
               // Let the learner read the solution only after a correct answer.
