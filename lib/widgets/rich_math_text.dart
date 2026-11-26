@@ -350,6 +350,346 @@ class RichMathText extends StatelessWidget {
       return input;
     }
 
+    if (RegExp(r'^[+\-−]\s*\d+(?:[.,]\d+)?
+      return r'$' + input + r'$';
+    }
+
+    final hasLatexCommand = RegExp(
+      r'\\(frac|sqrt|text|cdot|times|div|pm|leq|geq|neq|approx|in|notin|alpha|beta|theta|pi|sin|cos|tan|log|ln|sum|int|lim|left|right|begin|end)\b',
+    ).hasMatch(input);
+    final hasArabicProse = _arabicPattern.hasMatch(input);
+    final hasMathSyntax = RegExp(
+      r'[A-Za-z0-9)]\s*(?:\^|_|=|\+|-|\*|/|<|>)|(?:\^|_|=|\+|\*|/|<|>)\s*[A-Za-z0-9(]',
+    ).hasMatch(input);
+
+    if (!hasArabicProse && (hasLatexCommand || hasMathSyntax)) {
+      return r'$' + input + r'$';
+    }
+
+    return input;
+  }
+
+  String? _extractPureArabicProse(String input) {
+    var value = input.trim();
+    var hadMathDelimiters = false;
+    if (value.startsWith(r'$$') && value.endsWith(r'$$') && value.length >= 4) {
+      value = value.substring(2, value.length - 2).trim();
+      hadMathDelimiters = true;
+    } else if (value.startsWith(r'$') &&
+        value.endsWith(r'$') &&
+        value.length >= 2) {
+      value = value.substring(1, value.length - 1).trim();
+      hadMathDelimiters = true;
+    }
+
+    final commandMatch = _pureTextCommandPattern.firstMatch(value);
+    final commandContent = commandMatch?.group(1)?.trim();
+    if (commandContent != null && _arabicPattern.hasMatch(commandContent)) {
+      return commandContent;
+    }
+
+    if (!hadMathDelimiters || !_arabicPattern.hasMatch(value)) {
+      return null;
+    }
+
+    // Content authors sometimes wrap a prose-only Arabic option in `$...$`.
+    // Rendering that through a math font breaks Arabic shaping, so unwrap it
+    // only when it contains no actual mathematical syntax.
+    final hasMathSyntax = RegExp(
+      r'[\\^_{}=+*/<>]|\\[A-Za-z]+|[A-Za-z0-9]',
+    ).hasMatch(value);
+    return hasMathSyntax ? null : value;
+  }
+
+  List<_MathToken> _tokenize(String input) {
+    final tokens = <_MathToken>[];
+    var cursor = 0;
+    for (final match in _latexPattern.allMatches(input)) {
+      if (match.start > cursor) {
+        tokens.add(
+          _MathToken(
+            _MathTokenType.text,
+            input.substring(cursor, match.start),
+          ),
+        );
+      }
+      final raw = match.group(0)!;
+      final isBlock = (raw.startsWith(r'$$') && raw.endsWith(r'$$')) ||
+          (raw.startsWith(r'\[') && raw.endsWith(r'\]'));
+      final doubleCharacterDelimiters = raw.startsWith(r'$$') ||
+          raw.startsWith(r'\[') ||
+          raw.startsWith(r'\(');
+      final content = doubleCharacterDelimiters
+          ? raw.substring(2, raw.length - 2).trim()
+          : raw.substring(1, raw.length - 1).trim();
+      tokens.add(
+        _MathToken(
+          isBlock ? _MathTokenType.blockMath : _MathTokenType.inlineMath,
+          content,
+        ),
+      );
+      cursor = match.end;
+    }
+    if (cursor < input.length) {
+      tokens.add(
+        _MathToken(_MathTokenType.text, input.substring(cursor)),
+      );
+    }
+    if (tokens.isEmpty) {
+      tokens.add(_MathToken(_MathTokenType.text, input));
+    }
+    return tokens;
+  }
+}
+
+enum _MathTokenType { text, inlineMath, blockMath }
+
+class _ArabicMathSegment {
+  final int start;
+  final int end;
+  final String text;
+
+  const _ArabicMathSegment({
+    required this.start,
+    required this.end,
+    required this.text,
+  });
+}
+
+class _MathToken {
+  final _MathTokenType type;
+  final String value;
+
+  const _MathToken(this.type, this.value);
+}
+).hasMatch(input)) {
+      return r'
+      return r'$' + input + r'$';
+    }
+
+    final hasLatexCommand = RegExp(
+      r'\\(frac|sqrt|text|cdot|times|div|pm|leq|geq|neq|approx|in|notin|alpha|beta|theta|pi|sin|cos|tan|log|ln|sum|int|lim|left|right|begin|end)\b',
+    ).hasMatch(input);
+    final hasArabicProse = _arabicPattern.hasMatch(input);
+    final hasMathSyntax = RegExp(
+      r'[A-Za-z0-9)]\s*(?:\^|_|=|\+|-|\*|/|<|>)|(?:\^|_|=|\+|\*|/|<|>)\s*[A-Za-z0-9(]',
+    ).hasMatch(input);
+
+    if (!hasArabicProse && (hasLatexCommand || hasMathSyntax)) {
+      return r'$' + input + r'$';
+    }
+
+    return input;
+  }
+
+  String? _extractPureArabicProse(String input) {
+    var value = input.trim();
+    var hadMathDelimiters = false;
+    if (value.startsWith(r'$$') && value.endsWith(r'$$') && value.length >= 4) {
+      value = value.substring(2, value.length - 2).trim();
+      hadMathDelimiters = true;
+    } else if (value.startsWith(r'$') &&
+        value.endsWith(r'$') &&
+        value.length >= 2) {
+      value = value.substring(1, value.length - 1).trim();
+      hadMathDelimiters = true;
+    }
+
+    final commandMatch = _pureTextCommandPattern.firstMatch(value);
+    final commandContent = commandMatch?.group(1)?.trim();
+    if (commandContent != null && _arabicPattern.hasMatch(commandContent)) {
+      return commandContent;
+    }
+
+    if (!hadMathDelimiters || !_arabicPattern.hasMatch(value)) {
+      return null;
+    }
+
+    // Content authors sometimes wrap a prose-only Arabic option in `$...$`.
+    // Rendering that through a math font breaks Arabic shaping, so unwrap it
+    // only when it contains no actual mathematical syntax.
+    final hasMathSyntax = RegExp(
+      r'[\\^_{}=+*/<>]|\\[A-Za-z]+|[A-Za-z0-9]',
+    ).hasMatch(value);
+    return hasMathSyntax ? null : value;
+  }
+
+  List<_MathToken> _tokenize(String input) {
+    final tokens = <_MathToken>[];
+    var cursor = 0;
+    for (final match in _latexPattern.allMatches(input)) {
+      if (match.start > cursor) {
+        tokens.add(
+          _MathToken(
+            _MathTokenType.text,
+            input.substring(cursor, match.start),
+          ),
+        );
+      }
+      final raw = match.group(0)!;
+      final isBlock = (raw.startsWith(r'$$') && raw.endsWith(r'$$')) ||
+          (raw.startsWith(r'\[') && raw.endsWith(r'\]'));
+      final doubleCharacterDelimiters = raw.startsWith(r'$$') ||
+          raw.startsWith(r'\[') ||
+          raw.startsWith(r'\(');
+      final content = doubleCharacterDelimiters
+          ? raw.substring(2, raw.length - 2).trim()
+          : raw.substring(1, raw.length - 1).trim();
+      tokens.add(
+        _MathToken(
+          isBlock ? _MathTokenType.blockMath : _MathTokenType.inlineMath,
+          content,
+        ),
+      );
+      cursor = match.end;
+    }
+    if (cursor < input.length) {
+      tokens.add(
+        _MathToken(_MathTokenType.text, input.substring(cursor)),
+      );
+    }
+    if (tokens.isEmpty) {
+      tokens.add(_MathToken(_MathTokenType.text, input));
+    }
+    return tokens;
+  }
+}
+
+enum _MathTokenType { text, inlineMath, blockMath }
+
+class _ArabicMathSegment {
+  final int start;
+  final int end;
+  final String text;
+
+  const _ArabicMathSegment({
+    required this.start,
+    required this.end,
+    required this.text,
+  });
+}
+
+class _MathToken {
+  final _MathTokenType type;
+  final String value;
+
+  const _MathToken(this.type, this.value);
+}
+ + input.replaceAll('−', '-') + r'
+      return r'$' + input + r'$';
+    }
+
+    final hasLatexCommand = RegExp(
+      r'\\(frac|sqrt|text|cdot|times|div|pm|leq|geq|neq|approx|in|notin|alpha|beta|theta|pi|sin|cos|tan|log|ln|sum|int|lim|left|right|begin|end)\b',
+    ).hasMatch(input);
+    final hasArabicProse = _arabicPattern.hasMatch(input);
+    final hasMathSyntax = RegExp(
+      r'[A-Za-z0-9)]\s*(?:\^|_|=|\+|-|\*|/|<|>)|(?:\^|_|=|\+|\*|/|<|>)\s*[A-Za-z0-9(]',
+    ).hasMatch(input);
+
+    if (!hasArabicProse && (hasLatexCommand || hasMathSyntax)) {
+      return r'$' + input + r'$';
+    }
+
+    return input;
+  }
+
+  String? _extractPureArabicProse(String input) {
+    var value = input.trim();
+    var hadMathDelimiters = false;
+    if (value.startsWith(r'$$') && value.endsWith(r'$$') && value.length >= 4) {
+      value = value.substring(2, value.length - 2).trim();
+      hadMathDelimiters = true;
+    } else if (value.startsWith(r'$') &&
+        value.endsWith(r'$') &&
+        value.length >= 2) {
+      value = value.substring(1, value.length - 1).trim();
+      hadMathDelimiters = true;
+    }
+
+    final commandMatch = _pureTextCommandPattern.firstMatch(value);
+    final commandContent = commandMatch?.group(1)?.trim();
+    if (commandContent != null && _arabicPattern.hasMatch(commandContent)) {
+      return commandContent;
+    }
+
+    if (!hadMathDelimiters || !_arabicPattern.hasMatch(value)) {
+      return null;
+    }
+
+    // Content authors sometimes wrap a prose-only Arabic option in `$...$`.
+    // Rendering that through a math font breaks Arabic shaping, so unwrap it
+    // only when it contains no actual mathematical syntax.
+    final hasMathSyntax = RegExp(
+      r'[\\^_{}=+*/<>]|\\[A-Za-z]+|[A-Za-z0-9]',
+    ).hasMatch(value);
+    return hasMathSyntax ? null : value;
+  }
+
+  List<_MathToken> _tokenize(String input) {
+    final tokens = <_MathToken>[];
+    var cursor = 0;
+    for (final match in _latexPattern.allMatches(input)) {
+      if (match.start > cursor) {
+        tokens.add(
+          _MathToken(
+            _MathTokenType.text,
+            input.substring(cursor, match.start),
+          ),
+        );
+      }
+      final raw = match.group(0)!;
+      final isBlock = (raw.startsWith(r'$$') && raw.endsWith(r'$$')) ||
+          (raw.startsWith(r'\[') && raw.endsWith(r'\]'));
+      final doubleCharacterDelimiters = raw.startsWith(r'$$') ||
+          raw.startsWith(r'\[') ||
+          raw.startsWith(r'\(');
+      final content = doubleCharacterDelimiters
+          ? raw.substring(2, raw.length - 2).trim()
+          : raw.substring(1, raw.length - 1).trim();
+      tokens.add(
+        _MathToken(
+          isBlock ? _MathTokenType.blockMath : _MathTokenType.inlineMath,
+          content,
+        ),
+      );
+      cursor = match.end;
+    }
+    if (cursor < input.length) {
+      tokens.add(
+        _MathToken(_MathTokenType.text, input.substring(cursor)),
+      );
+    }
+    if (tokens.isEmpty) {
+      tokens.add(_MathToken(_MathTokenType.text, input));
+    }
+    return tokens;
+  }
+}
+
+enum _MathTokenType { text, inlineMath, blockMath }
+
+class _ArabicMathSegment {
+  final int start;
+  final int end;
+  final String text;
+
+  const _ArabicMathSegment({
+    required this.start,
+    required this.end,
+    required this.text,
+  });
+}
+
+class _MathToken {
+  final _MathTokenType type;
+  final String value;
+
+  const _MathToken(this.type, this.value);
+}
+;
+    }
+
     if (assumeMath) {
       return r'$' + input + r'$';
     }
