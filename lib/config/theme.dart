@@ -69,6 +69,10 @@ class AppTheme {
         onSurface: text,
         surfaceContainerHighest: mutedSurface,
         outline: border,
+        outlineVariant: border,
+        onSurfaceVariant: muted,
+        primaryContainer: primary.withValues(alpha:.12),
+        onPrimaryContainer: text,
       ),
       textTheme: baseTextTheme.copyWith(
         displaySmall: baseTextTheme.displaySmall?.copyWith(
@@ -78,7 +82,7 @@ class AppTheme {
         ),
         headlineSmall: baseTextTheme.headlineSmall?.copyWith(
           color: text,
-          fontWeight: FontWeight.w900,
+          fontWeight: FontWeight.w800,
           height: 1.3,
         ),
         titleLarge: baseTextTheme.titleLarge?.copyWith(
