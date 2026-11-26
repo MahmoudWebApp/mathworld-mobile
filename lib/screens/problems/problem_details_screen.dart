@@ -781,6 +781,7 @@ class _InfoPill extends StatelessWidget {
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w700,
+                  color: icon == Icons.star_rounded ? effectiveColor : null,
                 ),
           ),
         ],
