@@ -10,6 +10,7 @@ import '../../config/design_tokens.dart';
 import '../../core/errors/app_exception.dart';
 import '../../core/utils/error_message.dart';
 import '../../providers/problems_provider.dart';
+import '../../providers/learning_tracks_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/layout_utils.dart';
 import '../../widgets/app_states.dart';
@@ -298,6 +299,30 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                             final items=result.problems;
                             var current=index;
                             final owner=ref.read(authProvider).user?.id;
+                            if(owner==null)return;
+                            // For active grades, use the server continuation even
+                            // when this question was opened from a mixed search.
+                            int trackId=0;
+                            try {
+                              final selection=await ref.read(trackSelectionProvider.future);
+                              if(trackNumber(selection['StageId'])==problem.stageId)trackId=trackNumber(selection['TrackId']);
+                            }catch(_){}
+                            if(!mounted||ref.read(authProvider).user?.id!=owner)return;
+                            if(trackId>0){
+                              var currentId=problem.id;
+                              var retry=false;
+                              final visited=<int>{};
+                              while(mounted&&ref.read(authProvider).user?.id==owner&&visited.add(currentId)){
+                                final submitted=await Navigator.pushNamed(this.context,AppRoutes.problemDetails,arguments:{
+                                  'problemId':currentId,'trackId':trackId,'categoryId':problem.categoryId,'retry':retry,
+                                });
+                                if(!mounted||ref.read(authProvider).user?.id!=owner||submitted is! NextTrackCandidate)break;
+                                currentId=submitted.id;
+                                retry=submitted.retry;
+                              }
+                              if(mounted&&ref.read(authProvider).user?.id==owner)ref.invalidate(problemsProvider(parameters));
+                              return;
+                            }
                             while(mounted&&ref.read(authProvider).user?.id==owner){
                               final next=items.indexWhere((item)=>item.categoryId==items[current].categoryId&&item.stageId==items[current].stageId&&!item.isSolved&&!item.hasAttempted,current+1);
                               final submitted=await Navigator.pushNamed(
