@@ -112,7 +112,7 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
         ),
       )),
       body: MathBackground(
-        child: Column(
+        child: SafeArea(top:false,child:Column(
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -315,7 +315,7 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
               ),
             ),
           ],
-        ),
+        )),
       ),
     );
   }
