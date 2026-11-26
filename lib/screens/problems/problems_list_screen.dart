@@ -299,7 +299,7 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
                             var current=index;
                             final owner=ref.read(authProvider).user?.id;
                             while(mounted&&ref.read(authProvider).user?.id==owner){
-                              final next=items.indexWhere((item)=>!item.isSolved&&!item.hasAttempted,current+1);
+                              final next=items.indexWhere((item)=>item.categoryId==items[current].categoryId&&item.stageId==items[current].stageId&&!item.isSolved&&!item.hasAttempted,current+1);
                               final submitted=await Navigator.pushNamed(
                                 this.context,AppRoutes.problemDetails,arguments:{
                                   'problemId':items[current].id,
