@@ -138,7 +138,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
     final ar=context.locale.languageCode=='ar';
     final detail=ref.watch(trackDetailsProvider(id));final progress=ref.watch(trackProgressProvider(id));
     void reload(){ref.invalidate(trackDetailsProvider(id));ref.invalidate(trackProgressProvider(id));}
-    if(detail.hasError||progress.hasError)return AppErrorView(message:localizedErrorMessage(detail.error??progress.error!),onRetry:reload);
+    if((detail.hasError&&!detail.hasValue)||(progress.hasError&&!progress.hasValue))return AppErrorView(message:localizedErrorMessage(detail.error??progress.error!),onRetry:reload);
     final d=detail.valueOrNull;final p=progress.valueOrNull;
     if(d==null||p==null)return const AppContentSkeleton(cards:true);
     final rawTrack=d['Track'];
@@ -214,12 +214,12 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
     final data=state.valueOrNull;
     final rows=trackRows(data?['Items']);
     final visible=rows;
-    return Scaffold(appBar:AppBar(title:Text(widget.name)),body:MathBackground(child:state.hasError?AppErrorView(message:localizedErrorMessage(state.error!),onRetry:()=>ref.invalidate(trackPracticeProvider(key))):data==null?const AppContentSkeleton():RefreshIndicator(onRefresh:()async{ref.invalidate(trackPracticeProvider(key));await ref.read(trackPracticeProvider(key).future);},child:ListView(physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.all(12),children:[
+    return Scaffold(appBar:AppBar(title:Text(widget.name)),body:MathBackground(child:state.hasError&&!state.hasValue?AppErrorView(message:localizedErrorMessage(state.error!),onRetry:()=>ref.invalidate(trackPracticeProvider(key))):data==null?const AppContentSkeleton():RefreshIndicator(onRefresh:()async{ref.invalidate(trackPracticeProvider(key));await ref.read(trackPracticeProvider(key).future);},child:ListView(physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.all(12),children:[
       FilterChip(label:Text(ar?'إخفاء المحلولة':'Hide solved'),selected:_hideSolved,onSelected:(value)=>setState((){_hideSolved=value;_page=1;})),
       if(visible.isEmpty) AppEmptyView(icon:Icons.calculate_outlined,title:ar?'لا توجد مسائل مطابقة':'No matching problems'),
       for(final problem in visible) Card(child:ListTile(title:Text(trackText(problem,'Title',ar)),subtitle:Text(problem['IsSolved']==true?(ar?'محلولة':'Solved'):(ar?'غير محلولة':'Unsolved')),onTap:()async{
-        await Navigator.pushNamed(context,AppRoutes.problemDetails,arguments:trackNumber(problem['Id']));
-        if(mounted){ref.invalidate(trackPracticeProvider(key));ref.invalidate(trackProgressProvider(widget.id));ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}
+        final submitted=await Navigator.pushNamed(context,AppRoutes.problemDetails,arguments:trackNumber(problem['Id']));
+        if(mounted&&submitted==true){ref.invalidate(trackPracticeProvider(key));ref.invalidate(trackProgressProvider(widget.id));ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}
       })),
       MathWorldPagination(page:_page,pageCount:trackNumber(data['PageSize'])<=0?1:(trackNumber(data['Total'])+trackNumber(data['PageSize'])-1)~/trackNumber(data['PageSize']),arabic:ar,onChanged:(p)=>setState(()=>_page=p)),
     ]))));

@@ -45,4 +45,27 @@ void main() {
       expect(gold,dark?const Color(0xFFF7C948):const Color(0xFFA66B00));
     }
   });
+  testWidgets('small loading sections never occupy a full-page skeleton', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home:Scaffold(body:Column(children:[
+      AppLoadingView(mode:AppLoadingMode.section),Text('Next section'),
+    ]))));
+    expect(find.byType(AppContentSkeleton),findsNothing);
+    expect(find.byType(AppInlineLoader),findsOneWidget);
+    expect(tester.getSize(find.byType(AppLoadingView)).height,lessThanOrEqualTo(88));
+    expect(find.text('Next section'),findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('skeleton is bounded, pauses in hidden tab and disappears when data arrives', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home:Scaffold(body:TickerMode(
+      enabled:false,child:AppContentSkeleton(cards:true,count:4),
+    ))));
+    await tester.pumpAndSettle();
+    expect(find.byType(AppContentSkeleton),findsOneWidget);
+    expect(tester.takeException(),isNull);
+    await tester.pumpWidget(const MaterialApp(home:Scaffold(body:Text('Loaded data'))));
+    await tester.pumpAndSettle();
+    expect(find.byType(AppContentSkeleton),findsNothing);
+    expect(find.text('Loaded data'),findsOneWidget);
+  });
 }

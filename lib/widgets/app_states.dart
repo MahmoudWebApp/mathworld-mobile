@@ -107,16 +107,22 @@ class AppEmptyView extends StatelessWidget {
   }
 }
 
-/// Shared content loading state: animated placeholders, never a branded spinner.
+/// First content load uses placeholders; small sections, filters and searches
+/// use a compact unbranded loader. The caller owns completion/error state.
 enum AppLoadingMode { data, search, filter, section }
 class AppLoadingView extends StatelessWidget {
   const AppLoadingView({super.key,this.mode=AppLoadingMode.data});
   final AppLoadingMode mode;
   @override
   Widget build(BuildContext context) => LayoutBuilder(builder:(context, constraints) {
+    if(mode!=AppLoadingMode.data) {
+      final height=constraints.hasBoundedHeight
+          ? constraints.maxHeight.clamp(0.0,88.0).toDouble():88.0;
+      return SizedBox(height:height,child:const Center(child:AppInlineLoader(size:24)));
+    }
     return SizedBox(
       height:constraints.hasBoundedHeight?constraints.maxHeight:320,
-      child:AppContentSkeleton(count:mode==AppLoadingMode.section?3:5),
+      child:const AppContentSkeleton(),
     );
   });
 }
@@ -125,49 +131,67 @@ class AppLoadingView extends StatelessWidget {
 class AppInlineLoader extends StatelessWidget {
   const AppInlineLoader({super.key,this.size=20});
   final double size;
-  @override Widget build(BuildContext context)=>SizedBox.square(
-    dimension:size,
-    child:CircularProgressIndicator(strokeWidth:2.5,
-      color:Theme.of(context).colorScheme.primary,
-      value:MediaQuery.disableAnimationsOf(context)?0.7:null),
+  @override Widget build(BuildContext context)=>Semantics(
+    label:Localizations.localeOf(context).languageCode=='ar'?'جارٍ التحميل':'Loading',
+    child:SizedBox.square(
+      dimension:size,
+      child:CircularProgressIndicator(strokeWidth:2.5,
+        color:Theme.of(context).colorScheme.primary,
+        value:MediaQuery.disableAnimationsOf(context)?0.7:null),
+    ),
   );
 }
 
-/// Loading placeholders follow the eventual content layout; no fake counts.
+/// Bounded, non-interactive placeholder list/grid. Animate one opacity layer,
+/// not every bar/card, and stop animation when its route/tab is inactive.
 class AppContentSkeleton extends StatefulWidget {
-  const AppContentSkeleton({super.key,this.cards=false,this.count=5});
+  const AppContentSkeleton({super.key,this.cards=false,this.count=4});
   final bool cards;
   final int count;
   @override
   State<AppContentSkeleton> createState()=>_AppContentSkeletonState();
 }
 class _AppContentSkeletonState extends State<AppContentSkeleton> with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse=AnimationController(vsync:this,duration:const Duration(milliseconds:1100));
+  late final AnimationController _pulse=AnimationController(vsync:this,duration:const Duration(milliseconds:900));
+  late final Animation<double> _opacity=Tween<double>(begin:.55,end:1).animate(_pulse);
   @override
   void didChangeDependencies(){
     super.didChangeDependencies();
-    if(MediaQuery.disableAnimationsOf(context)){_pulse.stop();_pulse.value=1;}
-    else if(!_pulse.isAnimating){_pulse.repeat();}
+    final animate=TickerMode.of(context)&&!MediaQuery.disableAnimationsOf(context);
+    if(!animate){_pulse.stop();_pulse.value=1;}
+    else if(!_pulse.isAnimating){_pulse.repeat(reverse:true);}
   }
   @override
   void dispose(){_pulse.dispose();super.dispose();}
   @override
   Widget build(BuildContext context) {
-    final colors=Theme.of(context).colorScheme;
-    final reduceMotion=MediaQuery.disableAnimationsOf(context);
-    final base=colors.onSurface.withValues(alpha:.075);
-    final highlight=colors.onSurface.withValues(alpha:.15);
-    Widget bar(double width,double height)=>AnimatedBuilder(animation:_pulse,builder:(_,__) {
-      final offset=-2.0+3.0*_pulse.value;
-      return RepaintBoundary(child:Container(width:width,height:height,decoration:BoxDecoration(
-        color:reduceMotion?base:null,
-        gradient:reduceMotion?null:LinearGradient(begin:Alignment(offset,0),end:Alignment(offset+1,0),colors:[base,highlight,base]),
-        borderRadius:BorderRadius.circular(7),
-      )));
-    });
-    Widget item()=>Card(elevation:0,child:Padding(padding:const EdgeInsets.all(16),child:Row(children:[bar(42,42),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[bar(140,14),const SizedBox(height:12),bar(double.infinity,10),const SizedBox(height:8),bar(90,10)]))])));
-    final ar=Localizations.localeOf(context).languageCode=='ar';
-    return Semantics(label:ar?'جارٍ تحميل المحتوى':'Loading content',liveRegion:true,child:ExcludeSemantics(child:widget.cards?GridView.builder(padding:const EdgeInsets.all(12),gridDelegate:const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent:320,mainAxisExtent:120),itemCount:widget.count,itemBuilder:(_,__)=>item()):ListView.builder(padding:const EdgeInsets.all(12),itemCount:widget.count,itemBuilder:(_,__)=>item()),
+    final base=Theme.of(context).colorScheme.onSurface.withValues(alpha:.11);
+    Widget bar(double width,double height)=>Container(width:width,height:height,decoration:BoxDecoration(
+      color:base,borderRadius:BorderRadius.circular(7),
     ));
+    Widget item()=>Card(elevation:0,child:Padding(
+      padding:const EdgeInsets.all(12),
+      child:widget.cards
+        ? Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisAlignment:MainAxisAlignment.center,children:[
+            bar(30,26),const SizedBox(height:8),bar(double.infinity,12),const SizedBox(height:7),bar(66,8),
+          ])
+        : Row(children:[bar(38,38),const SizedBox(width:12),Expanded(child:Column(
+            mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,
+            children:[bar(140,13),const SizedBox(height:9),bar(double.infinity,10),const SizedBox(height:7),bar(90,9)],
+          ))]),
+    ));
+    final ar=Localizations.localeOf(context).languageCode=='ar';
+    return LayoutBuilder(builder:(context,constraints){
+      final count=widget.count.clamp(1,8).toInt();
+      final height=constraints.hasBoundedHeight?constraints.maxHeight:320.0;
+      final child=widget.cards
+        ? GridView.builder(physics:const NeverScrollableScrollPhysics(),padding:const EdgeInsets.all(12),
+            gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:2,mainAxisExtent:112,crossAxisSpacing:8,mainAxisSpacing:8),
+            itemCount:count.isOdd?count+1:count,itemBuilder:(_,__)=>item())
+        : ListView.builder(physics:const NeverScrollableScrollPhysics(),padding:const EdgeInsets.all(12),itemCount:count,itemBuilder:(_,__)=>item());
+      return Semantics(label:ar?'جارٍ تحميل المحتوى':'Loading content',child:ExcludeSemantics(
+        child:IgnorePointer(child:SizedBox(height:height,child:FadeTransition(opacity:_opacity,child:RepaintBoundary(child:child)))),
+      ));
+    });
   }
 }

@@ -40,10 +40,22 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
   int _selectedIndex = 0;
   final Set<int> _visitedTabs = <int>{};
 
-  void _selectTab(int index) => setState(() => _selectedIndex = index);
+  void _selectTab(int index) {
+    if(index==_selectedIndex)return;
+    setState(()=>_selectedIndex=index);
+  }
   bool _initialTabApplied = false;
   Timer? _notificationRefresh;
   bool _isAppResumed = true;
+  DateTime? _backgroundedAt;
+  DateTime? _lastInboxRefresh;
+
+  void _refreshInbox({bool force=false}) {
+    final now=DateTime.now();
+    if(!force&&_lastInboxRefresh!=null&&now.difference(_lastInboxRefresh!)<const Duration(seconds:5))return;
+    _lastInboxRefresh=now;
+    ref.invalidate(notificationInboxProvider);
+  }
   bool _presenceInFlight = false;
   late final LearnerPresenceService _presence;
   late final NotificationLiveUpdates _liveNotifications;
@@ -89,7 +101,7 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
       readToken: ref.read(apiClientProvider).readToken,
       onInboxChanged: () {
         if (!mounted || !_isAppResumed) return;
-        ref.invalidate(notificationInboxProvider);
+        _refreshInbox(force:true);
         ref.invalidate(notificationPageProvider);
       },
     );
@@ -102,7 +114,7 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
     _notificationRefresh = Timer.periodic(const Duration(minutes: 1), (_) {
       // No background polling/heartbeat for a suspended mobile app.
       if (!mounted || !_isAppResumed) return;
-      ref.invalidate(notificationInboxProvider);
+      _refreshInbox();
       unawaited(_beatPresence());
     });
   }
@@ -110,22 +122,26 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final resumed = state == AppLifecycleState.resumed;
-    if (resumed && !_isAppResumed && mounted) {
-      // Reconcile notifications, server-granted Premium and student stats
-      // after external admin changes while the phone was in the background.
-      ref.invalidate(notificationInboxProvider);
-      ref.invalidate(studentPremiumProvider);
-      ref.invalidate(dashboardProvider);
-      ref.invalidate(studentBadgesProvider);
-      ref.invalidate(learningJourneyProvider);
-      ref.invalidate(trackSelectionProvider);
-      ref.invalidate(trackProgressProvider);
-      ref.invalidate(trackPracticeProvider);
-      ref.invalidate(premiumProgressReportProvider);
-      ref.invalidate(premiumAnalyticsProvider);
-      ref.invalidate(filteredPremiumAnalyticsProvider);
+    if(!resumed&&_isAppResumed)_backgroundedAt=DateTime.now();
+    if(resumed&&!_isAppResumed&&mounted){
+      // Dialogs, permission prompts and brief app switches should not
+      // invalidate every visited screen. Reconcile after a real absence.
+      final elapsed=DateTime.now().difference(_backgroundedAt??DateTime.now());
+      _refreshInbox();
+      if(elapsed>=const Duration(seconds:30)){
+        ref.invalidate(studentPremiumProvider);
+        ref.invalidate(dashboardProvider);
+        ref.invalidate(studentBadgesProvider);
+        ref.invalidate(learningJourneyProvider);
+        ref.invalidate(trackSelectionProvider);
+        ref.invalidate(trackProgressProvider);
+        ref.invalidate(trackPracticeProvider);
+        ref.invalidate(premiumProgressReportProvider);
+        ref.invalidate(premiumAnalyticsProvider);
+        ref.invalidate(filteredPremiumAnalyticsProvider);
+      }
     }
-    _isAppResumed = resumed;
+    if(_isAppResumed!=resumed&&mounted)setState(()=>_isAppResumed=resumed);
     if (resumed && mounted) {
       unawaited(_beatPresence());
       _liveNotifications.start();
@@ -227,7 +243,9 @@ class _MainShellState extends ConsumerState<MainShell> with WidgetsBindingObserv
         extendBody: false,
         body: IndexedStack(index: _selectedIndex, children: [
           for (var i = 0; i < _pages.length; i++)
-            _visitedTabs.contains(i) ? _pages[i] : const SizedBox.shrink(),
+            _visitedTabs.contains(i)
+                ? TickerMode(enabled:i==_selectedIndex&&_isAppResumed,child:_pages[i])
+                : const SizedBox.shrink(),
         ]),
         bottomNavigationBar: SafeArea(
           minimum: const EdgeInsets.fromLTRB(14, 0, 14, 12),

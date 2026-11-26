@@ -110,7 +110,7 @@ class StageCategoriesScreen extends ConsumerWidget {
         top: embedded,
         bottom: false,
         child: accessState.when(
-          loading: () => const AppLoadingView(mode:AppLoadingMode.section),
+          loading: () => const AppContentSkeleton(cards:true,count:4),
           error: (error, __) => AppErrorView(
             message: localizedErrorMessage(error),
             onRetry: () => ref.invalidate(
@@ -391,7 +391,7 @@ class CurrentStageCategoriesScreen extends ConsumerWidget {
     }
 
     return ref.watch(stagesProvider).when(
-      loading: () => const AppLoadingView(mode:AppLoadingMode.section),
+      loading: () => const AppContentSkeleton(cards:true,count:4),
       error: (error, _) => AppErrorView(
         message: localizedErrorMessage(error),
         onRetry: () => ref.invalidate(stagesProvider),

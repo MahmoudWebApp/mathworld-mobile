@@ -135,7 +135,7 @@ class StudentBadgesCard extends ConsumerWidget {
     final state=ref.watch(studentBadgesProvider);
     return GlassCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
       Row(children:[Icon(Icons.military_tech_rounded,color:AppColors.pointsGold(context),size:28),const SizedBox(width:8),Expanded(child:Text(ar?'الشارات والإنجازات':'Badges & achievements',style:Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight:FontWeight.w800))),IconButton(onPressed:()=>ref.invalidate(studentBadgesProvider),tooltip:ar?'تحديث':'Refresh',icon:const Icon(Icons.refresh))]),
-      state.when(loading:()=>const SizedBox(height:180,child:AppContentSkeleton(cards:true,count:4)),error:(_,__)=>Text(ar?'تعذر تحميل الشارات. اضغط تحديث.':'Could not load badges. Tap refresh.'),data:(result){
+      state.when(loading:()=>const AppLoadingView(mode:AppLoadingMode.section),error:(_,__)=>Text(ar?'تعذر تحميل الشارات. اضغط تحديث.':'Could not load badges. Tap refresh.'),data:(result){
         final badges=result.badges;
         final featured=_featured(badges);
         final groups=<String,List<MathBadge>>{
