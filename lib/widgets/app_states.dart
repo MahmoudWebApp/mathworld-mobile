@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../config/design_tokens.dart';
 import 'glass_card.dart';
+import 'mobile_section.dart';
 
 /// Standard error state used across the application.
 class AppErrorView extends StatelessWidget {
@@ -145,7 +146,9 @@ class AppInlineLoader extends StatelessWidget {
 /// Bounded, non-interactive placeholder list/grid. Animate one opacity layer,
 /// not every bar/card, and stop animation when its route/tab is inactive.
 class AppContentSkeleton extends StatefulWidget {
-  const AppContentSkeleton({super.key,this.cards=false,this.count=4});
+  const AppContentSkeleton({super.key,this.cards=false,this.count=4,this.title,this.sectionTitle,this.cardExtent});
+  final String? title,sectionTitle;
+  final double? cardExtent;
   final bool cards;
   final int count;
   @override
@@ -169,29 +172,33 @@ class _AppContentSkeletonState extends State<AppContentSkeleton> with SingleTick
     Widget bar(double width,double height)=>Container(width:width,height:height,decoration:BoxDecoration(
       color:base,borderRadius:BorderRadius.circular(7),
     ));
-    Widget item()=>Card(elevation:0,child:Padding(
-      padding:const EdgeInsets.all(12),
-      child:widget.cards
+    Widget item()=>MobilePanel(padding:const EdgeInsets.all(12),child:widget.cards
         ? Column(crossAxisAlignment:CrossAxisAlignment.start,mainAxisAlignment:MainAxisAlignment.center,children:[
-            bar(30,26),const SizedBox(height:8),bar(double.infinity,12),const SizedBox(height:7),bar(66,8),
+            bar(44,44),const SizedBox(height:8),bar(double.infinity,12),const SizedBox(height:7),bar(66,8),
+            if(widget.cardExtent!=null)...[const Spacer(),bar(48,10),const SizedBox(height:6),bar(double.infinity,5),const SizedBox(height:10),bar(double.infinity,28)],
           ])
         : Row(children:[bar(38,38),const SizedBox(width:12),Expanded(child:Column(
             mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,
             children:[bar(140,13),const SizedBox(height:9),bar(double.infinity,10),const SizedBox(height:7),bar(90,9)],
           ))]),
-    ));
+    );
     final ar=Localizations.localeOf(context).languageCode=='ar';
     return LayoutBuilder(builder:(context,constraints){
       final count=widget.count.clamp(1,8).toInt();
       final height=constraints.hasBoundedHeight?constraints.maxHeight:320.0;
+      final scale=MediaQuery.textScalerOf(context).scale(14)/14;
+      final columns=constraints.maxWidth-32<300||scale>1.35?1:constraints.maxWidth-32>=700?3:2;
       final child=widget.cards
-        ? GridView.builder(physics:const NeverScrollableScrollPhysics(),padding:const EdgeInsets.all(12),
-            gridDelegate:const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:2,mainAxisExtent:112,crossAxisSpacing:8,mainAxisSpacing:8),
-            itemCount:count.isOdd?count+1:count,itemBuilder:(_,__)=>item())
-        : ListView.builder(physics:const NeverScrollableScrollPhysics(),padding:const EdgeInsets.all(12),itemCount:count,itemBuilder:(_,__)=>item());
-      return Semantics(label:ar?'جارٍ تحميل المحتوى':'Loading content',child:ExcludeSemantics(
-        child:IgnorePointer(child:SizedBox(height:height,child:FadeTransition(opacity:_opacity,child:RepaintBoundary(child:child)))),
-      ));
+        ? GridView.builder(shrinkWrap:true,physics:const NeverScrollableScrollPhysics(),
+            gridDelegate:SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:columns,mainAxisExtent:(widget.cardExtent??112)*scale.clamp(1.0,1.8).toDouble(),crossAxisSpacing:12,mainAxisSpacing:12),
+            itemCount:count,itemBuilder:(_,__)=>item())
+        : Column(children:[for(var i=0;i<count;i++)...[if(i>0)const SizedBox(height:12),item()]]);
+      return SizedBox(height:height,child:ListView(padding:const EdgeInsets.all(16),children:[
+        if(widget.title!=null)...[Text(widget.title!,style:Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight:FontWeight.w800)),const SizedBox(height:12)],
+        if(widget.sectionTitle!=null)...[MobilePanel(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[bar(96,14),const SizedBox(height:10),bar(double.infinity,5)])),const SizedBox(height:16),MobileSectionTitle(title:widget.sectionTitle!),const SizedBox(height:12)],
+        Semantics(label:ar?'جارٍ تحميل المحتوى':'Loading content',child:ExcludeSemantics(
+          child:IgnorePointer(child:FadeTransition(opacity:_opacity,child:RepaintBoundary(child:child))))),
+      ]));
     });
   }
 }
