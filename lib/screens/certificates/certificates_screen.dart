@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +19,9 @@ import '../premium/custom_exams_screen.dart';
 final certificateListProvider=FutureProvider.autoDispose.family<Map<String,dynamic>,int>((ref,owner) async{
   final actor=ref.watch(authProvider.select((s)=>s.user?.id));
   if(actor!=owner)return {};
+  final lease=ref.keepAlive();
+  final expiry=Timer(const Duration(seconds:60),lease.close);
+  ref.onDispose(expiry.cancel);
   final response=await ref.watch(apiClientProvider).get('/users/certificates');
   return ApiEnvelope.map(response.data);
 });
@@ -27,14 +31,15 @@ final certificateListProvider=FutureProvider.autoDispose.family<Map<String,dynam
 class CertificateHomeSummary extends ConsumerWidget {
   final LearningJourney? journey;
   final bool examsEnabled;
-  const CertificateHomeSummary({super.key,this.journey,this.examsEnabled=false});
+  final bool loadSummary;
+  const CertificateHomeSummary({super.key,this.journey,this.examsEnabled=false,this.loadSummary=true});
   @override Widget build(BuildContext context,WidgetRef ref){
     final ar=context.locale.languageCode=='ar';
     final owner=ref.watch(authProvider.select((s)=>s.user?.id));
     if(owner==null)return const SizedBox.shrink();
     final learningEnabled=journey?.certificatesEnabled==true;
-    final learning=learningEnabled?ref.watch(certificateListProvider(owner)):null;
-    final exams=examsEnabled?ref.watch(customExamHistoryProvider(owner)):null;
+    final learning=learningEnabled&&loadSummary?ref.watch(certificateListProvider(owner)):null;
+    final exams=examsEnabled&&loadSummary?ref.watch(customExamHistoryProvider(owner)):null;
     final learningItems=sessionRows(learning?.valueOrNull?['Items']);
     final examHistory=exams?.valueOrNull??[];
     final examItems=examHistory.where((x)=>x['CertificateIssued']==true).toList();
@@ -42,7 +47,7 @@ class CertificateHomeSummary extends ConsumerWidget {
     items.sort((a,b)=>(b.date??DateTime.fromMillisecondsSinceEpoch(0)).compareTo(a.date??DateTime.fromMillisecondsSinceEpoch(0)));
     final pending=(learningEnabled&&learning?.valueOrNull==null)||(examsEnabled&&exams?.valueOrNull==null);
     final failed=learning?.hasError==true||exams?.hasError==true;
-    final summary=pending?(failed?(ar?'تعذّر تحميل الملخص':'Summary unavailable'):(ar?'جارٍ تحميل الشهادات…':'Loading certificates…'))
+    final summary=!loadSummary?(ar?'عرض الشهادات':'View certificates'):pending?(failed?(ar?'تعذّر تحميل الملخص':'Summary unavailable'):(ar?'جارٍ تحميل الشهادات…':'Loading certificates…'))
       :items.isEmpty?(ar?'لم تصدر شهادات بعد':'No certificates yet')
       :'${items.length}${examHistory.length>=100?'+':''} ${ar?'شهادة':'certificates'} · ${items.first.title}';
     return MobilePanel(padding:EdgeInsets.zero,child:MobileActionRow(
