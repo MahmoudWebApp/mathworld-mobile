@@ -19,12 +19,19 @@ final currentGradeReportProvider=FutureProvider.autoDispose<Map<String,dynamic>>
   final actor=ref.watch(authProvider.select((s)=>(id:s.user?.id,stage:s.user?.currentStageId)));
   if(actor.id==null)throw StateError('No authenticated account');
   final client=ref.watch(apiClientProvider);
-  final selected=await ref.watch(trackSelectionProvider.future);
+  final results=await Future.wait<Map<String,dynamic>>([
+    ref.watch(trackSelectionProvider.future),
+    client.get('/users/current-grade-report',queryParameters:{'allowSharedPractice':true})
+      .then((response)=>ApiEnvelope.map(response.data)),
+  ],eagerError:true);
+  final selected=results[0],report=results[1];
   final id=trackNumber(selected['TrackId']);
   if(id<=0)throw StateError('No active learning track');
-  final response=await client.get('/users/current-grade-report');
-  final report=ApiEnvelope.map(response.data);
   if(trackNumber(report['TrackId'])!=id||report['MetricsScope']!='CurrentTrack')throw const FormatException('Report scope changed');
+  final progressScope=report['ProgressScope'],historyScope=report['HistoryScope'];
+  final isolated=progressScope=='CurrentPracticeCycle'&&historyScope=='RecordedTrackAttempts';
+  final shared=progressScope=='SharedStagePracticeCycle'&&historyScope=='SharedPracticeAndRecordedTrackAttempts';
+  if(!isolated&&!shared)throw const FormatException('Unknown report metric scope');
   return report;
 });
 
@@ -72,6 +79,7 @@ class _ReportBodyState extends State<_ReportBody>{
   String percent(Object? v)=>v is num?'${v.toStringAsFixed(1)}%':'—';
   @override Widget build(BuildContext context){
     final p=report,theme=Theme.of(context);
+    final shared=p['ProgressScope']=='SharedStagePracticeCycle';
     final track=p['Track'] is Map?Map<String,dynamic>.from(p['Track'] as Map):<String,dynamic>{};
     final allCategories=trackRows(p['Categories']),allRecent=trackRows(p['RecentAttempts']);
     final categoryPages=(allCategories.length+4)~/5,attemptPages=(allRecent.length+4)~/5;
@@ -89,7 +97,9 @@ class _ReportBodyState extends State<_ReportBody>{
         metric(ar?'دقة المحاولات المسجلة':'Recorded attempt accuracy',percent(p['AccuracyPercent'])),
         metric(ar?'النقاط المكتسبة':'Earned points',p['Points'],tint:gold),
         metric(ar?'المحاولات المسجلة':'Recorded attempts',p['Attempts']),
-        Text(ar?'الإنجاز والإتقان للدورة الحالية؛ الدقة والنقاط وسجل المحاولات للتاريخ المسجل في هذا الصف.':'Completion and mastery reflect the current cycle; accuracy, points and attempts reflect recorded history in this grade.',style:theme.textTheme.bodySmall),
+        Text(shared
+          ?(ar?'الإنجاز والإتقان من التدريب المشترك للمرحلة، مفلتران على مسائل الصف الحالي. الدقة والنقاط والمحاولات تشمل التدريب المشترك والجلسات المسجلة لهذا الصف، ولا تُنسب حصراً إلى الصف.':'Completion and mastery use shared stage practice filtered to current-grade problems. Accuracy, points and attempts include shared practice and recorded grade sessions, not exclusively grade-attributed history.')
+          :(ar?'الإنجاز والإتقان للدورة الحالية؛ الدقة والنقاط وسجل المحاولات للتاريخ المسجل في هذا الصف.':'Completion and mastery reflect the current cycle; accuracy, points and attempts reflect recorded history in this grade.'),style:theme.textTheme.bodySmall),
       ]));
       if(i==1)return section(ar?'الأداء حسب الفئة':'Performance by category');
       if(i<categories.length+2){
