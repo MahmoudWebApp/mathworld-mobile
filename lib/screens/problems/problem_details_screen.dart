@@ -347,7 +347,8 @@ class _ProblemContent extends ConsumerWidget {
                 ),
           ),
         ),
-        _OptionalProblemDiagram(problemId: problem.id, isArabic: isArabic),
+        if (problem.hasDiagram != false)
+          _OptionalProblemDiagram(problemId: problem.id, isArabic: isArabic),
         const SizedBox(height: AppSpacing.xl),
         Text(
           'choose_answer'.tr(),
