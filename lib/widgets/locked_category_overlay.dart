@@ -20,7 +20,7 @@ class LockedCategoryCard extends StatelessWidget {
       child:Stack(fit:StackFit.passthrough,children:[
         ExcludeFocus(child:IgnorePointer(child:ExcludeSemantics(child:child))),
         Positioned.fill(child:Material(
-          color:theme.colorScheme.surface.withValues(alpha:theme.brightness==Brightness.dark?.72:.68),
+          color:theme.colorScheme.surface.withValues(alpha:theme.brightness == Brightness.dark ? 0.72 : 0.68),
           child:Center(child:Padding(
             padding:const EdgeInsets.all(8),
             child:Column(mainAxisSize:MainAxisSize.min,children:[
