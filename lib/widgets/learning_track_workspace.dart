@@ -30,6 +30,13 @@ import '../providers/problem_details_provider.dart';
 import '../providers/student_badges_provider.dart';
 import '../providers/leaderboard_provider.dart';
 
+// A display-only decision; server-provided IsLocked still controls access.
+@visibleForTesting
+bool showTrackFreeLabels(String? subscription,List<Map<String,dynamic>> categories,Map<int,Map<String,dynamic>> stats) =>
+    subscription?.toLowerCase() == 'free' &&
+    categories.any((c)=>c['IsFree']!=true && stats[trackNumber(c['Id'])]?['IsLocked']==true) &&
+    !categories.any((c)=>c['IsFree']!=true && stats[trackNumber(c['Id'])]?['IsLocked']==false);
+
 class LearningTrackWorkspace extends ConsumerStatefulWidget {
   final int stageId;
   final TrackCatalog catalog;
@@ -156,7 +163,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
     final categories=trackRows(d['Categories']);
     // Reuse existing account and live category access data; no extra API request.
     final subscription = ref.watch(authProvider.select((s)=>s.user?.subscriptionType.toLowerCase()));
-    final showFreeLabels = subscription == 'free' && categories.any((c)=>c['IsFree']!=true && stats[trackNumber(c['Id'])]?['IsLocked']==true) && !categories.any((c)=>c['IsFree']!=true && stats[trackNumber(c['Id'])]?['IsLocked']==false);
+    final showFreeLabels = showTrackFreeLabels(subscription,categories,stats);
     final ordered=[...categories.where((c)=>c['IsFree']==true),...categories.where((c)=>c['IsFree']!=true)];
     void skills(Map<String,dynamic> c){
       final rows=trackRows(d['Skills']).where((s)=>s['CategoryId']==c['Id']).toList();
