@@ -140,7 +140,7 @@ class _LearningSessionScreenState extends ConsumerState<LearningSessionScreen>{
                   if(_hints?['Available']==false)Text(tr('لا تتوفر تلميحات مراجعة لهذه المسألة.','Reviewed hints are unavailable.'))
                   else ...[
                     if(_hints==null&&revealed>0)OutlinedButton(onPressed:_busy||_pending!=null?null:()=>_hint(0),child:Text(tr('استعادة التلميحات','Restore hints'))),
-                    if(revealed<2)OutlinedButton(onPressed:_busy||_pending!=null?null:()=>_hint(revealed+1),child:Text('${tr('عرض التلميح','Reveal hint')} ${revealed+1}')),
+                    if(revealed<sessionInt(_hints?['HintCount']??2))OutlinedButton(onPressed:_busy||_pending!=null?null:()=>_hint(revealed+1),child:Text('${tr('عرض التلميح','Reveal hint')} ${revealed+1}')),
                   ],
                 ],
               ],
