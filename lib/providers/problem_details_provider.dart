@@ -82,12 +82,26 @@ final problemDetailsProvider = StateNotifierProvider.autoDispose
       settingsProvider.select((settings) => settings.languageCode),
     );
 
-    // Recreate question interaction state when a local track switch is observed.
-    ref.watch(trackSelectionProvider.select((value)=>value.valueOrNull?['TrackId']));
+    // The first selection response is hydration, not a track switch.
+    // The detail request already checks the current track on the server.
+    // Recreate interaction state only after an actual selection change or
+    // loss of a previously known selection; account changes still rebuild it.
     ref.watch(authProvider.select((s)=>(id:s.user?.id,stage:s.user?.currentStageId,role:s.user?.role,tier:s.user?.subscriptionType,status:s.status)));
-    final prefetch=ref.watch(problemPrefetchProvider);
+    var lastSelection = ref.read(trackSelectionProvider).valueOrNull;
+    ref.listen(trackSelectionProvider, (_, next) {
+      if (next.isLoading) return;
+      final current = next.hasError ? null : next.valueOrNull;
+      final previous = lastSelection;
+      lastSelection = current;
+      if (previous != null &&
+          (current == null || trackNumber(previous['TrackId']) != trackNumber(current['TrackId']))) {
+        ref.invalidateSelf();
+      }
+    });
     return ProblemDetailsNotifier(
-      initialProblem:()=>prefetch.take(problemId),
+      // Consume a warm entry once; don't rebuild when the prefetch cache
+      // itself is recreated during selection hydration.
+      initialProblem:()=>ref.read(problemPrefetchProvider).take(problemId),
       repository: ref.watch(problemsRepositoryProvider),
       problemId: problemId,
       languageCode: languageCode,
