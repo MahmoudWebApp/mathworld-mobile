@@ -350,6 +350,10 @@ class RichMathText extends StatelessWidget {
       return input;
     }
 
+    if (RegExp(r'^[+\-−]\s*\d+(?:[.,]\d+)?$').hasMatch(input)) {
+      return r'$' + input.replaceAll('−', '-') + r'$';
+    }
+
     if (assumeMath) {
       return r'$' + input + r'$';
     }

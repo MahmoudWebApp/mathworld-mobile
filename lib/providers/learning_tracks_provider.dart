@@ -82,3 +82,23 @@ final trackPracticeProvider=FutureProvider.autoDispose.family<Map<String,dynamic
     rethrow;
   }
 });
+
+typedef NextTrackProblemKey=({int trackId,int categoryId,int afterProblemId});
+typedef NextTrackCandidate=({int id,bool retry});
+final nextTrackProblemProvider=FutureProvider.autoDispose.family<NextTrackCandidate?,NextTrackProblemKey>((ref,key) async {
+  final account=ref.watch(authProvider.select((s)=>(id:s.user?.id,role:s.user?.role.toLowerCase(),stage:s.user?.currentStageId)));
+  if(account.id==null||account.role!='student')return null;
+  final response=await ref.watch(apiClientProvider).get(
+    '/users/learning-tracks/${key.trackId}/categories/${key.categoryId}/next',
+    queryParameters:{'afterProblemId':key.afterProblemId},
+  );
+  final data=ApiEnvelope.map(response.data);
+  if(trackNumber(data['TrackId'])!=key.trackId||trackNumber(data['CategoryId'])!=key.categoryId)throw const FormatException('Continuation scope changed');
+  final problem=data['Problem'];
+  if(data['HasNext']==false&&problem==null)return null;
+  if(data['HasNext']!=true)throw const FormatException('Invalid continuation response');
+  if(problem is! Map||trackNumber(problem['CategoryId'])!=key.categoryId)throw const FormatException('Continuation category changed');
+  final id=trackNumber(problem['Id']);
+  if(id<=0||id==key.afterProblemId)throw const FormatException('Invalid continuation problem');
+  return (id:id,retry:problem['RequiresRetry']==true);
+});

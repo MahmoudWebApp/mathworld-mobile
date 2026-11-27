@@ -190,7 +190,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
           return SliverGrid(delegate:SliverChildBuilderDelegate((context,i){
             final c=ordered[i],s=stats[trackNumber(ordered[i]['Id'])];
             final locked=s?['IsLocked'];final count=trackNumber(c['ProblemsCount']);final solved=trackNumber(s?['Solved']);
-            return MobilePanel(padding:const EdgeInsets.all(12),borderColor:accent.withValues(alpha:.36),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            return GestureDetector(behavior:HitTestBehavior.opaque,onTap:locked==null?null:()=>open(c),child:MobilePanel(padding:const EdgeInsets.all(12),borderColor:accent.withValues(alpha:.36),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
               Row(children:[_TrackTopicIcon(value:c['Icon']?.toString()??'',accent:accent),const Spacer(),
                 if(locked==true)Icon(Icons.lock_outline,color:AppColors.pointsGold(context),size:18)
                 else if(c['IsFree']==true)Text(ar?'مجاني':'Free',style:const TextStyle(color:AppColors.success,fontSize:11,fontWeight:FontWeight.w700)),
@@ -211,7 +211,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
                 if(p?['TrackPracticeIsolationEnabled']==true&&locked==false&&trackNumber(s?['Attempted'])>0)
                   IconButton(visualDensity:VisualDensity.compact,tooltip:ar?'إعادة تدريب الفئة':'Restart topic',onPressed:_resetting?null:()=>_reset(trackNumber(p?['StageId']),trackText(c,'Name',ar),categoryId:trackNumber(c['Id'])),icon:Icon(Icons.restart_alt,color:accent,size:20)),
               ]),
-            ]));
+            ])));
           },childCount:ordered.length),gridDelegate:SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:columns,crossAxisSpacing:12,mainAxisSpacing:12,mainAxisExtent:236*scale.clamp(1.0,1.8).toDouble()));
         })),
         SliverToBoxAdapter(child:Padding(padding:const EdgeInsets.all(16),child:TextButton(onPressed:()=>Navigator.pushNamed(context,AppRoutes.learningStage),child:Text(ar?'تغيير المرحلة':'Change stage')))),
@@ -267,8 +267,24 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
             subtitle:Text(problem['IsSolved']==true?(ar?'محلولة':'Solved'):(ar?'غير محلولة':'Unsolved')),
             trailing:Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.star_rounded,size:16,color:AppColors.pointsGold(context)),const SizedBox(width:3),Text('${trackNumber(problem['Points'])}',style:TextStyle(color:AppColors.pointsGold(context),fontWeight:FontWeight.w700)),LayoutUtils.forwardIcon(context,size:18)]),
             onTap:()async{
-              final submitted=await Navigator.pushNamed(context,AppRoutes.problemDetails,arguments:trackNumber(problem['Id']));
-              if(mounted&&submitted==true){ref.invalidate(trackPracticeProvider);ref.invalidate(trackProgressProvider(widget.id));ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}
+              var currentId=trackNumber(problem['Id']);
+              var completed=false;
+              var retry=false;
+              final owner=ref.read(authProvider).user?.id;
+              final visited=<int>{};
+              while(mounted&&owner!=null&&ref.read(authProvider).user?.id==owner&&currentId>0&&visited.add(currentId)){
+                final result=await Navigator.pushNamed(this.context,AppRoutes.problemDetails,arguments:{
+                  'problemId':currentId,
+                  'trackId':widget.id,
+                  'categoryId':widget.categoryId,
+                  'retry':retry,
+                });
+                completed=completed||result==true||result is NextTrackCandidate;
+                if(!mounted||ref.read(authProvider).user?.id!=owner||result is! NextTrackCandidate)break;
+                currentId=result.id;
+                retry=result.retry;
+              }
+              if(mounted&&completed&&ref.read(authProvider).user?.id==owner){ref.invalidate(trackPracticeProvider);ref.invalidate(trackProgressProvider(widget.id));ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}
             },
           ));
         },

@@ -17,8 +17,8 @@ final dailyChallengeProvider = FutureProvider.autoDispose<DailyChallenge?>((ref)
   // The daily challenge is an upgrade benefit. Fail closed while account
   // entitlement is loading or unavailable; Free still has unlimited practice
   // in the two categories selected for their stage.
-  final membership = ref.watch(studentPremiumProvider);
-  if (membership.valueOrNull != true) return null;
+  final membership = await ref.watch(studentPremiumProvider.future);
+  if (membership != true) return null;
   final journey=await ref.watch(learningJourneyProvider.future);
   if(journey?.learningSessionsEnabled==true)return null;
   return ref.watch(dashboardRepositoryProvider).getDailyChallenge(stageId);

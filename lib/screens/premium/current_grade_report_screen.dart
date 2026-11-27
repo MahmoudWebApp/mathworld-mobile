@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/app_routes.dart';
 import '../../config/design_tokens.dart';
 import '../../core/network/api_envelope.dart';
+import '../../core/errors/app_exception.dart';
 import '../../core/utils/error_message.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/repositories_provider.dart';
@@ -41,7 +42,15 @@ class CurrentGradeReportScreen extends ConsumerWidget {
           action:FilledButton(onPressed:()=>Navigator.pushNamed(context,AppRoutes.premiumBenefits),child:Text(ar?'ترقية الحساب':'Upgrade account')),
         ))):ref.watch(currentGradeReportProvider).when(skipLoadingOnRefresh:false,skipLoadingOnReload:false,
           loading:()=>const AppContentSkeleton(),
-          error:(e,_)=>AppErrorView(message:localizedErrorMessage(e),onRetry:(){ref.invalidate(trackSelectionProvider);ref.invalidate(currentGradeReportProvider);}),
+          error:(e,_){
+            final code=e is AppException?e.serverMessage?.trim():null;
+            final message=code=='TrackReportIsolationUnavailable'
+              ?(ar?'تقرير الصف غير متاح حالياً. تقدمك محفوظ ولم يُحذف.':'The grade report is currently unavailable. Your progress is preserved.')
+              :code=='LearningTrackRequired'
+                ?(ar?'اختر الصف أو المستوى التعليمي لعرض التقرير.':'Choose a grade or level to view the report.')
+                :localizedErrorMessage(e);
+            return AppErrorView(message:message,onRetry:(){ref.invalidate(trackSelectionProvider);ref.invalidate(currentGradeReportProvider);});
+          },
           data:(p)=>_ReportBody(report:p,ar:ar,onRefresh:() async {try{await ref.refresh(currentGradeReportProvider.future).then((_) {});}catch(_){}}),
         ),
       ))));

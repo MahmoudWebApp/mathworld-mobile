@@ -60,7 +60,7 @@ class CertificateHomeSummary extends ConsumerWidget {
     return MobilePanel(padding:EdgeInsets.zero,child:MobileActionRow(
       icon:Icons.workspace_premium_rounded,color:AppColors.pointsGold(context),
       title:ar?'شهاداتي':'My certificates',subtitle:summary,
-      onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>learningEnabled?CertificatesScreen(journey:journey!,showExams:examsEnabled):const CustomExamsScreen())),
+      onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>learningEnabled?CertificatesScreen(journey:journey!,showExams:examsEnabled):const CustomExamsScreen(certificatesOnly:true))),
     ));
   }
 }
@@ -153,12 +153,12 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
       if(_busy||_checking)const LinearProgressIndicator(),
       if(_error)Card(child:ListTile(title:Text(tr('تعذّر إكمال الطلب. أعد المحاولة.','Request failed. Please retry.')),trailing:IconButton(onPressed:_busy||_checking?null:() async{await _load(refresh:true);if(mounted&&_choice!=null)await _check(_choice);},icon:const Icon(Icons.refresh)))),
       if(_notice!=null)Text(_notice!),
-      if(widget.showExams)MobilePanel(padding:EdgeInsets.zero,child:MobileActionRow(icon:Icons.school_outlined,color:AppColors.pointsGold(context),title:tr('شهادات الامتحانات','Exam certificates'),onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const CustomExamsScreen())))),
+      if(widget.showExams)MobilePanel(padding:EdgeInsets.zero,child:MobileActionRow(icon:Icons.school_outlined,color:AppColors.pointsGold(context),title:tr('شهادات الامتحانات','Exam certificates'),onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const CustomExamsScreen(certificatesOnly:true))))),
       const SizedBox(height:16),
       if(_list?['IssuanceEnabled']==true&&premium)Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
         Text(tr('استحقاق شهادة جديدة','New certificate eligibility'),style:Theme.of(context).textTheme.titleMedium),
         Text(tr('أكمل جميع مسائل النطاق المعتمد وأثبت الحل المستقل في كل مهارة.','Complete every problem in the approved scope and demonstrate independent solving in every skill.')),
-        DropdownButton<int>(isExpanded:true,value:_choice,hint:Text(tr('اختر النطاق','Choose scope')),onChanged:_busy||_checking?null:_check,items:[
+        DropdownButtonFormField<int>(key:ValueKey(_choice),isExpanded:true,initialValue:_choice,decoration:InputDecoration(labelText:tr('اختر النطاق','Choose scope')),onChanged:_busy||_checking?null:_check,items:[
           if(j.trackId!=null)DropdownMenuItem(value:0,child:Text(tr('الصف أو المساق الكامل','Entire grade or course'))),
           for(final c in categories)DropdownMenuItem(value:c.categoryId,child:Text(c.getName(context.locale.languageCode),overflow:TextOverflow.ellipsis)),
         ]),

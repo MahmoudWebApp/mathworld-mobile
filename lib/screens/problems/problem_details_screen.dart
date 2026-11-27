@@ -14,6 +14,7 @@ import '../../core/utils/error_message.dart';
 import '../../models/problem.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/problem_details_provider.dart';
+import '../../providers/learning_tracks_provider.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/math_background.dart';
@@ -55,10 +56,10 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
     if (mounted) setState(() => _challengeAdvancePaused = true);
   }
 
-  ({int? problemId, bool retry, bool dailyChallenge}) _readArguments() {
+  ({int? problemId, bool retry, bool dailyChallenge, int? nextProblemId, int? trackId, int? categoryId}) _readArguments() {
     final arguments = ModalRoute.of(context)?.settings.arguments;
     if (arguments is int) {
-      return (problemId: arguments, retry: false, dailyChallenge: false);
+      return (problemId: arguments, retry: false, dailyChallenge: false, nextProblemId: null, trackId: null, categoryId: null);
     }
     if (arguments is Map) {
       final rawId = arguments['problemId'] ?? arguments['id'];
@@ -67,9 +68,12 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
         problemId: id,
         retry: arguments['retry'] == true,
         dailyChallenge: arguments['dailyChallenge'] == true,
+        nextProblemId: arguments['nextProblemId'] is int ? arguments['nextProblemId'] as int : null,
+        trackId: arguments['trackId'] is int ? arguments['trackId'] as int : null,
+        categoryId: arguments['categoryId'] is int ? arguments['categoryId'] as int : null,
       );
     }
-    return (problemId: null, retry: false, dailyChallenge: false);
+    return (problemId: null, retry: false, dailyChallenge: false, nextProblemId: null, trackId: null, categoryId: null);
   }
 
   @override
@@ -120,6 +124,20 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
     final state = ref.watch(problemDetailsProvider(problemId));
     final notifier = ref.read(problemDetailsProvider(problemId).notifier);
     final loadedProblem = state.problem.valueOrNull;
+    final explicitScope=routeArguments.trackId!=null&&routeArguments.categoryId!=null;
+    final selection=!routeArguments.dailyChallenge&&!explicitScope&&loadedProblem!=null
+        ?ref.watch(trackSelectionProvider):null;
+    final selected=selection?.hasError==false&&selection?.isLoading==false?selection?.valueOrNull:null;
+    final selectedTrackId=trackNumber(selected?['TrackId']);
+    final trackId=explicitScope?routeArguments.trackId:
+        loadedProblem!=null&&trackNumber(selected?['StageId'])==loadedProblem.stageId&&selectedTrackId>0?selectedTrackId:null;
+    final categoryId=explicitScope?routeArguments.categoryId:loadedProblem?.categoryId;
+    final validScope=trackId!=null&&categoryId!=null&&loadedProblem?.categoryId==categoryId&&!routeArguments.dailyChallenge;
+    final nextTrack=validScope
+        ?ref.watch(nextTrackProblemProvider((trackId:trackId,categoryId:categoryId,afterProblemId:problemId))):null;
+    final candidate=nextTrack?.hasError==false&&!nextTrack!.isLoading?nextTrack.valueOrNull:null;
+    final nextId=validScope?candidate?.id:
+        selection?.isLoading==true||selection?.hasError==true||explicitScope?null:routeArguments.nextProblemId;
 
     if (routeArguments.retry &&
         loadedProblem?.isInErrorNotebook == true &&
@@ -183,9 +201,26 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
             challengeAdvancePaused: _challengeAdvancePaused,
             onPauseChallengeAdvance: _pauseChallengeAdvance,
             onContinueChallenge: _continueChallenge,
+            onNextProblem: nextId==null ? null : () {
+              if(candidate!=null&&explicitScope){
+                Navigator.pop(context,candidate);
+              }else if(candidate!=null){
+                Navigator.pushReplacementNamed(context,AppRoutes.problemDetails,arguments:{
+                  'problemId':candidate.id,'retry':candidate.retry,
+                });
+              }else{
+                Navigator.pop(context,'nextProblem');
+              }
+            },
+            nextTrackLoading: selection?.isLoading==true||nextTrack?.isLoading==true,
+            nextTrackError: selection?.hasError==true||nextTrack?.hasError==true,
+            nextTrackExhausted: nextTrack?.hasValue==true&&nextTrack?.isLoading==false&&nextTrack?.hasError==false&&candidate==null,
+            onRetryNext: selection?.hasError==true?()=>ref.invalidate(trackSelectionProvider):validScope?()=>ref.invalidate(nextTrackProblemProvider((trackId:trackId,categoryId:categoryId,afterProblemId:problemId))):null,
             onSubmit: () => _runAction(context, () async {
               await notifier.submitAnswer();
-              if (!mounted || !routeArguments.dailyChallenge) return;
+              if (!mounted) return;
+              if(validScope)ref.invalidate(nextTrackProblemProvider((trackId:trackId,categoryId:categoryId,afterProblemId:problemId)));
+              if (!routeArguments.dailyChallenge) return;
               // An incorrect answer must never advance the challenge.
               // Let the learner read the solution only after a correct answer.
               if (ref.read(problemDetailsProvider(problemId)).answerResult?.isCorrect == true) {
@@ -231,6 +266,9 @@ class _ProblemContent extends ConsumerWidget {
   final bool challengeAdvancePaused;
   final VoidCallback onPauseChallengeAdvance;
   final VoidCallback onContinueChallenge;
+  final VoidCallback? onNextProblem;
+  final bool nextTrackLoading,nextTrackError,nextTrackExhausted;
+  final VoidCallback? onRetryNext;
   final ValueChanged<int?> onOptionChanged;
   final VoidCallback onSubmit;
   final VoidCallback onStartRetry;
@@ -245,6 +283,11 @@ class _ProblemContent extends ConsumerWidget {
     required this.challengeAdvancePaused,
     required this.onPauseChallengeAdvance,
     required this.onContinueChallenge,
+    required this.onNextProblem,
+    required this.nextTrackLoading,
+    required this.nextTrackError,
+    required this.nextTrackExhausted,
+    required this.onRetryNext,
     required this.onOptionChanged,
     required this.onSubmit,
     required this.onStartRetry,
@@ -274,7 +317,6 @@ class _ProblemContent extends ConsumerWidget {
       children: [
         _ProblemHeader(
           problem: problem,
-          isArabic: isArabic,
           isFavoriteBusy: state.isFavoriteBusy,
           onToggleFavorite: onToggleFavorite,
         ),
@@ -390,12 +432,19 @@ class _ProblemContent extends ConsumerWidget {
                 ],
               ),
             ),
-          ] else
-            FilledButton.icon(
+          ] else ...[
+            if (!isDailyChallenge && state.answerResult!.isCorrect) ...[
+              if(nextTrackLoading)Text(isArabic?'جارٍ تجهيز المسألة التالية…':'Preparing the next problem…')
+              else if(nextTrackError)OutlinedButton(onPressed:onRetryNext,child:Text(isArabic?'إعادة تحميل المسألة التالية':'Retry loading the next problem'))
+              else if(onNextProblem!=null)FilledButton.icon(onPressed: onNextProblem, icon: LayoutUtils.forwardIcon(context), label: Text(isArabic ? 'المسألة التالية' : 'Next problem'))
+              else if(nextTrackExhausted)Text(isArabic?'لا توجد مسائل أخرى غير محلولة ومتاحة في هذه الفئة.':'No other available unsolved problems in this topic.'),
+            ],
+            TextButton.icon(
               onPressed: () => Navigator.maybePop(context),
               icon: const Icon(Icons.list_alt_rounded),
               label: Text('back_to_problems'.tr()),
             ),
+          ],
         ],
         if ((allowNotebookRetry || !isDailyChallenge || state.answerResult?.isCorrect == false) && problem.hasAttempted &&
             problem.isInErrorNotebook && problem.canRetry &&
@@ -418,14 +467,19 @@ class _ProblemContent extends ConsumerWidget {
             title:Text('detailed_solution'.tr(),style:Theme.of(context).textTheme.titleMedium),
             childrenPadding:const EdgeInsets.fromLTRB(16,0,16,16),
             expandedCrossAxisAlignment:CrossAxisAlignment.stretch,
-            children:[structure==null?RichMathText(
-              text: solution,
-              isArabic: isArabic,
-              style: Theme.of(context).textTheme.bodyLarge,
-            ):Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            children:[solution.trim().isNotEmpty ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final paragraph in solution.split(RegExp(r'\n\s*\n')).where((part) => part.trim().isNotEmpty))
+                  Padding(padding: const EdgeInsets.only(bottom: 12), child: RichMathText(
+                    text: paragraph.trim(), isArabic: isArabic,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  )),
+              ],
+            ) : structure==null ? const SizedBox.shrink() : Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
               Text(isArabic?'الفكرة والقانون':'Idea and formula',style:Theme.of(context).textTheme.titleMedium),
               RichMathText(text:structure.idea,isArabic:isArabic),
-              RichMathText(text:structure.formulaLatex,isArabic:isArabic,inline:true),
+              RichMathText(text:structure.formulaLatex,isArabic:isArabic,inline:true,assumeMath:true),
               const SizedBox(height:12),
               Text(isArabic?'خطوات الحل':'Solution steps',style:Theme.of(context).textTheme.titleMedium),
               for(var i=0;i<structure.steps.length;i++) Padding(padding:const EdgeInsets.only(top:6),child:RichMathText(text:'${i+1}. ${structure.steps[i]}',isArabic:isArabic)),
@@ -610,13 +664,11 @@ class _RetryModeBanner extends StatelessWidget {
 
 class _ProblemHeader extends StatelessWidget {
   final Problem problem;
-  final bool isArabic;
   final bool isFavoriteBusy;
   final VoidCallback onToggleFavorite;
 
   const _ProblemHeader({
     required this.problem,
-    required this.isArabic,
     required this.isFavoriteBusy,
     required this.onToggleFavorite,
   });
@@ -629,14 +681,7 @@ class _ProblemHeader extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: RichMathText(
-                text: problem.title,
-                isArabic: isArabic,
-                inline: true,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-              ),
-            ),
+            const Spacer(),
             const SizedBox(width: AppSpacing.sm),
             IconButton.filledTonal(
               iconSize: 28,

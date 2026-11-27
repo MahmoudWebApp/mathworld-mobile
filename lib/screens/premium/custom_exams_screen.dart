@@ -15,6 +15,8 @@ import '../../widgets/app_states.dart';
 import '../../widgets/mathworld_pagination.dart';
 import '../../config/constants.dart';
 import '../../widgets/rich_math_text.dart';
+import '../../widgets/mobile_section.dart';
+import '../../widgets/math_background.dart';
 
 final customExamAvailabilityProvider=FutureProvider.autoDispose<bool>((ref) async{
   final uid=ref.watch(authProvider.select((s)=>s.user?.id));
@@ -43,15 +45,17 @@ String requestId(){
   return '${s.substring(0,8)}-${s.substring(8,12)}-${s.substring(12,16)}-${s.substring(16,20)}-${s.substring(20)}';
 }
 class CustomExamsScreen extends ConsumerWidget{
-  const CustomExamsScreen({super.key});
+  final bool certificatesOnly;
+  const CustomExamsScreen({super.key,this.certificatesOnly=false});
   @override Widget build(BuildContext context,WidgetRef ref){
     final uid=ref.watch(authProvider.select((s)=>s.user?.id));
-    return uid==null?const Scaffold():_ExamWorkspace(key:ValueKey(uid),owner:uid);
+    return uid==null?const Scaffold():_ExamWorkspace(key:ValueKey((uid,certificatesOnly)),owner:uid,certificatesOnly:certificatesOnly);
   }
 }
 class _ExamWorkspace extends ConsumerStatefulWidget{
-  const _ExamWorkspace({super.key,required this.owner});
+  const _ExamWorkspace({super.key,required this.owner,required this.certificatesOnly});
   final int owner;
+  final bool certificatesOnly;
   @override ConsumerState<_ExamWorkspace> createState()=>_ExamWorkspaceState();
 }
 class _ExamWorkspaceState extends ConsumerState<_ExamWorkspace>{
@@ -60,7 +64,7 @@ class _ExamWorkspaceState extends ConsumerState<_ExamWorkspace>{
   List<Map<String,dynamic>> history=[];
   int historyPage=1,historyTotal=0,reviewPage=1;
   bool hasUnfinished=false;
-  bool busy=false,loaded=false;
+  bool busy=false,loaded=false,showHistory=false;
   String? error,request;
   int category=0,count=10,difficulty=0;
   int? chosen;
@@ -79,7 +83,7 @@ class _ExamWorkspaceState extends ConsumerState<_ExamWorkspace>{
   Future<Map<String,dynamic>> post(String path,[Map<String,dynamic>? data])async=>ApiEnvelope.map((await ref.read(apiClientProvider).post(path,data:data)).data);
   Future<void> reload({bool refresh=true,int? page})async{
     final target=page??(refresh?1:historyPage);
-    final provider=customExamHistoryProvider((owner:widget.owner,page:target,certificatesOnly:false));
+    final provider=customExamHistoryProvider((owner:widget.owner,page:target,certificatesOnly:widget.certificatesOnly));
     if(refresh)ref.invalidate(customExamHistoryProvider);
     final data=await ref.read(provider.future);
     if(active)setState((){history=rows(data['Items']);historyTotal=(data['Total'] as num).toInt();historyPage=target;hasUnfinished=data['HasUnfinished']==true;});
@@ -87,6 +91,11 @@ class _ExamWorkspaceState extends ConsumerState<_ExamWorkspace>{
   Future<void> load()=>run(()async{
     // History is safe for all signed-in students and independent of entitlement.
     // Start both reads together; retain existing history while setup refreshes.
+    if(widget.certificatesOnly){
+      await reload(refresh:loaded);
+      if(active)setState((){loaded=true;showHistory=true;});
+      return;
+    }
     final results=await Future.wait<Object?>([ref.read(studentPremiumProvider.future),reload(refresh:loaded).then<Object?>((_)=>null)]);
     if(!active)return;
     final s=results.first==true?await get('$root/setup'):null;
@@ -139,11 +148,21 @@ class _ExamWorkspaceState extends ConsumerState<_ExamWorkspace>{
     final historyPages=(historyTotal+AppConstants.pageSize-1)~/AppConstants.pageSize;
     final review=rows(e?['Review']);
     final reviewPages=(review.length+AppConstants.pageSize-1)~/AppConstants.pageSize;
-    return Scaffold(appBar:AppBar(title:Text(tr('الامتحانات المخصصة','Custom exams')),actions:[IconButton(onPressed:busy?null:load,icon:const Icon(Icons.refresh))]),
-      body:SafeArea(child:!loaded&&busy?const AppContentSkeleton(count:5):ListView(padding:const EdgeInsets.all(16),children:[
+    return Scaffold(appBar:AppBar(title:Text(widget.certificatesOnly?tr('شهادات الامتحانات','Exam certificates'):tr('الامتحانات المخصصة','Custom exams')),actions:[IconButton(onPressed:busy?null:load,icon:const Icon(Icons.refresh))]),
+      body:MathBackground(child:SafeArea(child:!loaded&&error==null?const AppContentSkeleton(count:5):ListView(padding:const EdgeInsets.all(16),children:[
         if(error!=null)Text(error!,style:TextStyle(color:Theme.of(context).colorScheme.error)),
         if(busy)const Center(child:Padding(padding:EdgeInsets.all(8),child:AppInlineLoader())),
-        if(!premium)Card(child:ListTile(leading:const Icon(Icons.workspace_premium_outlined),title:Text(tr('الامتحانات الجديدة لحساب Premium','New exams require Premium')),onTap:()=>Navigator.pushNamed(context,AppRoutes.premiumBenefits))),
+        if(e==null&&!widget.certificatesOnly)...[
+          SegmentedButton<bool>(
+            segments:[
+              ButtonSegment(value:false,label:Text(tr('إنشاء امتحان','New exam')),icon:const Icon(Icons.add_task_rounded)),
+              ButtonSegment(value:true,label:Text(tr('امتحاناتي','My exams')),icon:const Icon(Icons.history_rounded)),
+            ],
+            selected:{showHistory},onSelectionChanged:busy?null:(value)=>setState(()=>showHistory=value.first),
+          ),
+          const SizedBox(height:16),
+        ],
+        if(!premium&&!showHistory&&e==null)Card(child:ListTile(leading:const Icon(Icons.workspace_premium_outlined),title:Text(tr('الامتحانات الجديدة لحساب Premium','New exams require Premium')),onTap:()=>Navigator.pushNamed(context,AppRoutes.premiumBenefits))),
         if(e!=null&&e['AbandonedAtUtc']==null)...[
           Text(name(e,'Title'),style:Theme.of(context).textTheme.titleLarge),
           if(e['FinishedAtUtc']!=null)...[
@@ -169,35 +188,44 @@ class _ExamWorkspaceState extends ConsumerState<_ExamWorkspace>{
             if(e['Answered']==e['Total'])FilledButton(onPressed:busy||!premium?null:finish,child:Text(tr('إنهاء وتصحيح الامتحان','Finish and grade exam'))),
             TextButton(onPressed:busy?null:()=>abandon(e['Id'].toString()),child:Text(tr('إلغاء الامتحان','Abandon exam'))),
           ],
-        ]else if(premium&&s!=null)...[
+        ]else if(!showHistory&&premium&&s!=null)...[
+          MobilePanel(child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
           Text(name(asMap(s['Track'])??{},'Name'),style:Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height:16),
           DropdownButtonFormField<int>(initialValue:category,isExpanded:true,decoration:InputDecoration(labelText:tr('نطاق الامتحان','Exam scope')),items:[
             DropdownMenuItem(value:0,child:Text(tr('الصف الكامل','Entire grade'))),
             for(final c in cats)DropdownMenuItem(value:(c['Id'] as num).toInt(),child:Text(name(c,'Name'),overflow:TextOverflow.ellipsis)),
           ],onChanged:busy?null:(v)=>setState((){category=v??0;request=null;})),
           const SizedBox(height:12),
-          DropdownButtonFormField<int>(initialValue:difficulty,decoration:InputDecoration(labelText:tr('مستوى الصعوبة (اختياري)','Difficulty (optional)')),items:[
+          DropdownButtonFormField<int>(initialValue:difficulty,isExpanded:true,decoration:InputDecoration(labelText:tr('مستوى الصعوبة (اختياري)','Difficulty (optional)')),items:[
             DropdownMenuItem(value:0,child:Text(tr('جميع المستويات','All levels'))),
             for(final level in [1,2,3,4,5])DropdownMenuItem(value:level,enabled:available(level)>0,child:Text(tr('المستوى','Level')+' $level')),
           ],onChanged:busy?null:(v)=>setState((){difficulty=v??0;request=null;})),
           Text(tr('التصفية تعتمد مستويات الصعوبة المراجعة فقط.','Difficulty filters use reviewed levels only.'),style:Theme.of(context).textTheme.bodySmall),
           const SizedBox(height:12),
           DropdownButtonFormField<int>(initialValue:count,decoration:InputDecoration(labelText:tr('عدد الأسئلة','Questions')),items:[for(final n in [5,10,15,20])DropdownMenuItem(value:n,enabled:n<=max,child:Text('$n'))],onChanged:busy?null:(v)=>setState((){count=v??10;request=null;})),
+          const SizedBox(height:12),
           Text(tr('حد النجاح','Pass threshold')+": ${s['PassPercent']}%"),
+          const SizedBox(height:12),
           FilledButton(onPressed:busy||unfinished||count>max?null:start,child:Text(tr('ابدأ الامتحان','Start exam'))),
+          if(unfinished)TextButton(onPressed:()=>setState(()=>showHistory=true),child:Text(tr('استئناف الامتحان السابق','Resume previous exam'))),
+          ])),
         ],
-        const SizedBox(height:20),Text(tr('امتحاناتي وشهاداتي','My exams and certificates'),style:Theme.of(context).textTheme.titleMedium),
+        if(e==null&&showHistory)...[
+        MobileSectionTitle(title:widget.certificatesOnly?tr('شهاداتي الصادرة','My issued certificates'):tr('امتحاناتي وشهاداتي','My exams and certificates')),
+        const SizedBox(height:12),
         for(final h in history)Card(child:Column(children:[
           ListTile(title:Text(name(h,'Title')),subtitle:Text(h['FinishedAtUtc']!=null?"${h['Score']}/${h['Total']}":h['AbandonedAtUtc']!=null?tr('ملغى','Abandoned'):tr('قيد التنفيذ','In progress'))),
           Wrap(children:[
-            if(h['AbandonedAtUtc']==null&&(premium||h['FinishedAtUtc']!=null))TextButton(onPressed:busy?null:()=>open(h['Id'].toString()),child:Text(h['FinishedAtUtc']!=null?tr('النتيجة','Result'):tr('استئناف','Resume'))),
-            if(h['FinishedAtUtc']==null&&h['AbandonedAtUtc']==null)TextButton(onPressed:busy?null:()=>abandon(h['Id'].toString()),child:Text(tr('إلغاء','Abandon'))),
+            if(!widget.certificatesOnly&&h['AbandonedAtUtc']==null&&(premium||h['FinishedAtUtc']!=null))TextButton(onPressed:busy?null:()=>open(h['Id'].toString()),child:Text(h['FinishedAtUtc']!=null?tr('النتيجة','Result'):tr('استئناف','Resume'))),
+            if(!widget.certificatesOnly&&h['FinishedAtUtc']==null&&h['AbandonedAtUtc']==null)TextButton(onPressed:busy?null:()=>abandon(h['Id'].toString()),child:Text(tr('إلغاء','Abandon'))),
             if(h['CertificateIssued']==true)TextButton(onPressed:busy?null:()=>certificate(h['Id'].toString()),child:Text(tr('الشهادة','Certificate'))),
           ]),
         ])),
         if(historyPages>1)MathWorldPagination(page:historyPage,pageCount:historyPages,arabic:ar,onChanged:(p){if(!busy)run(()=>reload(refresh:false,page:p));}),
-        if(loaded&&history.isEmpty)Text(tr('لا توجد امتحانات سابقة','No previous exams')),
-      ])),
+        if(loaded&&history.isEmpty)AppEmptyView(icon:Icons.history_rounded,title:widget.certificatesOnly?tr('لم تصدر شهادات بعد','No certificates issued yet'):tr('لا توجد امتحانات سابقة','No previous exams')),
+        ],
+      ]))),
     );
   }
 }

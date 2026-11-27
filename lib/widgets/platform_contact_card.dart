@@ -47,6 +47,7 @@ class PlatformContactCard extends ConsumerWidget {
               child:Wrap(alignment:WrapAlignment.center,spacing:8,runSpacing:8,children:[
                 for(final link in p.links) IconButton(
                   tooltip:ar?link.labelAr:link.labelEn,
+                  style: IconButton.styleFrom(backgroundColor:Theme.of(context).colorScheme.primary.withValues(alpha:.10), foregroundColor:Theme.of(context).colorScheme.primary, minimumSize:const Size(48,48)),
                   onPressed:()=>_open(context,link.url),
                   icon:_SocialIcon(url:link.url),
                 ),
@@ -68,16 +69,19 @@ class _SocialIcon extends StatelessWidget {
     bool matches(String domain)=>host==domain||host.endsWith('.$domain');
     String? artwork;
     if(matches('youtube.com')||matches('youtu.be')){
-      artwork='<rect x="1" y="4" width="22" height="16" rx="5" fill="#FF0000"/><path d="M10 8l7 4-7 4z" fill="white"/>';
+      artwork='<path d="M23.5 6.2A3 3 0 0 0 21.4 4C19.5 3.5 12 3.5 12 3.5S4.5 3.5 2.6 4A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8A3 3 0 0 0 2.6 20c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.2c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8ZM9.5 15.6V8.4l6.3 3.6z" fill-rule="evenodd"/>';
     }else if(matches('facebook.com')||matches('fb.com')){
-      artwork='<circle cx="12" cy="12" r="12" fill="#1877F2"/><path d="M13.8 24V14h3.4l.5-4h-3.9V7.5c0-1.2.4-2 2-2H18V2a23 23 0 0 0-3-.2C11.6 1.8 9.5 4 9.5 7.5V10H6v4h3.5v10z" fill="white"/>';
+      artwork='<path d="M14 24V14h3.4l.5-4H14V7.5c0-1.2.4-2 2-2h2V2a23 23 0 0 0-3-.2C11.6 1.8 9.5 4 9.5 7.5V10H6v4h3.5v10z"/>';
     }else if(matches('instagram.com')){
-      artwork='<defs><linearGradient id="g" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#FEDA75"/><stop offset=".5" stop-color="#D62976"/><stop offset="1" stop-color="#4F5BD5"/></linearGradient></defs><rect width="24" height="24" rx="6" fill="url(#g)"/><rect x="5" y="5" width="14" height="14" rx="4" fill="none" stroke="white" stroke-width="1.7"/><circle cx="12" cy="12" r="3.5" fill="none" stroke="white" stroke-width="1.7"/><circle cx="16.5" cy="7.5" r="1" fill="white"/>';
+      artwork='<rect x="2" y="2" width="20" height="20" rx="6" fill="none" stroke="black" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="black" stroke-width="2"/><circle cx="18" cy="6" r="1.2"/>';
     }else if(matches('tiktok.com')){
-      const note='M14 3h3c.3 2.6 1.8 4.1 4 4.5v3a10 10 0 0 1-4-1.5v7a6 6 0 1 1-6-6v3a3 3 0 1 0 3 3z';
-      artwork='<rect width="24" height="24" rx="6" fill="#161823"/><path d="$note" fill="#25F4EE" transform="translate(-.6 .4)"/><path d="$note" fill="#FE2C55" transform="translate(.6 .7)"/><path d="$note" fill="white"/>';
+      artwork='<path d="M14 2h3c.3 2 1.7 3.7 4 4v3c-1.5 0-2.9-.5-4-1.4V16a6 6 0 1 1-6-6h1v3h-1a3 3 0 1 0 3 3V2Z"/>';
+    }else if(matches('x.com')||matches('twitter.com')){
+      artwork='<path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25h6.914l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>';
+    }else if(matches('linkedin.com')){
+      artwork='<path d="M2 8h4v14H2zM4 1a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM9 8h4v2c1-2 3-2.5 5-2.5 4 0 4 3 4 6v8.5h-4v-8c0-2-1-3-2.5-3S13 12 13 14v8H9z"/>';
     }
     if(artwork==null)return const Icon(Icons.open_in_new);
-    return SvgPicture.string('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">$artwork</svg>',width:28,height:28);
+    return SvgPicture.string('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">$artwork</svg>',width:22,height:22,colorFilter:ColorFilter.mode(Theme.of(context).colorScheme.primary,BlendMode.srcIn));
   }
 }
