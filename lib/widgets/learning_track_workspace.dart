@@ -1,8 +1,8 @@
 import 'app_states.dart';
 import 'locked_category_overlay.dart';
 import 'mobile_section.dart';
-import 'rich_math_text.dart';
-import '../utils/layout_utils.dart';
+import 'problem_card.dart';
+import '../models/problem.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../config/design_tokens.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -262,11 +262,8 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
           if(visible.isEmpty)return AppEmptyView(icon:Icons.calculate_outlined,title:ar?'لا توجد مسائل مطابقة':'No matching problems');
           if(i==visible.length)return MathWorldPagination(page:_page,pageCount:trackNumber(data['PageSize'])<=0?1:(trackNumber(data['Total'])+trackNumber(data['PageSize'])-1)~/trackNumber(data['PageSize']),arabic:ar,onChanged:(p)=>setState(()=>_page=p));
           final problem=visible[i];
-          return MobilePanel(padding:EdgeInsets.zero,child:ListTile(
-            leading:Icon(problem['IsSolved']==true?Icons.check_circle_outline:Icons.calculate_outlined,color:problem['IsSolved']==true?AppColors.success:Theme.of(context).colorScheme.primary),
-            title:RichMathText(text:trackText(problem,'Title',ar),inline:true,maxLines:2,overflow:TextOverflow.ellipsis),
-            subtitle:Text(problem['IsSolved']==true?(ar?'محلولة':'Solved'):(ar?'غير محلولة':'Unsolved')),
-            trailing:Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.star_rounded,size:16,color:AppColors.pointsGold(context)),const SizedBox(width:3),Text('${trackNumber(problem['Points'])}',style:TextStyle(color:AppColors.pointsGold(context),fontWeight:FontWeight.w700)),LayoutUtils.forwardIcon(context,size:18)]),
+          return ProblemCard(
+            problem:ProblemPreview.fromJson(problem,languageCode:context.locale.languageCode),
             onTap:()async{
               var currentId=trackNumber(problem['Id']);
               var completed=false;
@@ -287,7 +284,7 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
               }
               if(mounted&&completed&&ref.read(authProvider).user?.id==owner){ref.invalidate(trackPracticeProvider);ref.invalidate(trackProgressProvider(widget.id));ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}
             },
-          ));
+          );
         },
       ))),
     ]))));
