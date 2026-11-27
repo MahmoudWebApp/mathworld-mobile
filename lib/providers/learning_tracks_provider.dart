@@ -66,7 +66,7 @@ final trackProgressProvider=FutureProvider.autoDispose.family<Map<String,dynamic
   final response=await ref.watch(apiClientProvider).get('/users/learning-tracks/$id/progress');
   return ApiEnvelope.map(response.data);
 });
-typedef TrackPracticeKey=({int trackId,int categoryId,int page,bool hideSolved});
+typedef TrackPracticeKey=({int trackId,int categoryId,int page,bool hideSolved,String query});
 final trackPracticeProvider=FutureProvider.autoDispose.family<Map<String,dynamic>,TrackPracticeKey>((ref,key) async {
   final account=ref.watch(authProvider.select((s)=>(id:s.user?.id,role:s.user?.role.toLowerCase(),stage:s.user?.currentStageId)));
   if(account.id==null||account.role!='student')return {};
@@ -75,7 +75,7 @@ final trackPracticeProvider=FutureProvider.autoDispose.family<Map<String,dynamic
   final timer=Timer(const Duration(seconds:30),lease.close);
   ref.onDispose(timer.cancel);
   try {
-    final response=await client.get('/users/learning-tracks/${key.trackId}/categories/${key.categoryId}/problems',queryParameters:{'page':key.page,'pageSize':AppConstants.pageSize,'hideSolved':key.hideSolved});
+    final response=await client.get('/users/learning-tracks/${key.trackId}/categories/${key.categoryId}/problems',queryParameters:{'page':key.page,'pageSize':AppConstants.pageSize,'hideSolved':key.hideSolved,if(key.query.trim().isNotEmpty)'q':key.query.trim()});
     return ApiEnvelope.map(response.data);
   } catch (_) {
     lease.close();
