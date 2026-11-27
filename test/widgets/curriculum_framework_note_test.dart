@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:mathworld_mobile/widgets/curriculum_framework_note.dart';
 
 void main() {
   testWidgets('Arabic methodology avoids fixed quotas and false accreditation',
       (tester) async {
     await tester.pumpWidget(const MaterialApp(
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      supportedLocales: [Locale('en'), Locale('ar')],
       locale: Locale('ar'),
       home: Scaffold(body: SingleChildScrollView(
         child: CurriculumFrameworkNote(),
@@ -22,6 +25,8 @@ void main() {
   testWidgets('English methodology disclaims endorsement',
       (tester) async {
     await tester.pumpWidget(const MaterialApp(
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      supportedLocales: [Locale('en'), Locale('ar')],
       locale: Locale('en'),
       home: Scaffold(body: SingleChildScrollView(
         child: CurriculumFrameworkNote(),
