@@ -58,20 +58,20 @@ class CurrentGradeReportScreen extends ConsumerWidget {
                 :localizedErrorMessage(e);
             return AppErrorView(message:message,onRetry:(){ref.invalidate(trackSelectionProvider);ref.invalidate(currentGradeReportProvider);});
           },
-          data:(p)=>_ReportBody(report:p,ar:ar,onRefresh:() async {try{await ref.refresh(currentGradeReportProvider.future).then((_) {});}catch(_){}}),
+          data:(p)=>CurrentGradeReportBody(report:p,ar:ar,onRefresh:() async {try{await ref.refresh(currentGradeReportProvider.future).then((_) {});}catch(_){}}),
         ),
       ))));
   }
 }
 
-class _ReportBody extends StatefulWidget {
-  const _ReportBody({required this.report,required this.ar,required this.onRefresh});
+class CurrentGradeReportBody extends StatefulWidget {
+  const CurrentGradeReportBody({super.key,required this.report,required this.ar,required this.onRefresh});
   final Map<String,dynamic> report;
   final bool ar;
   final Future<void> Function() onRefresh;
-  @override State<_ReportBody> createState()=>_ReportBodyState();
+  @override State<CurrentGradeReportBody> createState()=>_CurrentGradeReportBodyState();
 }
-class _ReportBodyState extends State<_ReportBody>{
+class _CurrentGradeReportBodyState extends State<CurrentGradeReportBody>{
   int _categoryPage=1,_attemptPage=1;
   Map<String,dynamic> get report=>widget.report;
   bool get ar=>widget.ar;
@@ -157,7 +157,7 @@ class _ReportBodyState extends State<_ReportBody>{
       if(index==recent.length)return Padding(padding:const EdgeInsets.only(top:12),child:Text(recent.isEmpty?(ar?'لا توجد محاولات مسجلة لهذا الصف.':'No recorded attempts for this grade.'):(ar?'آخر 10 محاولات مسجلة كحد أقصى.':'Up to 10 most recent recorded attempts.')));
       final a=recent[index],correct=a['IsCorrect']==true;
       final date=DateTime.tryParse(a['SubmittedAtUtc']?.toString()??'')?.toLocal();
-      return Padding(padding:const EdgeInsets.only(bottom:8),child:MobilePanel(padding:EdgeInsets.zero,child:ListTile(leading:Icon(correct?Icons.check_circle_outline:Icons.cancel_outlined,color:correct?AppColors.success:theme.colorScheme.error),title:Text(trackText(a,'Title',ar),maxLines:2,overflow:TextOverflow.ellipsis),subtitle:Text(date==null?'—':DateFormat.yMMMd(context.locale.languageCode).add_jm().format(date)),trailing:Text('+${a['PointsEarned']??0}',style:TextStyle(color:gold,fontWeight:FontWeight.bold)))));
+      return Padding(padding:const EdgeInsets.only(bottom:8),child:MobilePanel(padding:EdgeInsets.zero,child:ListTile(leading:Icon(correct?Icons.check_circle_outline:Icons.cancel_outlined,color:correct?AppColors.success:theme.colorScheme.error),title:Text(trackText(a,'Title',ar),maxLines:2,overflow:TextOverflow.ellipsis),subtitle:Text(date==null?'—':DateFormat.yMMMd(Localizations.localeOf(context).languageCode).add_jm().format(date)),trailing:Text('+${a['PointsEarned']??0}',style:TextStyle(color:gold,fontWeight:FontWeight.bold)))));
     }));
   }
 }
