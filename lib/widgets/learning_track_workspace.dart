@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'app_states.dart';
 import 'locked_category_overlay.dart';
 import 'mobile_section.dart';
@@ -246,16 +247,34 @@ class _TrackPractice extends ConsumerStatefulWidget{
 class _TrackPracticeState extends ConsumerState<_TrackPractice>{
   int _page=1;
   bool _hideSolved=false;
+  final _search=TextEditingController();
+  Timer? _debounce;
+  String _query='';
+  bool _searchPending=false;
+  void _searchChanged(String value){
+    _debounce?.cancel();
+    final term=value.trim();
+    setState(()=>_searchPending=term!=_query);
+    _debounce=Timer(Duration(milliseconds:term.isEmpty?0:350),(){
+      if(mounted)setState((){_query=term;_page=1;_searchPending=false;});
+    });
+  }
+  @override void dispose(){_debounce?.cancel();_search.dispose();super.dispose();}
   @override Widget build(BuildContext context){
     final ar=context.locale.languageCode=='ar';
-    final key=(trackId:widget.id,categoryId:widget.categoryId,page:_page,hideSolved:_hideSolved);
+    final key=(trackId:widget.id,categoryId:widget.categoryId,page:_page,hideSolved:_hideSolved,query:_query);
     final state=ref.watch(trackPracticeProvider(key));
     final data=state.valueOrNull;
     final rows=trackRows(data?['Items']);
     final visible=rows;
     return Scaffold(appBar:AppBar(title:Text(widget.name)),body:MathBackground(showSymbols:false,child:SafeArea(top:false,child:Column(children:[
+      Padding(padding:const EdgeInsets.fromLTRB(16,12,16,0),child:TextField(
+        controller:_search,maxLength:120,onChanged:_searchChanged,
+        textInputAction:TextInputAction.search,
+        decoration:InputDecoration(counterText:'',hintText:ar?'ابحث في مسائل الفئة…':'Search topic problems…',prefixIcon:const Icon(Icons.search_rounded),suffixIcon:_search.text.isEmpty?null:IconButton(tooltip:ar?'مسح البحث':'Clear search',icon:const Icon(Icons.close_rounded),onPressed:(){_search.clear();_searchChanged('');})),
+      )),
       Padding(padding:const EdgeInsets.fromLTRB(16,8,16,8),child:Align(alignment:AlignmentDirectional.centerStart,child:FilterChip(label:Text(ar?'إخفاء المحلولة':'Hide solved'),selected:_hideSolved,onSelected:(value)=>setState((){_hideSolved=value;_page=1;})))),
-      Expanded(child:state.hasError&&!state.hasValue?AppErrorView(message:localizedErrorMessage(state.error!),onRetry:()=>ref.invalidate(trackPracticeProvider(key))):data==null?const AppContentSkeleton(count:5):RefreshIndicator(onRefresh:()async{ref.invalidate(trackPracticeProvider(key));try{await ref.read(trackPracticeProvider(key).future);}catch(_){}},child:ListView.separated(
+      Expanded(child:_searchPending?const AppContentSkeleton(count:5):state.hasError&&!state.hasValue?AppErrorView(message:localizedErrorMessage(state.error!),onRetry:()=>ref.invalidate(trackPracticeProvider(key))):data==null?const AppContentSkeleton(count:5):RefreshIndicator(onRefresh:()async{ref.invalidate(trackPracticeProvider(key));try{await ref.read(trackPracticeProvider(key).future);}catch(_){}},child:ListView.separated(
         physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.fromLTRB(16,0,16,20),
         itemCount:visible.isEmpty?1:visible.length+1,separatorBuilder:(_,__)=>const SizedBox(height:12),
         itemBuilder:(context,i){
