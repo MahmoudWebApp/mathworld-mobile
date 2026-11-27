@@ -41,8 +41,8 @@ jobs:
         run: cp .env.example .env
       - name: Resolve Flutter packages
         run: flutter pub get --enforce-lockfile
-      - name: Verify Free access and Google build configuration
-        run: flutter test test/models/stage_daily_quota_test.dart test/daily_challenge_model_test.dart test/google_oauth_configuration_test.dart
+      - name: Verify full Flutter regression suite before signed APK
+        run: flutter test
       - name: Analyze Flutter
         run: flutter analyze --no-fatal-infos
 
