@@ -14,6 +14,7 @@ import '../../core/utils/error_message.dart';
 import '../../models/problem.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/problem_details_provider.dart';
+import '../../providers/problem_prefetch_provider.dart';
 import '../../providers/learning_tracks_provider.dart';
 import '../../widgets/app_states.dart';
 import '../../widgets/glass_card.dart';
@@ -136,6 +137,12 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
     final nextTrack=validScope
         ?ref.watch(nextTrackProblemProvider((trackId:trackId,categoryId:categoryId,afterProblemId:problemId))):null;
     final candidate=nextTrack?.hasError==false&&!nextTrack!.isLoading?nextTrack.valueOrNull:null;
+    if(validScope&&candidate!=null&&!candidate.retry){
+      final cache=ref.watch(problemPrefetchProvider);
+      WidgetsBinding.instance.addPostFrameCallback((_){
+        if(mounted)cache.warm(candidate.id,categoryId,trackId);
+      });
+    }
     final nextId=validScope?candidate?.id:
         selection?.isLoading==true||selection?.hasError==true||explicitScope?null:routeArguments.nextProblemId;
 
