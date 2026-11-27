@@ -34,7 +34,7 @@ class RichMathText extends StatelessWidget {
   // forms before painting mixed Arabic prose; raw backslashes must never
   // appear as question text.
   static final RegExp _latexPattern =
-      RegExp(r'(\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\$[^\n$]+?\$|\\\([\s\S]+?\\\))');
+      RegExp(r'(\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\$[^\n$]+?\$|\\\([\s\S]+?\\\)|(?:\\det\s*)?\\begin\{(?:[pbBvV]?matrix|smallmatrix)\}[\s\S]+?\\end\{(?:[pbBvV]?matrix|smallmatrix)\})');
   static final RegExp _arabicPattern = RegExp(r'[\u0600-\u06FF]');
   static final RegExp _textCommandPattern = RegExp(r'\\text\s*\{([^{}]*)\}');
   static final RegExp _arabicRunPattern = RegExp(
@@ -335,7 +335,7 @@ class RichMathText extends StatelessWidget {
     // double backslashes before TeX delimiters or commands. Collapse only
     // TeX-command/brace-delimiter escapes, preserving valid TeX line breaks.
     input = input.replaceAll(
-      RegExp(r'\\\\(?=[A-Za-z\[\]\(\)])'),
+      RegExp(r'\\\\(?=(?:[A-Za-z]{2,}(?![A-Za-z])|[\[\]\(\)]))'),
       '\\',
     );
 
@@ -418,6 +418,11 @@ class RichMathText extends StatelessWidget {
         );
       }
       final raw = match.group(0)!;
+      if(raw.startsWith(r'\begin{')||raw.startsWith(r'\det')){
+        tokens.add(_MathToken(_MathTokenType.blockMath,raw.trim()));
+        cursor=match.end;
+        continue;
+      }
       final isBlock = (raw.startsWith(r'$$') && raw.endsWith(r'$$')) ||
           (raw.startsWith(r'\[') && raw.endsWith(r'\]'));
       final doubleCharacterDelimiters = raw.startsWith(r'$$') ||
