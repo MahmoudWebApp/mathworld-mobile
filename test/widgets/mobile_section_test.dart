@@ -7,7 +7,7 @@ void main(){
   testWidgets('mobile panels use branded borders even with a black outlineVariant',(tester)async{
     for(final brightness in [Brightness.light,Brightness.dark]){
       final scheme=ColorScheme.fromSeed(seedColor:AppColors.brandPurple,brightness:brightness).copyWith(outlineVariant:Colors.black);
-      await tester.pumpWidget(MaterialApp(theme:ThemeData(colorScheme:scheme),home:const Scaffold(body:MobilePanel(child:Text('Panel')))));
+      await tester.pumpWidget(MaterialApp(themeAnimationDuration:Duration.zero,theme:ThemeData(colorScheme:scheme),home:const Scaffold(body:MobilePanel(child:Text('Panel')))));
       final panel=find.descendant(of:find.byType(MobilePanel),matching:find.byType(DecoratedBox));
       final decoration=tester.widget<DecoratedBox>(panel.first).decoration as BoxDecoration;
       final border=decoration.border as Border;
