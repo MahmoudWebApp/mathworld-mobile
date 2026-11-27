@@ -207,4 +207,17 @@ void main() {
     expect(find.textContaining(r'\begin'),findsNothing);
     expect(tester.takeException(),isNull);
   });
+
+  testWidgets('renders bare determinant with Arabic prose and matrix row separators', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home:Scaffold(body:
+      RichMathText(text:r'''نحسب المحدد:
+\det\begin{pmatrix}2&3\\
+1&4\end{pmatrix}
+إذن الناتج 5.''',isArabic:true),
+    )));
+    expect(find.byType(Math),findsOneWidget);
+    expect(find.textContaining(r'\begin'),findsNothing);
+    expect(find.textContaining('نحسب المحدد',findRichText:true),findsWidgets);
+    expect(tester.takeException(),isNull);
+  });
 }
