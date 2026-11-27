@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/platform_contact_provider.dart';
 import 'glass_card.dart';
+import '../config/design_tokens.dart';
 
 class PlatformContactCard extends ConsumerWidget {
   const PlatformContactCard({super.key});
@@ -45,12 +46,16 @@ class PlatformContactCard extends ConsumerWidget {
             if(p.links.isNotEmpty)Padding(
               padding:const EdgeInsets.all(12),
               child:Wrap(alignment:WrapAlignment.center,spacing:8,runSpacing:8,children:[
-                for(final link in p.links) IconButton(
+                for(final link in p.links) Material(
+                  color:Colors.transparent,
+                  borderRadius:BorderRadius.circular(12),
+                  clipBehavior:Clip.antiAlias,
+                  child:Ink(decoration:BoxDecoration(gradient:AppGradients.primary,borderRadius:BorderRadius.circular(12)),child:IconButton(
                   tooltip:ar?link.labelAr:link.labelEn,
-                  style: IconButton.styleFrom(backgroundColor:Theme.of(context).colorScheme.primary.withValues(alpha:.10), foregroundColor:Theme.of(context).colorScheme.primary, minimumSize:const Size(48,48)),
+                  style: IconButton.styleFrom(foregroundColor:Colors.white, minimumSize:const Size(48,48),shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(12))),
                   onPressed:()=>_open(context,link.url),
                   icon:_SocialIcon(url:link.url),
-                ),
+                ))),
               ]),
             ),
           ],
@@ -82,6 +87,6 @@ class _SocialIcon extends StatelessWidget {
       artwork='<path d="M2 8h4v14H2zM4 1a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM9 8h4v2c1-2 3-2.5 5-2.5 4 0 4 3 4 6v8.5h-4v-8c0-2-1-3-2.5-3S13 12 13 14v8H9z"/>';
     }
     if(artwork==null)return const Icon(Icons.open_in_new);
-    return SvgPicture.string('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">$artwork</svg>',width:22,height:22,colorFilter:ColorFilter.mode(Theme.of(context).colorScheme.primary,BlendMode.srcIn));
+    return SvgPicture.string('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">$artwork</svg>',width:22,height:22,colorFilter:const ColorFilter.mode(Colors.white,BlendMode.srcIn));
   }
 }

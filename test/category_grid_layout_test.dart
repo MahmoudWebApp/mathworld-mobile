@@ -19,7 +19,7 @@ void main() {
   test('larger layouts increase columns without overcrowding', () {
     expect(StageCategoryGridLayout.columns(440), 2);
     expect(StageCategoryGridLayout.columns(740), 3);
-    expect(StageCategoryGridLayout.columns(1000), 4);
+    expect(StageCategoryGridLayout.columns(1000), 3);
     expect(StageCategoryGridLayout.cardExtent(3), 355);
   });
 

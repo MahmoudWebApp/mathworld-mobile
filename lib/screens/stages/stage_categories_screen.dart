@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import '../../widgets/mathworld_feedback.dart';
+import '../../widgets/locked_category_overlay.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -469,7 +470,7 @@ class _CategoryCard extends StatelessWidget {
       });
     }
 
-    return GlassCard(
+    return LockedCategoryCard(locked:locked,arabic:localeCode=='ar',name:title,onUpgrade:()=>_showPremiumLockedSheet(context,title),child:GlassCard(
       // The API now returns a real per-stage count. Never navigate into a
       // category known to have zero questions and then show a dead-end page.
       // Unavailable topics never route to a paywall or empty question list.
@@ -480,9 +481,7 @@ class _CategoryCard extends StatelessWidget {
           ? () => showMathWorldNotice(context,localeCode == 'ar'
                   ? 'هذه الفئة لا تحتوي على مسائل منشورة بعد.'
                   : 'This category has no published problems yet.',kind:MathWorldNoticeKind.info)
-          : locked
-              ? () => _showPremiumLockedSheet(context, title)
-              : null,
+          : locked ? null : openQuestions,
       color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
       border: BorderSide(
         color: accent.withValues(alpha: isDark ? 0.55 : 0.36),
@@ -621,7 +620,7 @@ class _CategoryCard extends StatelessWidget {
           ],
         ],
       ),
-    );
+    ));
   }
 
   Future<void> _showPremiumLockedSheet(BuildContext context, String title) async {

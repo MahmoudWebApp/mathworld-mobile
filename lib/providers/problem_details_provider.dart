@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/problem.dart';
 import '../core/errors/app_exception.dart';
 import 'learning_tracks_provider.dart';
+import 'problem_prefetch_provider.dart';
+import 'auth_provider.dart';
 import '../models/solution_preview.dart';
 import '../repositories/problems_repository.dart';
 import 'dashboard_provider.dart';
@@ -82,7 +84,10 @@ final problemDetailsProvider = StateNotifierProvider.autoDispose
 
     // Recreate question interaction state when a local track switch is observed.
     ref.watch(trackSelectionProvider.select((value)=>value.valueOrNull?['TrackId']));
+    ref.watch(authProvider.select((s)=>(id:s.user?.id,stage:s.user?.currentStageId,role:s.user?.role,tier:s.user?.subscriptionType,status:s.status)));
+    final prefetch=ref.watch(problemPrefetchProvider);
     return ProblemDetailsNotifier(
+      initialProblem:()=>prefetch.take(problemId),
       repository: ref.watch(problemsRepositoryProvider),
       problemId: problemId,
       languageCode: languageCode,
@@ -128,23 +133,26 @@ class ProblemDetailsNotifier extends StateNotifier<ProblemDetailsState> {
     required String languageCode,
     required void Function() onAttemptCompleted,
     required void Function() onFavoriteChanged,
+    Future<Problem?> Function()? initialProblem,
   })  : _repository = repository,
         _problemId = problemId,
         _languageCode = languageCode,
         _onAttemptCompleted = onAttemptCompleted,
         _onFavoriteChanged = onFavoriteChanged,
         super(const ProblemDetailsState.loading()) {
-    load();
+    load(initialProblem:initialProblem);
   }
 
-  Future<void> load() async {
+  Future<void> load({Future<Problem?> Function()? initialProblem}) async {
     state = state.copyWith(
       problem: const AsyncValue.loading(),
       clearSolutionPreview: true,
       isPreviewLoading: false,
     );
     try {
-      final problem = await _repository.getProblem(_problemId, _languageCode);
+      final warm = initialProblem==null?null:await initialProblem();
+      if (!mounted) return;
+      final problem = warm ?? await _repository.getProblem(_problemId, _languageCode);
       if (!mounted) return;
       final restoredResult = problem.hasAttempted
           ? AnswerResult(

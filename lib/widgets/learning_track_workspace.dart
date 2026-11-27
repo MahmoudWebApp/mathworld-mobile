@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'app_states.dart';
+import 'locked_category_overlay.dart';
 import 'mobile_section.dart';
-import 'rich_math_text.dart';
-import '../utils/layout_utils.dart';
+import 'problem_card.dart';
+import '../models/problem.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../config/design_tokens.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -190,7 +192,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
           return SliverGrid(delegate:SliverChildBuilderDelegate((context,i){
             final c=ordered[i],s=stats[trackNumber(ordered[i]['Id'])];
             final locked=s?['IsLocked'];final count=trackNumber(c['ProblemsCount']);final solved=trackNumber(s?['Solved']);
-            return GestureDetector(behavior:HitTestBehavior.opaque,onTap:locked==null?null:()=>open(c),child:MobilePanel(padding:const EdgeInsets.all(12),borderColor:accent.withValues(alpha:.36),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            return LockedCategoryCard(locked:locked==true,arabic:ar,name:trackText(c,'Name',ar),onUpgrade:()=>open(c),child:GestureDetector(behavior:HitTestBehavior.opaque,onTap:locked==false?()=>open(c):null,child:MobilePanel(padding:const EdgeInsets.all(12),borderColor:accent.withValues(alpha:.36),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
               Row(children:[_TrackTopicIcon(value:c['Icon']?.toString()??'',accent:accent),const Spacer(),
                 if(locked==true)Icon(Icons.lock_outline,color:AppColors.pointsGold(context),size:18)
                 else if(c['IsFree']==true)Text(ar?'مجاني':'Free',style:const TextStyle(color:AppColors.success,fontSize:11,fontWeight:FontWeight.w700)),
@@ -211,7 +213,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
                 if(p?['TrackPracticeIsolationEnabled']==true&&locked==false&&trackNumber(s?['Attempted'])>0)
                   IconButton(visualDensity:VisualDensity.compact,tooltip:ar?'إعادة تدريب الفئة':'Restart topic',onPressed:_resetting?null:()=>_reset(trackNumber(p?['StageId']),trackText(c,'Name',ar),categoryId:trackNumber(c['Id'])),icon:Icon(Icons.restart_alt,color:accent,size:20)),
               ]),
-            ])));
+            ]))));
           },childCount:ordered.length),gridDelegate:SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount:columns,crossAxisSpacing:12,mainAxisSpacing:12,mainAxisExtent:236*scale.clamp(1.0,1.8).toDouble()));
         })),
         SliverToBoxAdapter(child:Padding(padding:const EdgeInsets.all(16),child:TextButton(onPressed:()=>Navigator.pushNamed(context,AppRoutes.learningStage),child:Text(ar?'تغيير المرحلة':'Change stage')))),
@@ -245,27 +247,42 @@ class _TrackPractice extends ConsumerStatefulWidget{
 class _TrackPracticeState extends ConsumerState<_TrackPractice>{
   int _page=1;
   bool _hideSolved=false;
+  final _search=TextEditingController();
+  Timer? _debounce;
+  String _query='';
+  bool _searchPending=false;
+  void _searchChanged(String value){
+    _debounce?.cancel();
+    final term=value.trim();
+    setState(()=>_searchPending=term!=_query);
+    _debounce=Timer(Duration(milliseconds:term.isEmpty?0:350),(){
+      if(mounted)setState((){_query=term;_page=1;_searchPending=false;});
+    });
+  }
+  @override void dispose(){_debounce?.cancel();_search.dispose();super.dispose();}
   @override Widget build(BuildContext context){
     final ar=context.locale.languageCode=='ar';
-    final key=(trackId:widget.id,categoryId:widget.categoryId,page:_page,hideSolved:_hideSolved);
+    final key=(trackId:widget.id,categoryId:widget.categoryId,page:_page,hideSolved:_hideSolved,query:_query);
     final state=ref.watch(trackPracticeProvider(key));
     final data=state.valueOrNull;
     final rows=trackRows(data?['Items']);
     final visible=rows;
     return Scaffold(appBar:AppBar(title:Text(widget.name)),body:MathBackground(showSymbols:false,child:SafeArea(top:false,child:Column(children:[
+      Padding(padding:const EdgeInsets.fromLTRB(16,12,16,0),child:TextField(
+        controller:_search,maxLength:120,onChanged:_searchChanged,
+        textInputAction:TextInputAction.search,
+        decoration:InputDecoration(counterText:'',hintText:ar?'ابحث في مسائل الفئة…':'Search topic problems…',prefixIcon:const Icon(Icons.search_rounded),suffixIcon:_search.text.isEmpty?null:IconButton(tooltip:ar?'مسح البحث':'Clear search',icon:const Icon(Icons.close_rounded),onPressed:(){_search.clear();_searchChanged('');})),
+      )),
       Padding(padding:const EdgeInsets.fromLTRB(16,8,16,8),child:Align(alignment:AlignmentDirectional.centerStart,child:FilterChip(label:Text(ar?'إخفاء المحلولة':'Hide solved'),selected:_hideSolved,onSelected:(value)=>setState((){_hideSolved=value;_page=1;})))),
-      Expanded(child:state.hasError&&!state.hasValue?AppErrorView(message:localizedErrorMessage(state.error!),onRetry:()=>ref.invalidate(trackPracticeProvider(key))):data==null?const AppContentSkeleton(count:5):RefreshIndicator(onRefresh:()async{ref.invalidate(trackPracticeProvider(key));try{await ref.read(trackPracticeProvider(key).future);}catch(_){}},child:ListView.separated(
+      Expanded(child:_searchPending?const AppContentSkeleton(count:5):state.hasError&&!state.hasValue?AppErrorView(message:localizedErrorMessage(state.error!),onRetry:()=>ref.invalidate(trackPracticeProvider(key))):data==null?const AppContentSkeleton(count:5):RefreshIndicator(onRefresh:()async{ref.invalidate(trackPracticeProvider(key));try{await ref.read(trackPracticeProvider(key).future);}catch(_){}},child:ListView.separated(
         physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.fromLTRB(16,0,16,20),
         itemCount:visible.isEmpty?1:visible.length+1,separatorBuilder:(_,__)=>const SizedBox(height:12),
         itemBuilder:(context,i){
           if(visible.isEmpty)return AppEmptyView(icon:Icons.calculate_outlined,title:ar?'لا توجد مسائل مطابقة':'No matching problems');
           if(i==visible.length)return MathWorldPagination(page:_page,pageCount:trackNumber(data['PageSize'])<=0?1:(trackNumber(data['Total'])+trackNumber(data['PageSize'])-1)~/trackNumber(data['PageSize']),arabic:ar,onChanged:(p)=>setState(()=>_page=p));
           final problem=visible[i];
-          return MobilePanel(padding:EdgeInsets.zero,child:ListTile(
-            leading:Icon(problem['IsSolved']==true?Icons.check_circle_outline:Icons.calculate_outlined,color:problem['IsSolved']==true?AppColors.success:Theme.of(context).colorScheme.primary),
-            title:RichMathText(text:trackText(problem,'Title',ar),inline:true,maxLines:2,overflow:TextOverflow.ellipsis),
-            subtitle:Text(problem['IsSolved']==true?(ar?'محلولة':'Solved'):(ar?'غير محلولة':'Unsolved')),
-            trailing:Row(mainAxisSize:MainAxisSize.min,children:[Icon(Icons.star_rounded,size:16,color:AppColors.pointsGold(context)),const SizedBox(width:3),Text('${trackNumber(problem['Points'])}',style:TextStyle(color:AppColors.pointsGold(context),fontWeight:FontWeight.w700)),LayoutUtils.forwardIcon(context,size:18)]),
+          return ProblemCard(
+            problem:ProblemPreview.fromJson(problem,languageCode:context.locale.languageCode),
             onTap:()async{
               var currentId=trackNumber(problem['Id']);
               var completed=false;
@@ -286,7 +303,7 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
               }
               if(mounted&&completed&&ref.read(authProvider).user?.id==owner){ref.invalidate(trackPracticeProvider);ref.invalidate(trackProgressProvider(widget.id));ref.invalidate(dashboardProvider);ref.invalidate(learningJourneyProvider);}
             },
-          ));
+          );
         },
       ))),
     ]))));
