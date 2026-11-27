@@ -36,13 +36,14 @@ class StudentEntitlement {
 }
 
 class ProblemHints {
-  final int problemId, revealedCount;
+  final int problemId, revealedCount,hintCount;
   final bool available;
   final List<String> hints;
-  const ProblemHints({required this.problemId,required this.revealedCount,required this.available,required this.hints});
+  const ProblemHints({required this.problemId,required this.revealedCount,required this.available,required this.hints,this.hintCount=2});
   factory ProblemHints.fromJson(Map<String,dynamic> json)=>ProblemHints(
     problemId:json['ProblemId'] as int,
     revealedCount:json['RevealedCount'] as int? ?? 0,
+    hintCount:json['HintCount'] as int? ?? 2,
     available:json['Available']==true,
     hints:(json['Hints'] as List? ?? []).whereType<Map>().map((h)=>h['Text'].toString()).toList(),
   );

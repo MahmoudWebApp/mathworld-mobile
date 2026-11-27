@@ -52,7 +52,7 @@ class _PremiumHintPanelState extends State<PremiumHintPanel>{
           const SizedBox(height:8),Text('${ar?'التلميح':'Hint'} ${i+1}',style:Theme.of(context).textTheme.titleSmall),
           RichMathText(text:hints.hints[i],isArabic:ar),
         ],
-        if(hints.available&&hints.revealedCount<2)OutlinedButton(onPressed:_loading||_error?null:()=>_load(level:hints.revealedCount+1),child:Text('${ar?'عرض التلميح':'Reveal hint'} ${hints.revealedCount+1}')),
+        if(hints.available&&hints.revealedCount<hints.hintCount)OutlinedButton(onPressed:_loading||_error?null:()=>_load(level:hints.revealedCount+1),child:Text('${ar?'عرض التلميح':'Reveal hint'} ${hints.revealedCount+1}')),
       ],
       const SizedBox(height:8),
       Text(ar?'الإجابة وطريقة الحل تظهران بعد الحل الصحيح لجميع الطلاب.':'The answer and solution appear after a correct solve for all learners.',style:Theme.of(context).textTheme.bodySmall),
