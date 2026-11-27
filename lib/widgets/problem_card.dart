@@ -11,11 +11,13 @@ import 'rich_math_text.dart';
 class ProblemCard extends StatelessWidget {
   final ProblemPreview problem;
   final VoidCallback onTap;
+  final bool showCategory;
 
   const ProblemCard({
     super.key,
     required this.problem,
     required this.onTap,
+    this.showCategory = true,
   });
 
   @override
@@ -106,8 +108,8 @@ class ProblemCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
+          if (problem.progressKnown || showCategory) const SizedBox(height: AppSpacing.sm),
+          if (problem.progressKnown || showCategory) Wrap(
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
             children: [
@@ -124,9 +126,10 @@ class ProblemCard extends StatelessWidget {
                         : (context.locale.languageCode == 'ar' ? 'جديدة' : 'New'),
                 color: problem.isSolved ? AppColors.success
                     : problem.hasAttempted ? AppColors.warning
-                    : Theme.of(context).colorScheme.outline,
+                    : AppColors.success,
+                tintLabel: true,
               ),
-              _MetaPill(
+              if (showCategory) _MetaPill(
                 icon: Icons.category_outlined,
                 label: problem.categoryName,
                 color: stageAccent,
@@ -144,11 +147,13 @@ class _MetaPill extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
+  final bool tintLabel;
 
   const _MetaPill({
     required this.icon,
     required this.label,
     required this.color,
+    this.tintLabel = false,
   });
 
   @override
@@ -172,7 +177,7 @@ class _MetaPill extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: tintLabel ? (Theme.of(context).brightness == Brightness.dark && color == AppColors.success ? const Color(0xFF80D8B7) : color) : Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
             ),
