@@ -38,7 +38,7 @@ void main() {
   testWidgets('points share the same contrast-aware gold', (tester) async {
     for(final dark in [false,true]){
       Color? gold;
-      await tester.pumpWidget(MaterialApp(theme:dark?ThemeData.dark():ThemeData.light(),home:Builder(builder:(context){
+      await tester.pumpWidget(MaterialApp(themeAnimationDuration:Duration.zero,theme:dark?ThemeData.dark():ThemeData.light(),home:Builder(builder:(context){
         gold=AppColors.pointsGold(context);
         return const SizedBox.shrink();
       })));
