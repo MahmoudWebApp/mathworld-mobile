@@ -154,6 +154,9 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
     final percent=double.tryParse(p?['CompletionPercent']?.toString()??'')??0;
     final accent=AppColors.stageForOrder(trackNumber(track['StageId']));
     final categories=trackRows(d['Categories']);
+    // Reuse existing account and live category access data; no extra API request.
+    final subscription = ref.watch(authProvider.select((s)=>s.user?.subscriptionType.toLowerCase()));
+    final showFreeLabels = subscription == 'free' && categories.any((c)=>c['IsFree']!=true && stats[trackNumber(c['Id'])]?['IsLocked']==true) && !categories.any((c)=>c['IsFree']!=true && stats[trackNumber(c['Id'])]?['IsLocked']==false);
     final ordered=[...categories.where((c)=>c['IsFree']==true),...categories.where((c)=>c['IsFree']!=true)];
     void skills(Map<String,dynamic> c){
       final rows=trackRows(d['Skills']).where((s)=>s['CategoryId']==c['Id']).toList();
@@ -195,7 +198,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
             return LockedCategoryCard(locked:locked==true,arabic:ar,name:trackText(c,'Name',ar),onUpgrade:()=>open(c),child:GestureDetector(behavior:HitTestBehavior.opaque,onTap:locked==false?()=>open(c):null,child:MobilePanel(padding:const EdgeInsets.all(12),borderColor:accent.withValues(alpha:.36),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
               Row(children:[_TrackTopicIcon(value:c['Icon']?.toString()??'',accent:accent),const Spacer(),
                 if(locked==true)Icon(Icons.lock_outline,color:AppColors.pointsGold(context),size:18)
-                else if(c['IsFree']==true)Text(ar?'مجاني':'Free',style:const TextStyle(color:AppColors.success,fontSize:11,fontWeight:FontWeight.w700)),
+                else if(showFreeLabels && locked==false && c['IsFree']==true)Text(ar?'مجاني':'Free',style:const TextStyle(color:AppColors.success,fontSize:11,fontWeight:FontWeight.w700)),
               ]),
               const SizedBox(height:8),
               Text(trackText(c,'Name',ar),maxLines:2,overflow:TextOverflow.ellipsis,style:Theme.of(context).textTheme.titleSmall?.copyWith(color:accent,fontWeight:FontWeight.w800)),
@@ -282,6 +285,7 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
           if(i==visible.length)return MathWorldPagination(page:_page,pageCount:trackNumber(data['PageSize'])<=0?1:(trackNumber(data['Total'])+trackNumber(data['PageSize'])-1)~/trackNumber(data['PageSize']),arabic:ar,onChanged:(p)=>setState(()=>_page=p));
           final problem=visible[i];
           return ProblemCard(
+            showCategory: false,
             problem:ProblemPreview.fromJson(problem,languageCode:context.locale.languageCode),
             onTap:()async{
               var currentId=trackNumber(problem['Id']);
