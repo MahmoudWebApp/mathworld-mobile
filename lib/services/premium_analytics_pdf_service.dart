@@ -26,14 +26,14 @@ class PremiumAnalyticsPdfService {
     if (fonts.length != 2) {
       throw const FormatException('Two PDF font weights are required');
     }
-    // Reuse the approved MathWorld identity that ships inside the app.
+    // Reuse the approved MathSuper identity that ships inside the app.
     // Exports remain usable offline even if an older app package omits it.
     pw.ImageProvider? brandMark;
     try {
       final asset = await rootBundle.load('assets/branding/mathworld-mark.png');
       brandMark = pw.MemoryImage(asset.buffer.asUint8List());
     } catch (_) {
-      // The MathWorld wordmark still identifies the report.
+      // The MathSuper wordmark still identifies the report.
     }
     final purple = PdfColor.fromInt(0xFF6D28D9);
     final dark = PdfColor.fromInt(0xFF1F2937);
@@ -137,8 +137,8 @@ class PremiumAnalyticsPdfService {
     );
 
     final document = pw.Document(
-      title: arabic ? 'MathWorld - تقرير الطالب' : 'MathWorld - Student report',
-      author: 'MathWorld', compress: true,
+      title: arabic ? 'MathSuper - تقرير الطالب' : 'MathSuper - Student report',
+      author: 'MathSuper', compress: true,
     );
 
     document.addPage(pw.MultiPage(
@@ -163,7 +163,7 @@ class PremiumAnalyticsPdfService {
                 ],
                 pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text('MathWorld', textDirection: pw.TextDirection.ltr,
+                    pw.Text('MathSuper', textDirection: pw.TextDirection.ltr,
                       style: pw.TextStyle(fontSize: 15, color: purple,
                         fontWeight: pw.FontWeight.bold)),
                     pw.Text(arabic ? 'منصة الرياضيات التفاعلية' : 'Interactive mathematics learning',

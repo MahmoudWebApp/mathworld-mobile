@@ -135,7 +135,7 @@ class _CertificatesScreenState extends ConsumerState<CertificatesScreen>{
       final pdf=Uint8List.fromList(bytes);
       await Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>Scaffold(
         appBar:AppBar(title:Text(tr('معاينة الشهادة','Certificate preview'))),
-        body:PdfPreview(build:(_)=>pdf,pdfFileName:'mathworld-certificate-$lang.pdf',canChangePageFormat:false,canChangeOrientation:false,canDebug:false,allowPrinting:true,allowSharing:true),
+        body:PdfPreview(build:(_)=>pdf,pdfFileName:'mathsuper-certificate-$lang.pdf',canChangePageFormat:false,canChangeOrientation:false,canDebug:false,allowPrinting:true,allowSharing:true),
       )));
     }catch(_){if(mounted&&_sameOwner)setState(()=>_error=true);}
     finally{if(mounted)setState(()=>_busy=false);}
