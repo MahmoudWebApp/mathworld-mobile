@@ -42,7 +42,10 @@ void main() {
         gold=AppColors.pointsGold(context);
         return const SizedBox.shrink();
       })));
-      expect(gold,dark?const Color(0xFFF7C948):const Color(0xFFA66B00));
+      expect(gold,const Color(0xFFFFD700));
+      final foreground=gold!.computeLuminance();
+      final background=AppColors.pointsSurface.computeLuminance();
+      expect((foreground+0.05)/(background+0.05),greaterThanOrEqualTo(4.5));
     }
   });
   testWidgets('small loading sections never occupy a full-page skeleton', (tester) async {

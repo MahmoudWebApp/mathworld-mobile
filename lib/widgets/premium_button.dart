@@ -13,6 +13,7 @@ class PremiumButton extends StatefulWidget {
   final bool expand;
   final EdgeInsetsGeometry padding;
   final Gradient gradient;
+  final Color? solidColor;
 
   const PremiumButton({
     super.key,
@@ -24,6 +25,7 @@ class PremiumButton extends StatefulWidget {
     this.expand = false,
     this.padding = const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
     this.gradient = AppGradients.primary,
+    this.solidColor,
   });
 
   @override
@@ -33,7 +35,7 @@ class _PremiumButtonState extends State<PremiumButton>{
   bool _pressed=false;
   @override
   Widget build(BuildContext context) {
-    final PremiumButton(:label,:onPressed,:leadingIcon,:trailingIcon,:isLoading,:expand,:padding,:gradient)=widget;
+    final PremiumButton(:label,:onPressed,:leadingIcon,:trailingIcon,:isLoading,:expand,:padding,:gradient,:solidColor)=widget;
     // A dark text color on the purple half of the gradient had insufficient
     // contrast. Use the same legible white foreground across both themes.
     const foreground = Colors.white;
@@ -44,10 +46,10 @@ class _PremiumButtonState extends State<PremiumButton>{
       constraints: const BoxConstraints(minHeight: 52),
       padding: padding,
       decoration: BoxDecoration(
-        gradient: onPressed == null ? null : actionGradient,
+        gradient: onPressed == null || solidColor != null ? null : actionGradient,
         color: onPressed == null
             ? Theme.of(context).colorScheme.surfaceContainerHighest
-            : null,
+            : solidColor,
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Center(

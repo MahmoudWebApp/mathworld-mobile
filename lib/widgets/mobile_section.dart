@@ -36,7 +36,7 @@ class MobileActionRow extends StatelessWidget {
   @override Widget build(BuildContext context)=>ListTile(
     contentPadding:const EdgeInsets.symmetric(horizontal:12,vertical:2),
     leading:Container(width:42,height:42,decoration:BoxDecoration(
-      color:color.withValues(alpha:.10),borderRadius:BorderRadius.circular(12)),
+      color:color==AppColors.rewardGold?AppColors.pointsSurface:color.withValues(alpha:.10),borderRadius:BorderRadius.circular(12)),
       child:Icon(icon,color:color,size:23)),
     title:Text(title,style:Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight:FontWeight.w700)),
     subtitle:subtitle==null?null:Text(subtitle!,style:Theme.of(context).textTheme.bodySmall,maxLines:2,overflow:TextOverflow.ellipsis),

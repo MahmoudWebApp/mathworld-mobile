@@ -68,7 +68,10 @@ class ProblemCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Row(
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                    decoration: BoxDecoration(color: AppColors.pointsSurface, borderRadius: BorderRadius.circular(8)),
+                    child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.star_rounded,
@@ -78,7 +81,7 @@ class ProblemCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           color: AppColors.pointsGold(context), fontWeight: FontWeight.w800)),
                     ],
-                  ),
+                  )),
                   if (problem.isSolved)
                     const Padding(
                       padding: EdgeInsets.only(top: 4),
@@ -165,7 +168,7 @@ class _MetaPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.09),
+        color: color == AppColors.rewardGold ? AppColors.pointsSurface : color.withValues(alpha: 0.09),
         borderRadius: BorderRadius.circular(99),
         border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
