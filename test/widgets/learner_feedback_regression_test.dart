@@ -70,7 +70,10 @@ void main() {
       expect(tester.takeException(),isNull);
       final disclosure=find.text(ar?'كيف تُحسب النتائج؟':'How are results calculated?');
       await tester.scrollUntilVisible(disclosure,120);
-      await tester.tap(disclosure);
+      await tester.ensureVisible(disclosure);
+      await tester.pumpAndSettle();
+      expect(disclosure.hitTestable(),findsOneWidget);
+      await tester.tap(disclosure.hitTestable());
       await tester.pumpAndSettle();
       expect(find.textContaining(ar?'لا تُنسب حصراً':'not exclusively grade-attributed'),findsOneWidget);
       expect(tester.takeException(),isNull);
