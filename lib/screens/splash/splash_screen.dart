@@ -45,7 +45,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       children: [
         BrandMark(size: 110),
         SizedBox(height: 18),
-        Text('MathWorld',style:TextStyle(fontSize:30,fontWeight:FontWeight.w900,color:Color(0xFF7937C3))),
+        Text('MathSuper',style:TextStyle(fontSize:30,fontWeight:FontWeight.w900,color:Color(0xFF7937C3))),
         SizedBox(height: 28),
         AppInlineLoader(size: 32),
       ],

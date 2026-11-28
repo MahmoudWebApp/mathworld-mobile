@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mathworld_mobile/widgets/brand_logo.dart';
 
 void main() {
-  testWidgets('MathWorld lockup stays in Latin order in Arabic RTL', (tester) async {
+  testWidgets('MathSuper lockup stays in Latin order in Arabic RTL', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Directionality(
@@ -15,16 +15,16 @@ void main() {
       ),
     );
 
-    expect(find.text('MathWorld'), findsOneWidget);
+    expect(find.text('MathSuper'), findsOneWidget);
     expect(find.byType(BrandMark), findsOneWidget);
     final mark = tester.getRect(find.byType(BrandMark));
-    final title = tester.getRect(find.text('MathWorld'));
+    final title = tester.getRect(find.text('MathSuper'));
     expect(mark.left, lessThan(title.left),
         reason: 'Cap/sigma mark must precede Latin text in RTL locales');
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('MathWorld mark keeps its complete original geometry', (tester) async {
+  testWidgets('MathSuper mark keeps its complete original geometry', (tester) async {
     await tester.pumpWidget(const MaterialApp(
       home: Scaffold(body: Center(child: BrandMark(size: 64))),
     ));
