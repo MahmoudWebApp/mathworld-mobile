@@ -46,7 +46,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final dashboard=dashboardState.valueOrNull;
     // Optional requests must not compete with the initial core reads.
     // If both fail, still allow the independent tools to recover.
-    final primaryReady=j!=null||dashboard!=null||(!journeyState.isLoading&&!dashboardState.isLoading);
+    final primaryReady = (j != null || !journeyState.isLoading) &&
+        (dashboard != null || !dashboardState.isLoading);
     final examsEnabled=primaryReady&&ref.watch(customExamAvailabilityProvider).valueOrNull==true;
     final primary=Theme.of(context).colorScheme.primary;
     final gold=AppColors.pointsGold(context);
