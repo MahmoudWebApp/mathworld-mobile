@@ -78,9 +78,11 @@ class ErrorNotebookNotifier extends StateNotifier<ErrorNotebookState> {
     load();
   }
 
-  Future<void> load() async {
+  Future<void> load({bool retainVisible = false}) async {
     final revision = ++_loadRevision;
-    state = state.copyWith(problems: const AsyncValue.loading());
+    if (!retainVisible || !state.problems.hasValue) {
+      state = state.copyWith(problems: const AsyncValue.loading());
+    }
 
     try {
       if(stageId==null||stageId!<=0){
@@ -142,7 +144,13 @@ class ErrorNotebookNotifier extends StateNotifier<ErrorNotebookState> {
       );
 
       if (!mounted) return;
-      await load();
+      // Hide the moved row immediately; the authoritative reload refreshes
+      // the list and totals without replacing the entire page with skeletons.
+      final current = state.problems.valueOrNull;
+      if (current != null && current.any((item) => item.id == problemId)) {
+        state = state.copyWith(problems: AsyncValue.data(current.where((item) => item.id != problemId).toList()));
+      }
+      await load(retainVisible: true);
     } finally {
       if (mounted) {
         final nextBusy = {...state.busyProblemIds}..remove(problemId);
