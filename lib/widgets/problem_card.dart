@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../config/design_tokens.dart';
@@ -11,11 +10,13 @@ import 'rich_math_text.dart';
 class ProblemCard extends StatelessWidget {
   final ProblemPreview problem;
   final VoidCallback onTap;
+  final bool showCategory;
 
   const ProblemCard({
     super.key,
     required this.problem,
     required this.onTap,
+    this.showCategory = true,
   });
 
   @override
@@ -94,7 +95,7 @@ class ProblemCard extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(context.locale.languageCode == 'ar' ? 'عرض' : 'View',
+                      Text(Localizations.localeOf(context).languageCode == 'ar' ? 'عرض' : 'View',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: stageAccent, fontWeight: FontWeight.w800)),
                       const SizedBox(width: 3),
@@ -106,8 +107,8 @@ class ProblemCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
+          if (problem.progressKnown || showCategory) const SizedBox(height: AppSpacing.sm),
+          if (problem.progressKnown || showCategory) Wrap(
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
             children: [
@@ -118,15 +119,21 @@ class ProblemCard extends StatelessWidget {
                         ? Icons.error_outline_rounded
                         : Icons.fiber_new_outlined,
                 label: problem.isSolved
-                    ? (context.locale.languageCode == 'ar' ? 'محلولة' : 'Solved')
+                    ? (Localizations.localeOf(context).languageCode == 'ar' ? 'محلولة' : 'Solved')
                     : problem.hasAttempted
-                        ? (context.locale.languageCode == 'ar' ? 'تحتاج مراجعة' : 'Needs review')
-                        : (context.locale.languageCode == 'ar' ? 'جديدة' : 'New'),
+                        ? (Localizations.localeOf(context).languageCode == 'ar' ? 'تحتاج مراجعة' : 'Needs review')
+                        : (Localizations.localeOf(context).languageCode == 'ar' ? 'جديدة' : 'New'),
                 color: problem.isSolved ? AppColors.success
                     : problem.hasAttempted ? AppColors.warning
-                    : Theme.of(context).colorScheme.outline,
+                    : AppColors.pointsGold(context),
+                tintLabel: true,
               ),
-              _MetaPill(
+              if (showCategory && (problem.stageName?.trim().isNotEmpty ?? false)) _MetaPill(
+                icon: Icons.school_outlined,
+                label: problem.stageName!,
+                color: stageAccent,
+              ),
+              if (showCategory && problem.categoryName.trim().isNotEmpty) _MetaPill(
                 icon: Icons.category_outlined,
                 label: problem.categoryName,
                 color: stageAccent,
@@ -144,11 +151,13 @@ class _MetaPill extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
+  final bool tintLabel;
 
   const _MetaPill({
     required this.icon,
     required this.label,
     required this.color,
+    this.tintLabel = false,
   });
 
   @override
@@ -172,7 +181,7 @@ class _MetaPill extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: tintLabel ? (color == AppColors.success ? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF80D8B7) : const Color(0xFF176B50)) : color) : Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
             ),

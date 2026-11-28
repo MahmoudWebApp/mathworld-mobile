@@ -47,7 +47,7 @@ class CurrentGradeReportScreen extends ConsumerWidget {
         data:(premium)=>!premium?Center(child:Padding(padding:const EdgeInsets.all(16),child:AppEmptyView(
           icon:Icons.workspace_premium_outlined,title:ar?'التقارير لحساب Premium':'Reports are for Premium accounts',
           action:FilledButton(onPressed:()=>Navigator.pushNamed(context,AppRoutes.premiumBenefits),child:Text(ar?'ترقية الحساب':'Upgrade account')),
-        ))):ref.watch(currentGradeReportProvider).when(skipLoadingOnRefresh:false,skipLoadingOnReload:false,
+        ))):ref.watch(currentGradeReportProvider).when(skipLoadingOnRefresh:true,skipLoadingOnReload:false,
           loading:()=>const AppContentSkeleton(),
           error:(e,_){
             final code=e is AppException?e.serverMessage?.trim():null;
@@ -58,20 +58,20 @@ class CurrentGradeReportScreen extends ConsumerWidget {
                 :localizedErrorMessage(e);
             return AppErrorView(message:message,onRetry:(){ref.invalidate(trackSelectionProvider);ref.invalidate(currentGradeReportProvider);});
           },
-          data:(p)=>_ReportBody(report:p,ar:ar,onRefresh:() async {try{await ref.refresh(currentGradeReportProvider.future).then((_) {});}catch(_){}}),
+          data:(p)=>CurrentGradeReportBody(report:p,ar:ar,onRefresh:() async {try{await ref.refresh(currentGradeReportProvider.future).then((_) {});}catch(_){}}),
         ),
       ))));
   }
 }
 
-class _ReportBody extends StatefulWidget {
-  const _ReportBody({required this.report,required this.ar,required this.onRefresh});
+class CurrentGradeReportBody extends StatefulWidget {
+  const CurrentGradeReportBody({super.key,required this.report,required this.ar,required this.onRefresh});
   final Map<String,dynamic> report;
   final bool ar;
   final Future<void> Function() onRefresh;
-  @override State<_ReportBody> createState()=>_ReportBodyState();
+  @override State<CurrentGradeReportBody> createState()=>_CurrentGradeReportBodyState();
 }
-class _ReportBodyState extends State<_ReportBody>{
+class _CurrentGradeReportBodyState extends State<CurrentGradeReportBody>{
   int _categoryPage=1,_attemptPage=1;
   Map<String,dynamic> get report=>widget.report;
   bool get ar=>widget.ar;
@@ -86,28 +86,66 @@ class _ReportBodyState extends State<_ReportBody>{
     final cp=_categoryPage.clamp(1,categoryPages<1?1:categoryPages).toInt(),ap=_attemptPage.clamp(1,attemptPages<1?1:attemptPages).toInt();
     final categories=allCategories.skip((cp-1)*5).take(5).toList(),recent=allRecent.skip((ap-1)*5).take(5).toList();
     final gold=AppColors.pointsGold(context);
+    final accent=AppColors.stageForOrder(trackNumber(p['StageId']??track['StageId']));
+    final colors=theme.colorScheme;
+    final completion=p['CompletionPercent'];
+    final fraction=completion is num?(completion/100).clamp(0.0,1.0).toDouble():null;
+    Widget tile(String label,Object? value,IconData icon,Color color)=>Container(
+      padding:const EdgeInsets.all(12),
+      decoration:BoxDecoration(color:color.withValues(alpha:.07),borderRadius:BorderRadius.circular(12),border:Border.all(color:color.withValues(alpha:.2))),
+      child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Icon(icon,color:color,size:20),const SizedBox(height:8),
+        Text(value?.toString()??'—',style:theme.textTheme.titleLarge?.copyWith(fontWeight:FontWeight.w800,color:colors.onSurface)),
+        const SizedBox(height:4),Text(label,style:theme.textTheme.bodySmall),
+      ]),
+    );
+    Widget metrics(List<Widget> children)=>LayoutBuilder(builder:(context,box){
+      final width=box.maxWidth;
+      final columns=width>=300&&MediaQuery.textScalerOf(context).scale(14)<=18?2:1;
+      final extent=(width-(columns-1)*10)/columns;
+      return Wrap(spacing:10,runSpacing:10,children:[for(final child in children) SizedBox(width:extent,child:child)]);
+    });
     Widget metric(String label,Object? value,{Color? tint})=>Padding(padding:const EdgeInsets.symmetric(vertical:5),child:Row(children:[Expanded(child:Text(label)),const SizedBox(width:12),Text(value?.toString()??'—',style:TextStyle(fontWeight:FontWeight.bold,color:tint))]));
     Widget section(String title)=>Padding(padding:const EdgeInsets.only(top:24,bottom:12),child:MobileSectionTitle(title:title));
     return RefreshIndicator(onRefresh:onRefresh,child:ListView.builder(physics:const AlwaysScrollableScrollPhysics(),padding:const EdgeInsets.all(16),itemCount:categories.length+recent.length+6,itemBuilder:(context,i){
-      if(i==0)return MobilePanel(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        Text(trackText(track,'Name',ar),style:theme.textTheme.titleLarge),
-        if(p['CompletionPercent'] is num)...[const SizedBox(height:12),LinearProgressIndicator(value:((p['CompletionPercent'] as num)/100).clamp(0.0,1.0).toDouble(),color:AppColors.progressFill((p['CompletionPercent'] as num)/100),backgroundColor:AppColors.progressTrack(context))],
-        metric(ar?'نسبة الإنجاز':'Completion',percent(p['CompletionPercent'])),
-        metric(ar?'المسائل المحلولة':'Solved','${p['Solved']} / ${p['ProblemsCount']}'),
-        metric(ar?'دقة المحاولات المسجلة':'Recorded attempt accuracy',percent(p['AccuracyPercent'])),
-        metric(ar?'النقاط المكتسبة':'Earned points',p['Points'],tint:gold),
-        metric(ar?'المحاولات المسجلة':'Recorded attempts',p['Attempts']),
-        Text(shared
-          ?(ar?'الإنجاز والإتقان من التدريب المشترك للمرحلة، مفلتران على مسائل الصف الحالي. الدقة والنقاط والمحاولات تشمل التدريب المشترك والجلسات المسجلة لهذا الصف، ولا تُنسب حصراً إلى الصف.':'Completion and mastery use shared stage practice filtered to current-grade problems. Accuracy, points and attempts include shared practice and recorded grade sessions, not exclusively grade-attributed history.')
-          :(ar?'الإنجاز والإتقان للدورة الحالية؛ الدقة والنقاط وسجل المحاولات للتاريخ المسجل في هذا الصف.':'Completion and mastery reflect the current cycle; accuracy, points and attempts reflect recorded history in this grade.'),style:theme.textTheme.bodySmall),
-      ]));
+      if(i==0)return Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+        MobilePanel(borderColor:accent.withValues(alpha:.3),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          Row(children:[Container(padding:const EdgeInsets.all(10),decoration:BoxDecoration(color:accent.withValues(alpha:.12),borderRadius:BorderRadius.circular(12)),child:Icon(Icons.school_outlined,color:accent)),const SizedBox(width:12),Expanded(child:Text(trackText(track,'Name',ar),style:theme.textTheme.titleLarge?.copyWith(color:accent,fontWeight:FontWeight.w800)))]),
+          const SizedBox(height:20),
+          Text(ar?'نسبة الإنجاز':'Completion',style:theme.textTheme.titleSmall),
+          const SizedBox(height:6),
+          Text(percent(completion),style:theme.textTheme.headlineMedium?.copyWith(color:accent,fontWeight:FontWeight.w800)),
+          if(fraction!=null)...[const SizedBox(height:8),LearningProgressBar(value:fraction,height:9)],
+          const SizedBox(height:8),
+          Text('${p['Solved']??'—'} / ${p['ProblemsCount']??'—'} ${ar?'مسألة محلولة':'problems solved'}',style:theme.textTheme.bodyMedium),
+        ])),
+        const SizedBox(height:12),
+        metrics([
+          tile(ar?'المسائل المحلولة':'Solved',p['Solved'],Icons.check_circle_outline,AppColors.success),
+          tile(ar?'دقة المحاولات المسجلة':'Recorded accuracy',percent(p['AccuracyPercent']),Icons.track_changes,accent),
+          tile(ar?'النقاط المكتسبة':'Earned points',p['Points'],Icons.star_rounded,gold),
+          tile(ar?'المحاولات المسجلة':'Recorded attempts',p['Attempts'],Icons.history,colors.primary),
+        ]),
+        const SizedBox(height:12),
+        MobilePanel(padding:EdgeInsets.zero,child:ExpansionTile(
+          initiallyExpanded:false,
+          leading:Icon(Icons.info_outline,color:accent),
+          title:Text(ar?'كيف تُحسب النتائج؟':'How are results calculated?',style:theme.textTheme.titleSmall),
+          childrenPadding:const EdgeInsets.fromLTRB(16,0,16,16),
+          children:[Text(shared
+            ?(ar?'الإنجاز والإتقان من التدريب المشترك للمرحلة، مفلتران على مسائل الصف الحالي. الدقة والنقاط والمحاولات تشمل التدريب المشترك والجلسات المسجلة لهذا الصف، ولا تُنسب حصراً إلى الصف.':'Completion and mastery use shared stage practice filtered to current-grade problems. Accuracy, points and attempts include shared practice and recorded grade sessions, not exclusively grade-attributed history.')
+            :(ar?'الإنجاز والإتقان للدورة الحالية؛ الدقة والنقاط وسجل المحاولات للتاريخ المسجل في هذا الصف.':'Completion and mastery reflect the current cycle; accuracy, points and attempts reflect recorded history in this grade.'),style:theme.textTheme.bodySmall)],
+        )),
+      ]);
       if(i==1)return section(ar?'الأداء حسب الفئة':'Performance by category');
       if(i<categories.length+2){
         final c=categories[i-2],mastery=c['MasteryPercent'];
         final attempts=trackNumber(c['Attempts']);
         final status=attempts==0?(ar?'لم تبدأ بعد':'Not started'):mastery is num&&mastery>=80?(ar?'نقطة قوة':'Strength'):(ar?'واصل التدريب':'Keep practicing');
         return Padding(padding:const EdgeInsets.only(bottom:12),child:MobilePanel(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-          Text(trackText(c,'Name',ar),style:theme.textTheme.titleMedium),Text(status,style:theme.textTheme.bodySmall),
+          Row(crossAxisAlignment:CrossAxisAlignment.start,children:[Expanded(child:Text(trackText(c,'Name',ar),style:theme.textTheme.titleMedium?.copyWith(color:accent,fontWeight:FontWeight.w800))),const SizedBox(width:8),Icon(attempts==0?Icons.radio_button_unchecked:mastery is num&&mastery>=80?Icons.verified_outlined:Icons.auto_stories_outlined,color:attempts==0?colors.outline:mastery is num&&mastery>=80?AppColors.success:accent)]),
+          const SizedBox(height:4),Text(status,style:theme.textTheme.bodySmall),
+          if(mastery is num)...[const SizedBox(height:10),LearningProgressBar(value:(mastery/100).clamp(0.0,1.0).toDouble(),height:6),const SizedBox(height:4)],
           metric(ar?'المسائل المحلولة':'Solved','${c['Solved']} / ${c['ProblemsCount']}'),
           metric(ar?'المحاولات':'Attempts',c['Attempts']),metric(ar?'الإتقان':'Mastery',percent(mastery)),metric(ar?'الدقة':'Accuracy',percent(c['AccuracyPercent'])),
         ])));
@@ -119,7 +157,7 @@ class _ReportBodyState extends State<_ReportBody>{
       if(index==recent.length)return Padding(padding:const EdgeInsets.only(top:12),child:Text(recent.isEmpty?(ar?'لا توجد محاولات مسجلة لهذا الصف.':'No recorded attempts for this grade.'):(ar?'آخر 10 محاولات مسجلة كحد أقصى.':'Up to 10 most recent recorded attempts.')));
       final a=recent[index],correct=a['IsCorrect']==true;
       final date=DateTime.tryParse(a['SubmittedAtUtc']?.toString()??'')?.toLocal();
-      return ListTile(leading:Icon(correct?Icons.check_circle_outline:Icons.cancel_outlined,color:correct?AppColors.success:theme.colorScheme.error),title:Text(trackText(a,'Title',ar),maxLines:2,overflow:TextOverflow.ellipsis),subtitle:Text(date==null?'—':DateFormat.yMMMd(context.locale.languageCode).add_jm().format(date)),trailing:Text('+${a['PointsEarned']??0}',style:TextStyle(color:gold,fontWeight:FontWeight.bold)));
+      return Padding(padding:const EdgeInsets.only(bottom:8),child:MobilePanel(padding:EdgeInsets.zero,child:ListTile(leading:Icon(correct?Icons.check_circle_outline:Icons.cancel_outlined,color:correct?AppColors.success:theme.colorScheme.error),title:Text(trackText(a,'Title',ar),maxLines:2,overflow:TextOverflow.ellipsis),subtitle:Text(date==null?'—':DateFormat.yMMMd(Localizations.localeOf(context).languageCode).add_jm().format(date)),trailing:Text('+${a['PointsEarned']??0}',style:TextStyle(color:gold,fontWeight:FontWeight.bold)))));
     }));
   }
 }

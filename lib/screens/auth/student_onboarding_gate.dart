@@ -44,13 +44,21 @@ class StudentOnboardingGate extends ConsumerWidget {
     final ar = context.locale.languageCode == 'ar';
     final status = ref.watch(studentOnboardingProvider);
     return status.when(
-      loading: () => const Scaffold(body: SafeArea(child: Center(child:AppInlineLoader(size:28)))),
+      loading: () => Scaffold(body: MathBackground(child: SafeArea(child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const BrandMark(size:64),
+        const SizedBox(height:20),
+        const AppInlineLoader(size:28),
+        const SizedBox(height:12),
+        Text(ar?'جارٍ التحقق من الحساب…':'Checking your account…',textAlign:TextAlign.center),
+      ]))))),
       error: (error, _) => Scaffold(body: SafeArea(child: Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
         const BrandMark(size: 64),
         const SizedBox(height: 20),
         Text(ar ? 'تعذّر التحقق من جاهزية الحساب' : 'Could not check account setup', textAlign: TextAlign.center),
         const SizedBox(height: 8),
-        Text(localizedErrorMessage(error), textAlign: TextAlign.center),
+        Text(error is AppException && error.canUseCachedData
+          ? (ar?'تعذّر الاتصال بالخدمة مؤقتاً. أعد المحاولة، لا حاجة لإعادة تسجيل الدخول.':'The service is temporarily unavailable. Retry without signing in again.')
+          : localizedErrorMessage(error), textAlign: TextAlign.center),
         FilledButton(onPressed: () => ref.invalidate(studentOnboardingProvider), child: Text(ar?'إعادة المحاولة':'Retry')),
         TextButton(onPressed: () async { await ref.read(authProvider.notifier).logout(); if(context.mounted) Navigator.pushNamedAndRemoveUntil(context, AppRoutes.login, (_) => false); }, child: Text(ar?'تسجيل الخروج':'Sign out')),
       ]))))),
