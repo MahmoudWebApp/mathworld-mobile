@@ -1,5 +1,8 @@
 import 'dart:ui' as ui;
 import 'dart:async';
+import 'dart:typed_data';
+import 'package:cross_file/cross_file.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +16,8 @@ import '../../utils/layout_utils.dart';
 import '../../core/utils/error_message.dart';
 import '../../models/problem.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/repositories_provider.dart';
+import '../../providers/stage_category_access_provider.dart';
 import '../../providers/problem_details_provider.dart';
 import '../../providers/problem_prefetch_provider.dart';
 import '../../providers/learning_tracks_provider.dart';
@@ -389,6 +394,7 @@ class _ProblemContent extends ConsumerWidget {
         ],
 
                 if(solution.isEmpty&&structure==null)Text(isArabic?'الحل التفصيلي غير متوفر.':'Detailed solution unavailable.'),
+                _ProblemDocumentActions(problemId:activeProblem.id,isArabic:isArabic),
               ]else ...[
                 const SizedBox(height:12),
                 _DeferredHintSection(key:ValueKey((activeProblem.id,activeProblem.practiceScopeId)),problemId:activeProblem.id,practiceScopeId:activeProblem.practiceScopeId,isArabic:isArabic),
@@ -593,6 +599,55 @@ class _ProblemContent extends ConsumerWidget {
     if (!opened && context.mounted) {
       showMathWorldNotice(context,'unable_to_open_link'.tr(),kind:MathWorldNoticeKind.error);
     }
+  }
+}
+
+
+/// Mount only inside a correct result dialog. The server rechecks Premium
+/// and correct current-scope progress every time a document is requested.
+class _ProblemDocumentActions extends ConsumerStatefulWidget {
+  final int problemId;
+  final bool isArabic;
+  const _ProblemDocumentActions({required this.problemId,required this.isArabic});
+  @override ConsumerState<_ProblemDocumentActions> createState()=>_ProblemDocumentActionsState();
+}
+class _ProblemDocumentActionsState extends ConsumerState<_ProblemDocumentActions>{
+  bool _busy=false,_failed=false;
+  Future<void> _download(String format) async {
+    if(_busy||ref.read(studentPremiumProvider).valueOrNull!=true)return;
+    final owner=ref.read(authProvider).user?.id;
+    if(owner==null)return;
+    setState((){_busy=true;_failed=false;});
+    final lang=widget.isArabic?'ar':'en';
+    try{
+      final bytes=await ref.read(apiClientProvider).getBinary('/problems/${widget.problemId}/export',queryParameters:{'format':format,'language':lang});
+      if(!mounted||ref.read(authProvider).user?.id!=owner)return;
+      final valid=format=='pdf'
+        ?bytes.length>100&&bytes[0]==37&&bytes[1]==80&&bytes[2]==68&&bytes[3]==70
+        :bytes.length>100&&bytes[0]==80&&bytes[1]==75&&bytes[2]==3&&bytes[3]==4;
+      if(!valid)throw const FormatException('Invalid export file');
+      final mime=format=='pdf'?'application/pdf':'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      final name='MathWorld-question-${widget.problemId}-$lang.$format';
+      final box=context.findRenderObject();
+      final origin=box is RenderBox&&box.hasSize?box.localToGlobal(Offset.zero)&box.size:null;
+      await SharePlus.instance.share(ShareParams(files:[XFile.fromData(Uint8List.fromList(bytes),mimeType:mime,name:name)],fileNameOverrides:[name],sharePositionOrigin:origin));
+    }catch(_){if(mounted)setState(()=>_failed=true);}
+    finally{if(mounted)setState(()=>_busy=false);}
+  }
+  @override Widget build(BuildContext context){
+    final premium=ref.watch(studentPremiumProvider).valueOrNull==true;
+    if(!premium)return const SizedBox.shrink();
+    final ar=widget.isArabic;
+    return Padding(padding:const EdgeInsets.only(top:16),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+      Text(ar?'تحميل السؤال والحل':'Download question and solution',style:Theme.of(context).textTheme.titleSmall),
+      const SizedBox(height:8),
+      Wrap(spacing:8,runSpacing:8,children:[
+        OutlinedButton.icon(onPressed:_busy?null:()=>_download('pdf'),icon:const Icon(Icons.picture_as_pdf_outlined),label:const Text('PDF')),
+        OutlinedButton.icon(onPressed:_busy?null:()=>_download('docx'),icon:const Icon(Icons.description_outlined),label:const Text('Word')),
+      ]),
+      if(_busy)...[const SizedBox(height:8),const LinearProgressIndicator(),Text(ar?'جاري تجهيز الملف…':'Preparing document…')],
+      if(_failed)Text(ar?'تعذّر تجهيز الملف. تحقق من الاشتراك والاتصال وحاول مجدداً.':'Could not prepare the document. Check access and connection, then retry.',style:TextStyle(color:Theme.of(context).colorScheme.error)),
+    ]));
   }
 }
 
