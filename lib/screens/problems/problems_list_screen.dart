@@ -294,6 +294,7 @@ class _ProblemsListScreenState extends ConsumerState<ProblemsListScreen> {
 
                         final problem = result.problems[index];
                         return ProblemCard(
+                          showTaxonomy: _categoryId == null,
                           problem: problem,
                           onTap: () async {
                             final items=result.problems;

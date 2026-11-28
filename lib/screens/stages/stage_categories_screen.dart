@@ -470,7 +470,7 @@ class _CategoryCard extends StatelessWidget {
       });
     }
 
-    return LockedCategoryCard(locked:locked,arabic:localeCode=='ar',name:title,onUpgrade:()=>_showPremiumLockedSheet(context,title),child:GlassCard(
+    return LockedCategoryCard(accent:accent,locked:locked,arabic:localeCode=='ar',name:title,onUpgrade:()=>_showPremiumLockedSheet(context,title),child:GlassCard(
       // The API now returns a real per-stage count. Never navigate into a
       // category known to have zero questions and then show a dead-end page.
       // Unavailable topics never route to a paywall or empty question list.

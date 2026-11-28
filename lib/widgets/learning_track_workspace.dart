@@ -192,7 +192,7 @@ class _TrackContentState extends ConsumerState<_TrackContent>{
           return SliverGrid(delegate:SliverChildBuilderDelegate((context,i){
             final c=ordered[i],s=stats[trackNumber(ordered[i]['Id'])];
             final locked=s?['IsLocked'];final count=trackNumber(c['ProblemsCount']);final solved=trackNumber(s?['Solved']);
-            return LockedCategoryCard(locked:locked==true,arabic:ar,name:trackText(c,'Name',ar),onUpgrade:()=>open(c),child:GestureDetector(behavior:HitTestBehavior.opaque,onTap:locked==false?()=>open(c):null,child:MobilePanel(padding:const EdgeInsets.all(12),borderColor:accent.withValues(alpha:.36),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            return LockedCategoryCard(accent:accent,locked:locked==true,arabic:ar,name:trackText(c,'Name',ar),onUpgrade:()=>open(c),child:GestureDetector(behavior:HitTestBehavior.opaque,onTap:locked==false?()=>open(c):null,child:MobilePanel(padding:const EdgeInsets.all(12),borderColor:accent.withValues(alpha:.36),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
               Row(children:[_TrackTopicIcon(value:c['Icon']?.toString()??'',accent:accent),const Spacer(),
                 if(locked==true)Icon(Icons.lock_outline,color:AppColors.pointsGold(context),size:18)
                 else if(c['IsFree']==true)Text(ar?'مجاني':'Free',style:const TextStyle(color:AppColors.success,fontSize:11,fontWeight:FontWeight.w700)),
@@ -282,6 +282,7 @@ class _TrackPracticeState extends ConsumerState<_TrackPractice>{
           if(i==visible.length)return MathWorldPagination(page:_page,pageCount:trackNumber(data['PageSize'])<=0?1:(trackNumber(data['Total'])+trackNumber(data['PageSize'])-1)~/trackNumber(data['PageSize']),arabic:ar,onChanged:(p)=>setState(()=>_page=p));
           final problem=visible[i];
           return ProblemCard(
+            showTaxonomy:false,
             problem:ProblemPreview.fromJson(problem,languageCode:context.locale.languageCode),
             onTap:()async{
               var currentId=trackNumber(problem['Id']);

@@ -8,13 +8,15 @@ class LockedCategoryCard extends StatelessWidget {
   final bool arabic;
   final String name;
   final VoidCallback onUpgrade;
+  final Color? accent;
   const LockedCategoryCard({super.key,required this.child,required this.locked,
-    required this.arabic,required this.name,required this.onUpgrade});
+    required this.arabic,required this.name,required this.onUpgrade,this.accent});
 
   @override
   Widget build(BuildContext context) {
     if(!locked)return child;
     final theme=Theme.of(context);
+    final categoryAccent=accent??theme.colorScheme.primary;
     return ClipRRect(
       borderRadius:BorderRadius.circular(AppRadius.md),
       child:Stack(fit:StackFit.passthrough,children:[
@@ -26,15 +28,15 @@ class LockedCategoryCard extends StatelessWidget {
             child:Column(mainAxisSize:MainAxisSize.min,children:[
               Container(width:40,height:40,decoration:BoxDecoration(
                 color:theme.colorScheme.surface,shape:BoxShape.circle,
-                border:Border.all(color:theme.colorScheme.outlineVariant)),
-                child:Icon(Icons.lock_rounded,color:theme.colorScheme.primary,size:22)),
+                border:Border.all(color:categoryAccent.withValues(alpha:.4))),
+                child:Icon(Icons.lock_rounded,color:categoryAccent,size:22)),
               const SizedBox(height:6),
               Text(arabic?'فئة مقفلة':'Locked topic',textAlign:TextAlign.center,
                 style:theme.textTheme.labelMedium?.copyWith(fontWeight:FontWeight.w800)),
               const SizedBox(height:8),
               Tooltip(message:arabic?'ترقية الحساب لفتح $name':'Upgrade account to unlock $name',
                 child:FilledButton(
-                  style:FilledButton.styleFrom(minimumSize:const Size(44,44),
+                  style:FilledButton.styleFrom(backgroundColor:categoryAccent,foregroundColor:Colors.white,minimumSize:const Size(44,44),
                     padding:const EdgeInsets.symmetric(horizontal:8,vertical:8)),
                   onPressed:onUpgrade,
                   child:Text(arabic?'ترقية الحساب':'Upgrade account',textAlign:TextAlign.center,

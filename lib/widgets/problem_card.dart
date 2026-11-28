@@ -11,11 +11,13 @@ import 'rich_math_text.dart';
 class ProblemCard extends StatelessWidget {
   final ProblemPreview problem;
   final VoidCallback onTap;
+  final bool showTaxonomy;
 
   const ProblemCard({
     super.key,
     required this.problem,
     required this.onTap,
+    this.showTaxonomy = true,
   });
 
   @override
@@ -124,9 +126,11 @@ class ProblemCard extends StatelessWidget {
                         : (context.locale.languageCode == 'ar' ? 'جديدة' : 'New'),
                 color: problem.isSolved ? AppColors.success
                     : problem.hasAttempted ? AppColors.warning
-                    : Theme.of(context).colorScheme.outline,
+                    : AppColors.pointsGold(context),
               ),
-              _MetaPill(
+              if (showTaxonomy && (problem.stageName?.isNotEmpty ?? false))
+                _MetaPill(icon: Icons.school_outlined, label: problem.stageName!, color: stageAccent),
+              if (showTaxonomy) _MetaPill(
                 icon: Icons.category_outlined,
                 label: problem.categoryName,
                 color: stageAccent,
@@ -172,7 +176,7 @@ class _MetaPill extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: color,
                     fontWeight: FontWeight.w700,
                   ),
             ),
