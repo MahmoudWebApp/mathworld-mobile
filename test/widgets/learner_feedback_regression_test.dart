@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mathworld_mobile/models/problem.dart';
+import 'package:mathworld_mobile/config/design_tokens.dart';
 import 'package:mathworld_mobile/widgets/problem_card.dart';
 import 'package:mathworld_mobile/widgets/learning_track_workspace.dart';
 import 'package:mathworld_mobile/screens/premium/current_grade_report_screen.dart';
@@ -25,8 +26,8 @@ void main() {
     expect(showTrackFreeLabels('Free',categories,{}),isFalse);
   });
 
-  testWidgets('scoped problem card hides category and restores green new status',(tester) async {
-    const problem=ProblemPreview(id:1,title:'Example',stageId:1,categoryId:1,categoryName:'Numbers',viewsCount:0,points:10,progressKnown:true);
+  testWidgets('scoped problem card hides stage and category and uses gold new status',(tester) async {
+    const problem=ProblemPreview(id:1,title:'Example',stageId:1,stageName:'Elementary',categoryId:1,categoryName:'Numbers',viewsCount:0,points:10,progressKnown:true);
     for(final ar in [false,true]){
       final label=ar?'جديدة':'New';
       await tester.pumpWidget(MaterialApp(
@@ -37,13 +38,15 @@ void main() {
       ));
       await tester.pumpAndSettle();
       expect(find.text('Numbers'),findsNothing);
+      expect(find.text('Elementary'),findsNothing);
       expect(find.text(label),findsOneWidget);
-      expect(tester.widget<Text>(find.text(label)).style?.color,const Color(0xFF176B50));
+      expect(tester.widget<Text>(find.text(label)).style?.color,AppColors.pointsGold(tester.element(find.text(label))));
       expect(tester.takeException(),isNull);
     }
     await tester.pumpWidget(MaterialApp(home:Scaffold(body:ProblemCard(problem:problem,onTap:(){}))));
     await tester.pumpAndSettle();
     expect(find.text('Numbers'),findsOneWidget);
+    expect(find.text('Elementary'),findsOneWidget);
   });
 
   testWidgets('grade report fits a narrow screen and keeps actual metrics and scope disclosure',(tester) async {

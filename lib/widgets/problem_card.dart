@@ -125,10 +125,15 @@ class ProblemCard extends StatelessWidget {
                         : (Localizations.localeOf(context).languageCode == 'ar' ? 'جديدة' : 'New'),
                 color: problem.isSolved ? AppColors.success
                     : problem.hasAttempted ? AppColors.warning
-                    : AppColors.success,
-                tintLabel: !problem.isSolved && !problem.hasAttempted,
+                    : AppColors.pointsGold(context),
+                tintLabel: true,
               ),
-              if (showCategory) _MetaPill(
+              if (showCategory && (problem.stageName?.trim().isNotEmpty ?? false)) _MetaPill(
+                icon: Icons.school_outlined,
+                label: problem.stageName!,
+                color: stageAccent,
+              ),
+              if (showCategory && problem.categoryName.trim().isNotEmpty) _MetaPill(
                 icon: Icons.category_outlined,
                 label: problem.categoryName,
                 color: stageAccent,
@@ -176,7 +181,7 @@ class _MetaPill extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: tintLabel ? (Theme.of(context).brightness == Brightness.dark && color == AppColors.success ? const Color(0xFF80D8B7) : const Color(0xFF176B50)) : Theme.of(context).colorScheme.onSurface,
+                    color: tintLabel ? (color == AppColors.success ? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF80D8B7) : const Color(0xFF176B50)) : color) : Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
             ),
