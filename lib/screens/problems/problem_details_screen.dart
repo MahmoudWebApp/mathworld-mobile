@@ -208,12 +208,15 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
             challengeAdvancePaused: _challengeAdvancePaused,
             onPauseChallengeAdvance: _pauseChallengeAdvance,
             onContinueChallenge: _continueChallenge,
-            onNextProblem: nextId==null ? null : () {
-              if(candidate!=null&&explicitScope){
-                Navigator.pop(context,candidate);
-              }else if(candidate!=null){
+            nextTrackKey: validScope?(trackId:trackId,categoryId:categoryId,afterProblemId:problemId):null,
+            onNextProblem: !validScope&&nextId==null ? null : () {
+              final fresh=validScope?ref.read(nextTrackProblemProvider((trackId:trackId,categoryId:categoryId,afterProblemId:problemId))).valueOrNull:null;
+              if(validScope&&fresh==null)return;
+              if(fresh!=null&&explicitScope){
+                Navigator.pop(context,fresh);
+              }else if(fresh!=null){
                 Navigator.pushReplacementNamed(context,AppRoutes.problemDetails,arguments:{
-                  'problemId':candidate.id,'retry':candidate.retry,
+                  'problemId':fresh.id,'retry':fresh.retry,
                 });
               }else{
                 Navigator.pop(context,'nextProblem');
@@ -227,19 +230,15 @@ class _ProblemDetailsScreenState extends ConsumerState<ProblemDetailsScreen> {
               await notifier.submitAnswer();
               if (!mounted) return;
               if(validScope)ref.invalidate(nextTrackProblemProvider((trackId:trackId,categoryId:categoryId,afterProblemId:problemId)));
-              if (!routeArguments.dailyChallenge) return;
-              // An incorrect answer must never advance the challenge.
-              // Let the learner read the solution only after a correct answer.
+            }),
+            onResultClosed: () {
+              if (!routeArguments.dailyChallenge || !mounted || _challengeAdvancePaused) return;
               if (ref.read(problemDetailsProvider(problemId)).answerResult?.isCorrect == true) {
                 _challengeAdvanceTimer?.cancel();
-                if (!_challengeAdvancePaused) {
-                  _challengeAdvanceTimer = Timer(
-                    const Duration(seconds: 8),
-                    _continueChallenge,
-                  );
-                }
+                _challengeAdvanceTimer = Timer(const Duration(seconds:8),_continueChallenge);
               }
-            }),
+            },
+            onResultOpened: () => _challengeAdvanceTimer?.cancel(),
             onStartRetry: notifier.startRetry,
             onCancelRetry: notifier.cancelRetry,
             onToggleFavorite: () =>
@@ -274,10 +273,12 @@ class _ProblemContent extends ConsumerWidget {
   final VoidCallback onPauseChallengeAdvance;
   final VoidCallback onContinueChallenge;
   final VoidCallback? onNextProblem;
+  final NextTrackProblemKey? nextTrackKey;
+  final VoidCallback onResultOpened,onResultClosed;
   final bool nextTrackLoading,nextTrackError,nextTrackExhausted;
   final VoidCallback? onRetryNext;
   final ValueChanged<int?> onOptionChanged;
-  final VoidCallback onSubmit;
+  final Future<void> Function() onSubmit;
   final VoidCallback onStartRetry;
   final VoidCallback onCancelRetry;
   final VoidCallback onToggleFavorite;
@@ -291,6 +292,9 @@ class _ProblemContent extends ConsumerWidget {
     required this.onPauseChallengeAdvance,
     required this.onContinueChallenge,
     required this.onNextProblem,
+    required this.nextTrackKey,
+    required this.onResultOpened,
+    required this.onResultClosed,
     required this.nextTrackLoading,
     required this.nextTrackError,
     required this.nextTrackExhausted,
@@ -307,12 +311,110 @@ class _ProblemContent extends ConsumerWidget {
     final isArabic = context.locale.languageCode == 'ar';
     final canSelect = state.answerResult == null &&
         (!problem.hasAttempted || state.isRetryMode);
-    final solution = _solutionText(problem, state);
-    final structure = !state.isRetryMode&&(state.answerResult?.isCorrect??problem.isSolved)?state.answerResult?.solutionStructure??problem.solutionStructure:null;
     final solved=state.answerResult?.isCorrect ?? problem.isSolved;
-    final videoUrl = solved && !state.isRetryMode
-        ? state.answerResult?.youtubeSolutionUrl ?? problem.youtubeSolutionUrl
+    Future<void> openResult() async {
+      if(!context.mounted)return;
+      onResultOpened();
+      final action=await showDialog<String>(context:context,builder:(dialogContext)=>Consumer(
+        builder:(dialogContext,dialogRef,_) {
+          final activeState=dialogRef.watch(problemDetailsProvider(problem.id));
+          final activeProblem=activeState.problem.valueOrNull;
+          if(activeProblem==null||activeState.answerResult==null||activeState.isRetryMode){
+            return AlertDialog(content:Text(isArabic?'النتيجة غير متاحة':'Result unavailable'));
+          }
+    final solution = _solutionText(activeProblem, activeState);
+    final structure = !activeState.isRetryMode&&(activeState.answerResult?.isCorrect??activeProblem.isSolved)?activeState.answerResult?.solutionStructure??activeProblem.solutionStructure:null;
+    final solved=activeState.answerResult?.isCorrect ?? activeProblem.isSolved;
+    final videoUrl = solved && !activeState.isRetryMode
+        ? activeState.answerResult?.youtubeSolutionUrl ?? activeProblem.youtubeSolutionUrl
         : null;
+
+
+          final next=nextTrackKey==null?null:dialogRef.watch(nextTrackProblemProvider(nextTrackKey!));
+          final nextLoading=next?.isLoading??nextTrackLoading;
+          final nextError=next?.hasError??nextTrackError;
+          final hasNext=nextTrackKey==null?onNextProblem!=null:next?.valueOrNull!=null&&!nextLoading&&!nextError;
+          return AlertDialog(
+            title:Text(solved?(isArabic?'أحسنت! إجابة صحيحة':'Well done! Correct answer'):(isArabic?'حاول مرة أخرى':'Try again')),
+            scrollable:true,
+            content:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+              if(solved) Row(mainAxisAlignment:MainAxisAlignment.center,children:[
+                for(final color in [AppColors.rewardGold,AppColors.success,Theme.of(dialogContext).colorScheme.primary,AppColors.rewardGold])
+                  Padding(padding:const EdgeInsets.all(4),child:TweenAnimationBuilder<double>(tween:Tween(begin:0.6,end:1),duration:MediaQuery.of(dialogContext).disableAnimations?Duration.zero:const Duration(milliseconds:450),builder:(_,value,child)=>Transform.scale(scale:value,child:child),child:Icon(Icons.auto_awesome,color:color,size:25))),
+              ]),
+              _AnswerResultCard(result:activeState.answerResult!),
+              if(solved)...[
+                const SizedBox(height:16),
+                Text(isArabic?'السؤال':'Question',style:Theme.of(dialogContext).textTheme.titleMedium),
+                RichMathText(text:activeProblem.questionText,isArabic:isArabic),
+        if (solution.isNotEmpty || structure != null) ...[
+          const SizedBox(height: AppSpacing.xxl),
+          Card(child:ExpansionTile(
+            key:ValueKey(('solution',activeProblem.id,solved)),
+            initiallyExpanded:true,
+            leading:Icon(Icons.menu_book_outlined,color:Theme.of(context).colorScheme.primary),
+            title:Text('detailed_solution'.tr(),style:Theme.of(context).textTheme.titleMedium),
+            childrenPadding:const EdgeInsets.fromLTRB(16,0,16,16),
+            expandedCrossAxisAlignment:CrossAxisAlignment.stretch,
+            children:[solution.trim().isNotEmpty ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final paragraph in solution.split(RegExp(r'\n\s*\n')).where((part) => part.trim().isNotEmpty))
+                  Padding(padding: const EdgeInsets.only(bottom: 12), child: RichMathText(
+                    text: paragraph.trim(), isArabic: isArabic,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  )),
+              ],
+            ) : structure==null ? const SizedBox.shrink() : Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+              Text(isArabic?'الفكرة والقانون':'Idea and formula',style:Theme.of(context).textTheme.titleMedium),
+              RichMathText(text:structure.idea,isArabic:isArabic),
+              RichMathText(text:structure.formulaLatex,isArabic:isArabic,inline:true,assumeMath:true),
+              const SizedBox(height:12),
+              Text(isArabic?'خطوات الحل':'Solution steps',style:Theme.of(context).textTheme.titleMedium),
+              for(var i=0;i<structure.steps.length;i++) Padding(padding:const EdgeInsets.only(top:6),child:RichMathText(text:'${i+1}. ${structure.steps[i]}',isArabic:isArabic)),
+              for(final entry in <(String,String)>[(isArabic?'التعويض':'Substitution',structure.substitution),(isArabic?'النتيجة والوحدة':'Result and unit','${structure.result} ${structure.unit}'),(isArabic?'التحقق':'Verification',structure.verification),(isArabic?'الخطأ الشائع':'Common error',structure.commonError)])...[
+                const SizedBox(height:12),Text(entry.$1,style:Theme.of(context).textTheme.titleMedium),
+                RichMathText(text:entry.$2,isArabic:isArabic),
+              ],
+            ])],
+          )),
+        ],
+        if (videoUrl?.trim().isNotEmpty == true && !activeState.isRetryMode) ...[
+          const SizedBox(height: AppSpacing.lg),
+          OutlinedButton.icon(
+            onPressed: () => _openVideo(context, videoUrl!),
+            icon: const Icon(Icons.play_circle_outline_rounded),
+            label: Text('video_solution'.tr()),
+          ),
+        ],
+
+                if(solution.isEmpty&&structure==null)Text(isArabic?'الحل التفصيلي غير متوفر.':'Detailed solution unavailable.'),
+              ]else ...[
+                const SizedBox(height:12),
+                _DeferredHintSection(key:ValueKey((activeProblem.id,activeProblem.practiceScopeId)),problemId:activeProblem.id,practiceScopeId:activeProblem.practiceScopeId,isArabic:isArabic),
+              ],
+              if(solved&&!isDailyChallenge)...[
+                if(nextLoading)Text(isArabic?'جارٍ تجهيز المسألة التالية…':'Preparing the next problem…')
+                else if(nextError)OutlinedButton(onPressed:onRetryNext,child:Text(isArabic?'إعادة تحميل المسألة التالية':'Retry loading the next problem'))
+                else if(!hasNext&&(nextTrackKey!=null||nextTrackExhausted))Text(isArabic?'لا توجد مسائل أخرى غير محلولة ومتاحة في هذه الفئة.':'No other available unsolved problems in this topic.'),
+              ],
+              if(solved&&isDailyChallenge&&!challengeAdvancePaused)OutlinedButton(onPressed:(){onPauseChallengeAdvance();Navigator.pop(dialogContext,'review');},child:Text(isArabic?'إيقاف الانتقال التلقائي':'Pause auto-advance')),
+            ]),
+            actions:[
+              TextButton(onPressed:()=>Navigator.pop(dialogContext),child:Text(isArabic?'إغلاق':'Close')),
+              if(!solved&&activeProblem.canRetry)FilledButton(onPressed:()=>Navigator.pop(dialogContext,'retry'),child:Text(isArabic?'إعادة المحاولة':'Try again')),
+              if(solved&&isDailyChallenge)FilledButton(onPressed:()=>Navigator.pop(dialogContext,'challenge'),child:Text(isArabic?'متابعة التحدي':'Continue challenge')),
+              if(solved&&!isDailyChallenge&&hasNext)FilledButton.icon(onPressed:()=>Navigator.pop(dialogContext,'next'),icon:LayoutUtils.forwardIcon(dialogContext),label:Text(isArabic?'المسألة التالية':'Next problem')),
+            ],
+          );
+        },
+      ));
+      if(!context.mounted)return;
+      if(action=='retry')onStartRetry();
+      else if(action=='next')onNextProblem?.call();
+      else if(action=='challenge')onContinueChallenge();
+      else if(action!='review')onResultClosed();
+    }
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -376,17 +478,17 @@ class _ProblemContent extends ConsumerWidget {
             ],
           ),
         ),
-        if(!solved)...[
-          const SizedBox(height:12),
-          _DeferredHintSection(key:ValueKey((problem.id,problem.practiceScopeId)),problemId:problem.id,practiceScopeId:problem.practiceScopeId,isArabic:isArabic),
-        ],
         if (canSelect) ...[
           const SizedBox(height: AppSpacing.xl),
           PremiumButton(
             onPressed: state.selectedOptionId == null ||
                     state.isSubmitting
                 ? null
-                : onSubmit,
+                : () async {
+                    await onSubmit();
+                    if(!context.mounted)return;
+                    if(ref.read(problemDetailsProvider(problem.id)).answerResult!=null)await openResult();
+                  },
             label: state.isRetryMode
                 ? 'submit_training_answer'.tr()
                 : 'submit_answer'.tr(),
@@ -397,62 +499,9 @@ class _ProblemContent extends ConsumerWidget {
             expand: true,
           ),
         ],
-        if (state.answerResult != null) ...[
-          const SizedBox(height: AppSpacing.xl),
-          _AnswerResultCard(result: state.answerResult!),
-          const SizedBox(height: AppSpacing.md),
-          // In the guided challenge, going back to the list must not
-          // silently interrupt the five-question sequence.
-          if (isDailyChallenge && state.answerResult!.isCorrect) ...[
-            GlassCard(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    challengeAdvancePaused
-                        ? (isArabic
-                            ? 'الانتقال التلقائي متوقف حتى تنتهي من قراءة الحل.'
-                            : 'Auto-advance paused while you review the solution.')
-                        : (isArabic
-                            ? 'السؤال التالي تلقائياً بعد 8 ثوانٍ. يمكنك قراءة القانون والحل أو الانتقال الآن.'
-                            : 'Next question automatically after 8 seconds. Review the rule and solution or continue now.'),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.sm,
-                    children: [
-                      if (!challengeAdvancePaused)
-                        OutlinedButton.icon(
-                          onPressed: onPauseChallengeAdvance,
-                          icon: const Icon(Icons.pause_circle_outline_rounded),
-                          label: Text(isArabic ? 'أحتاج وقتاً للحل' : 'Pause for review'),
-                        ),
-                      FilledButton.icon(
-                        onPressed: onContinueChallenge,
-                        icon: LayoutUtils.forwardIcon(context),
-                        label: Text(isArabic ? 'متابعة التحدي' : 'Continue challenge'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ] else ...[
-            if (!isDailyChallenge && state.answerResult!.isCorrect) ...[
-              if(nextTrackLoading)Text(isArabic?'جارٍ تجهيز المسألة التالية…':'Preparing the next problem…')
-              else if(nextTrackError)OutlinedButton(onPressed:onRetryNext,child:Text(isArabic?'إعادة تحميل المسألة التالية':'Retry loading the next problem'))
-              else if(onNextProblem!=null)FilledButton.icon(onPressed: onNextProblem, icon: LayoutUtils.forwardIcon(context), label: Text(isArabic ? 'المسألة التالية' : 'Next problem'))
-              else if(nextTrackExhausted)Text(isArabic?'لا توجد مسائل أخرى غير محلولة ومتاحة في هذه الفئة.':'No other available unsolved problems in this topic.'),
-            ],
-            TextButton.icon(
-              onPressed: () => Navigator.maybePop(context),
-              icon: const Icon(Icons.list_alt_rounded),
-              label: Text('back_to_problems'.tr()),
-            ),
-          ],
+        if (state.answerResult != null && !state.isRetryMode) ...[
+          const SizedBox(height:AppSpacing.lg),
+          OutlinedButton.icon(onPressed:openResult,icon:Icon(solved?Icons.check_circle_outline:Icons.lightbulb_outline),label:Text(solved?(isArabic?'عرض الحل والنتيجة':'View result and solution'):(isArabic?'التلميحات وإعادة المحاولة':'Hints and retry'))),
         ],
         if ((allowNotebookRetry || !isDailyChallenge || state.answerResult?.isCorrect == false) && problem.hasAttempted &&
             problem.isInErrorNotebook && problem.canRetry &&
@@ -464,46 +513,6 @@ class _ProblemContent extends ConsumerWidget {
             label: 'train_again'.tr(),
             leadingIcon: Icons.model_training_rounded,
             expand: true,
-          ),
-        ],
-        if (solution.isNotEmpty || structure != null) ...[
-          const SizedBox(height: AppSpacing.xxl),
-          Card(child:ExpansionTile(
-            key:ValueKey(('solution',problem.id,solved)),
-            initiallyExpanded:state.answerResult?.isCorrect==true,
-            leading:Icon(Icons.menu_book_outlined,color:Theme.of(context).colorScheme.primary),
-            title:Text('detailed_solution'.tr(),style:Theme.of(context).textTheme.titleMedium),
-            childrenPadding:const EdgeInsets.fromLTRB(16,0,16,16),
-            expandedCrossAxisAlignment:CrossAxisAlignment.stretch,
-            children:[solution.trim().isNotEmpty ? Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final paragraph in solution.split(RegExp(r'\n\s*\n')).where((part) => part.trim().isNotEmpty))
-                  Padding(padding: const EdgeInsets.only(bottom: 12), child: RichMathText(
-                    text: paragraph.trim(), isArabic: isArabic,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  )),
-              ],
-            ) : structure==null ? const SizedBox.shrink() : Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-              Text(isArabic?'الفكرة والقانون':'Idea and formula',style:Theme.of(context).textTheme.titleMedium),
-              RichMathText(text:structure.idea,isArabic:isArabic),
-              RichMathText(text:structure.formulaLatex,isArabic:isArabic,inline:true,assumeMath:true),
-              const SizedBox(height:12),
-              Text(isArabic?'خطوات الحل':'Solution steps',style:Theme.of(context).textTheme.titleMedium),
-              for(var i=0;i<structure.steps.length;i++) Padding(padding:const EdgeInsets.only(top:6),child:RichMathText(text:'${i+1}. ${structure.steps[i]}',isArabic:isArabic)),
-              for(final entry in <(String,String)>[(isArabic?'التعويض':'Substitution',structure.substitution),(isArabic?'النتيجة والوحدة':'Result and unit','${structure.result} ${structure.unit}'),(isArabic?'التحقق':'Verification',structure.verification),(isArabic?'الخطأ الشائع':'Common error',structure.commonError)])...[
-                const SizedBox(height:12),Text(entry.$1,style:Theme.of(context).textTheme.titleMedium),
-                RichMathText(text:entry.$2,isArabic:isArabic),
-              ],
-            ])],
-          )),
-        ],
-        if (videoUrl?.trim().isNotEmpty == true && !state.isRetryMode) ...[
-          const SizedBox(height: AppSpacing.lg),
-          OutlinedButton.icon(
-            onPressed: () => _openVideo(context, videoUrl!),
-            icon: const Icon(Icons.play_circle_outline_rounded),
-            label: Text('video_solution'.tr()),
           ),
         ],
         if (state.answerResult == null) ...[
