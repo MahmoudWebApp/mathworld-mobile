@@ -147,7 +147,7 @@ class ErrorNotebookNotifier extends StateNotifier<ErrorNotebookState> {
       // Hide the moved row immediately; the authoritative reload refreshes
       // the list and totals without replacing the entire page with skeletons.
       final current = state.problems.valueOrNull;
-      if (current != null && current.any((item) => item.id == problemId)) {
+      if (state.includeArchived != isArchived && current != null && current.any((item) => item.id == problemId)) {
         state = state.copyWith(problems: AsyncValue.data(current.where((item) => item.id != problemId).toList()));
       }
       await load(retainVisible: true);
