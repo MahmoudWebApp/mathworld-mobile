@@ -127,7 +127,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Text([if(j!=null)j.getName(context.locale.languageCode),user.premium?'Premium':'Free'].join(' · '),style:Theme.of(context).textTheme.bodySmall?.copyWith(color:stageAccent,fontWeight:FontWeight.w700)),
         ])),
       ]),
-      MobilePanel(gradient:Theme.of(context).brightness==Brightness.dark?AppGradients.darkHero:AppGradients.lightHero,child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      MobilePanel(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         Text(tr('تقدمك الدراسي','Your progress'),style:Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight:FontWeight.w800)),
         const SizedBox(height:12),
         if(j!=null||dashboard!=null)...[
@@ -145,11 +145,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           TextButton(onPressed:()=>ref.invalidate(learningJourneyProvider),child:Text(tr('تحديث تقدم الصف','Refresh grade progress'))),
       ])),
       MobilePanel(
-        gradient:Theme.of(context).brightness==Brightness.dark?AppGradients.darkHero:AppGradients.lightHero,
         child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
         Row(children:[
           Container(width:48,height:48,decoration:BoxDecoration(
-            gradient:AppGradients.primary,borderRadius:BorderRadius.circular(14)),
+            color:AppColors.brandPurple,borderRadius:BorderRadius.circular(14)),
             child:const Icon(Icons.functions_rounded,color:Colors.white,size:26)),
           const SizedBox(width:12),
           Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
@@ -160,16 +159,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ])),
         ]),
         const SizedBox(height:12),
-        PremiumButton(onPressed:resumeNextProblem,isLoading:_resuming,expand:true,label:tr('متابعة التعلم','Continue learning'),trailingIcon:Icons.arrow_forward_rounded),
+        PremiumButton(onPressed:resumeNextProblem,isLoading:_resuming,expand:true,solidColor:AppColors.brandPurple,label:tr('متابعة التعلم','Continue learning'),trailingIcon:Icons.arrow_forward_rounded),
       ])),
       Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         MobileSectionTitle(title:tr('أدوات التعلم','Learning tools')),
         const SizedBox(height:8),
         MobilePanel(padding:EdgeInsets.zero,child:Column(children:[
           MobileActionRow(icon:Icons.insights_rounded,color:const Color(0xFF0F766E),title:tr('التقارير والإحصائيات','Reports & analytics'),subtitle:tr('تقدمك في الصف الحالي','Your current grade progress'),onTap:()=>Navigator.pushNamed(context,AppRoutes.premiumReport)),
-          if(examsEnabled)...[const Divider(height:1,indent:12,endIndent:12),MobileActionRow(icon:Icons.school_outlined,color:primary,title:tr('الامتحانات المخصصة','Custom exams'),subtitle:tr('اختبر نفسك واحصل على شهادة','Test yourself and earn a certificate'),onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const CustomExamsScreen())))],
+          if(examsEnabled)...[const Divider(height:1,indent:12,endIndent:12),MobileActionRow(icon:Icons.school_outlined,color:const Color(0xFF2563EB),title:tr('الامتحانات المخصصة','Custom exams'),subtitle:tr('اختبر نفسك واحصل على شهادة','Test yourself and earn a certificate'),onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const CustomExamsScreen())))],
           if(j?.learningSessionsEnabled==true)...[const Divider(height:1,indent:12,endIndent:12),MobileActionRow(icon:Icons.calculate_outlined,color:primary,title:tr('التدريب والتحديات','Practice & challenges'),onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>_TrainingScreen(journey:j!))))],
-          if(j!=null&&!j.learningSessionsEnabled&&user.premium)...[const Divider(height:1,indent:12,endIndent:12),MobileActionRow(icon:Icons.emoji_events_outlined,color:gold,title:tr('تحدي اليوم','Daily challenge'),onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const _DailyChallengeScreen())))],
+          if(j!=null&&!j.learningSessionsEnabled&&user.premium)...[const Divider(height:1,indent:12,endIndent:12),MobileActionRow(icon:Icons.emoji_events_outlined,color:const Color(0xFFDB2777),title:tr('تحدي اليوم','Daily challenge'),onTap:()=>Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>const _DailyChallengeScreen())))],
           const Divider(height:1,indent:12,endIndent:12),
           MobileActionRow(icon:Icons.auto_stories_outlined,color:primary,title:tr('دفتر الأخطاء','Error notebook'),onTap:()=>Navigator.pushNamed(context,AppRoutes.errorNotebook)),
           const Divider(height:1,indent:12,endIndent:12),
@@ -214,7 +213,7 @@ class _Metric extends StatelessWidget {
   final IconData? icon;
   const _Metric({required this.label,required this.value,required this.color,this.icon});
   @override Widget build(BuildContext context)=>Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-    Row(children:[if(icon!=null)...[Icon(icon,color:color,size:16),const SizedBox(width:4)],Flexible(child:Text(value,style:Theme.of(context).textTheme.titleMedium?.copyWith(color:color,fontWeight:FontWeight.w800),maxLines:1,overflow:TextOverflow.ellipsis))]),
+    Container(padding:color==AppColors.rewardGold?const EdgeInsets.symmetric(horizontal:6,vertical:4):EdgeInsets.zero,decoration:color==AppColors.rewardGold?BoxDecoration(color:AppColors.pointsSurface,borderRadius:BorderRadius.circular(8)):null,child:Row(children:[if(icon!=null)...[Icon(icon,color:color,size:16),const SizedBox(width:4)],Flexible(child:Text(value,style:Theme.of(context).textTheme.titleMedium?.copyWith(color:color,fontWeight:FontWeight.w800),maxLines:1,overflow:TextOverflow.ellipsis))])),
     Text(label,style:Theme.of(context).textTheme.labelSmall,maxLines:2),
   ]);
 }
