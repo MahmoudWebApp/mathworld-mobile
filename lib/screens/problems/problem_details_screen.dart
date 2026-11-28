@@ -402,6 +402,7 @@ class _ProblemContent extends ConsumerWidget {
             ]),
             actions:[
               TextButton(onPressed:()=>Navigator.pop(dialogContext),child:Text(isArabic?'إغلاق':'Close')),
+              if(!isDailyChallenge)TextButton(onPressed:()=>Navigator.pop(dialogContext,'back'),child:Text('back_to_problems'.tr())),
               if(!solved&&activeProblem.canRetry)FilledButton(onPressed:()=>Navigator.pop(dialogContext,'retry'),child:Text(isArabic?'إعادة المحاولة':'Try again')),
               if(solved&&isDailyChallenge)FilledButton(onPressed:()=>Navigator.pop(dialogContext,'challenge'),child:Text(isArabic?'متابعة التحدي':'Continue challenge')),
               if(solved&&!isDailyChallenge&&hasNext)FilledButton.icon(onPressed:()=>Navigator.pop(dialogContext,'next'),icon:LayoutUtils.forwardIcon(dialogContext),label:Text(isArabic?'المسألة التالية':'Next problem')),
@@ -413,6 +414,7 @@ class _ProblemContent extends ConsumerWidget {
       if(action=='retry')onStartRetry();
       else if(action=='next')onNextProblem?.call();
       else if(action=='challenge')onContinueChallenge();
+      else if(action=='back')Navigator.maybePop(context);
       else if(action!='review')onResultClosed();
     }
 
