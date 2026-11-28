@@ -1,5 +1,5 @@
 {
-  "app_name": "MathWorld",
+  "app_name": "MathSuper",
   "app_description": "Educational Platform for Math Problems",
   "login": "Login",
   "register": "Register",
@@ -78,11 +78,11 @@
   "unexpected_error": "An unexpected error occurred",
   "continue_learning": "Continue Learning",
   "continue_learning_desc": "Continue with the topics and problems in your current learning stage",
-  "settings_subtitle": "Personalize MathWorld to match your preferences.",
+  "settings_subtitle": "Personalize MathSuper to match your preferences.",
   "about_and_legal": "About and Legal",
   "app_version_value": "Version {version}",
   "privacy_title": "Your Privacy Matters",
-  "privacy_intro": "This policy explains how MathWorld handles your information inside the mobile application.",
+  "privacy_intro": "This policy explains how MathSuper handles your information inside the mobile application.",
   "privacy_data_title": "Information We Collect",
   "privacy_data_body": "We collect account information, learning progress, solved problems, and favorites required to provide and improve the service.",
   "privacy_usage_title": "How We Use Information",
@@ -92,7 +92,7 @@
   "privacy_rights_title": "Your Rights",
   "privacy_rights_body": "You may request updates to your information or deletion of your account and data when account management is supported by the server.",
   "privacy_contact_title": "Contact",
-  "privacy_contact_body": "For privacy questions, contact the MathWorld team through the official support channels.",
+  "privacy_contact_body": "For privacy questions, contact the MathSuper team through the official support channels.",
   "privacy": "Privacy Policy",
   "about": "About the App",
   "explore": "Explore",
@@ -167,7 +167,7 @@
   "social_google": "Continue with Google",
   "social_login_failed": "Google sign-in failed",
   "link_google": "Link Google to my account",
-  "link_google_desc": "Keep your MathWorld progress and points in one account",
+  "link_google_desc": "Keep your MathSuper progress and points in one account",
   "google_linked": "Google account linked successfully",
   "leaderboard_title": "Leaderboard",
   "leaderboard_description": "Ranked by distinct solved problems, then earned points and first-try correctness.",
@@ -185,6 +185,6 @@
   "leaderboard_privacy": "Students appear by shortened names to protect privacy; no email addresses or private details are shown.",
   "active_stage_categories": "Categories",
   "change_stage_keeps_progress": "Changing stage keeps your previous progress",
-  "server_feature_unavailable": "This feature is not available on the connected server version. Update the MathWorld backend to match this app; retrying alone will not resolve it.",
-  "admin_web_only": "Administrator accounts are available on the MathWorld website only. The mobile app is for learners."
+  "server_feature_unavailable": "This feature is not available on the connected server version. Update the MathSuper backend to match this app; retrying alone will not resolve it.",
+  "admin_web_only": "Administrator accounts are available on the MathSuper website only. The mobile app is for learners."
 }

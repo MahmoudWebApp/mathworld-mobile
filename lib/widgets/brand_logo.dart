@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../config/design_tokens.dart';
 
+const _brandName = 'MathSuper';
+
 /// Shared lockup using the approved cap / sigma / x² symbol.
 class BrandLogo extends StatelessWidget {
   final double width;
@@ -23,7 +25,7 @@ class BrandLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     final markSize = height != null ? (height! < 52 ? height! : 52.0) : 48.0;
     return Semantics(
-      label: semanticsLabel ?? 'MathWorld',
+      label: semanticsLabel ?? _brandName,
       child: ExcludeSemantics(
         child: SizedBox(
           width: width,
@@ -74,7 +76,7 @@ class _BrandWordmarkState extends State<_BrandWordmark> with SingleTickerProvide
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: _controller,
-    child: const Text('MathWorld', maxLines: 1, style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
+    child: const Text(_brandName, maxLines: 1, style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900)),
     builder: (_, child) => ShaderMask(
       blendMode: BlendMode.srcIn,
       shaderCallback: (bounds) => LinearGradient(
@@ -104,7 +106,7 @@ class BrandMark extends StatelessWidget {
       fit: BoxFit.contain,
       alignment: Alignment.center,
       filterQuality: FilterQuality.high,
-      semanticLabel: 'MathWorld',
+      semanticLabel: _brandName,
     );
   }
 }

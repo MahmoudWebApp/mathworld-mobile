@@ -1,5 +1,5 @@
 {
-  "app_name": "MathWorld",
+  "app_name": "MathSuper",
   "app_description": "منصة تعليمية للمسائل الرياضية",
   "login": "تسجيل الدخول",
   "register": "إنشاء حساب",
@@ -78,11 +78,11 @@
   "unexpected_error": "حدث خطأ غير متوقع",
   "continue_learning": "تابع التعلّم",
   "continue_learning_desc": "تابع مسائل وفئات مرحلتك التعليمية الحالية",
-  "settings_subtitle": "خصص تجربة MathWorld بما يناسبك.",
+  "settings_subtitle": "خصص تجربة MathSuper بما يناسبك.",
   "about_and_legal": "عن التطبيق والخصوصية",
   "app_version_value": "الإصدار {version}",
   "privacy_title": "خصوصيتك تهمنا",
-  "privacy_intro": "توضح هذه السياسة كيف يتعامل MathWorld مع بياناتك داخل التطبيق.",
+  "privacy_intro": "توضح هذه السياسة كيف يتعامل MathSuper مع بياناتك داخل التطبيق.",
   "privacy_data_title": "البيانات التي نجمعها",
   "privacy_data_body": "نجمع بيانات الحساب، التقدم التعليمي، المسائل المحلولة، والمفضلات اللازمة لتقديم الخدمة وتحسين تجربتك.",
   "privacy_usage_title": "كيف نستخدم البيانات",
@@ -92,7 +92,7 @@
   "privacy_rights_title": "حقوقك",
   "privacy_rights_body": "يمكنك طلب تحديث بياناتك أو حذف حسابك وبياناته عند توفر ميزة إدارة الحساب من الخادم.",
   "privacy_contact_title": "التواصل",
-  "privacy_contact_body": "للاستفسارات المتعلقة بالخصوصية، تواصل مع فريق MathWorld عبر قنوات الدعم الرسمية.",
+  "privacy_contact_body": "للاستفسارات المتعلقة بالخصوصية، تواصل مع فريق MathSuper عبر قنوات الدعم الرسمية.",
   "privacy": "سياسة الخصوصية",
   "about": "عن التطبيق",
   "explore": "استكشف",
@@ -167,7 +167,7 @@
   "social_google": "المتابعة باستخدام Google",
   "social_login_failed": "تعذر تسجيل الدخول عبر Google",
   "link_google": "ربط Google بحسابي",
-  "link_google_desc": "اربطه بحساب MathWorld الحالي دون فقدان النقاط أو الحلول",
+  "link_google_desc": "اربطه بحساب MathSuper الحالي دون فقدان النقاط أو الحلول",
   "google_linked": "تم ربط حساب Google بنجاح",
   "leaderboard_title": "ترتيب المتفوقين",
   "leaderboard_description": "الترتيب حسب عدد المسائل المختلفة المحلولة، ثم النقاط والدقة من أول محاولة.",
@@ -185,6 +185,6 @@
   "leaderboard_privacy": "نعرض أسماء الطلاب بصيغة مختصرة لحماية الخصوصية، من دون بريد إلكتروني أو بيانات خاصة.",
   "active_stage_categories": "الفئات",
   "change_stage_keeps_progress": "تغيير المرحلة لا يمسح تقدمك السابق",
-  "server_feature_unavailable": "الميزة غير متاحة على إصدار الخادم المتصل حاليًا. حدّث خدمة MathWorld لتتوافق مع التطبيق؛ إعادة المحاولة وحدها لن تحل المشكلة.",
-  "admin_web_only": "حساب الإدارة متاح عبر موقع MathWorld فقط. تطبيق الجوال مخصص للطلاب."
+  "server_feature_unavailable": "الميزة غير متاحة على إصدار الخادم المتصل حاليًا. حدّث خدمة MathSuper لتتوافق مع التطبيق؛ إعادة المحاولة وحدها لن تحل المشكلة.",
+  "admin_web_only": "حساب الإدارة متاح عبر موقع MathSuper فقط. تطبيق الجوال مخصص للطلاب."
 }
